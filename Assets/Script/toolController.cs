@@ -9,19 +9,22 @@ public class ToolController : NetworkBehaviour
         NetworkVariableWritePermission.Server
     );
 
-    [Header("Tool Prefabs (global state index)")]
-    public GameObject[] toolPrefabs;
+    [Header("Tool Objects (children under this object, index = global state)")]
+    public GameObject[] toolObjects;
 
-    private GameObject currentToolInstance;
+    private int lastState = -1;
 
     public override void OnNetworkSpawn()
     {
+        CurrentState.OnValueChanged += OnStateChanged;
+
         if (IsServer)
         {
             SetupInitialStateByStage();
         }
 
-        CurrentState.OnValueChanged += OnStateChanged;
+        // 初始化顯示
+        ApplyState(CurrentState.Value);
     }
 
     public override void OnNetworkDespawn()
@@ -36,10 +39,10 @@ public class ToolController : NetworkBehaviour
         switch (stage)
         {
             case 1:
-                CurrentState.Value = 0; // Stage1 State0
+                CurrentState.Value = 0;
                 break;
             case 2:
-                CurrentState.Value = 3; // Stage2 State0
+                CurrentState.Value = 3;
                 break;
             default:
                 CurrentState.Value = 0;
@@ -47,24 +50,14 @@ public class ToolController : NetworkBehaviour
         }
     }
 
-    // ===== Server 控制切換 =====
     [ServerRpc(RequireOwnership = false)]
     public void SetStateServerRpc(int state)
     {
         int stage = SceneController.CurrentLevel;
 
-        bool invalid = false;
-
-        if (stage == 1)
-        {
-            // only allow 0,1,2
-            invalid = (state < 0 || state > 2);
-        }
-        else if (stage == 2)
-        {
-            // only allow 3,4
-            invalid = (state < 3 || state > 4);
-        }
+        bool invalid =
+            (stage == 1 && (state < 0 || state > 2)) ||
+            (stage == 2 && (state < 3 || state > 4));
 
         if (invalid)
         {
@@ -75,28 +68,30 @@ public class ToolController : NetworkBehaviour
         CurrentState.Value = state;
     }
 
-    // ===== Client 監聽 =====
     private void OnStateChanged(int oldValue, int newValue)
     {
-        Debug.Log($"Tool State: {oldValue} → {newValue}");
         ApplyState(newValue);
     }
 
     private void ApplyState(int state)
     {
-        if (currentToolInstance != null)
-        {
-            Destroy(currentToolInstance);
-        }
+        if (!IsSpawned) return;
 
-        if (state < 0 || state >= toolPrefabs.Length)
+        if (state < 0 || state >= toolObjects.Length)
         {
-            Debug.LogWarning("Invalid prefab index");
+            Debug.LogWarning("Invalid tool index");
             return;
         }
 
-        currentToolInstance = Instantiate(toolPrefabs[state], transform);
-        currentToolInstance.transform.localPosition = Vector3.zero;
-        currentToolInstance.transform.localRotation = Quaternion.identity;
+        // 關掉舊的
+        if (lastState >= 0 && lastState < toolObjects.Length)
+        {
+            toolObjects[lastState].SetActive(false);
+        }
+
+        // 打開新的
+        toolObjects[state].SetActive(true);
+
+        lastState = state;
     }
 }
