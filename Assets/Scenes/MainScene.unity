@@ -384,6 +384,163 @@ Transform:
   m_Children: []
   m_Father: {fileID: 919393077}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &329329609
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 329329613}
+  - component: {fileID: 329329612}
+  - component: {fileID: 329329611}
+  - component: {fileID: 329329610}
+  m_Layer: 0
+  m_Name: '[BuildingBlock] Custom Matchmaking'
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &329329610
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 329329609}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 010a1293387438b4dae447f1ef96508d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  automaticallySignIn: 1
+--- !u!114 &329329611
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 329329609}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 81f3c1e4a481d66498886c35ae307bd2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  onRoomCreationFinished:
+    m_PersistentCalls:
+      m_Calls: []
+  onRoomJoinFinished:
+    m_PersistentCalls:
+      m_Calls: []
+  onRoomLeaveFinished:
+    m_PersistentCalls:
+      m_Calls: []
+  lobbyName: myLobby
+  isPrivate: 0
+  maxPlayersPerRoom: 4
+  isPasswordProtected: 0
+--- !u!114 &329329612
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 329329609}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b023183069df224080314a560e6e1ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  blockId: c5bea02f-8079-4142-87f9-56da5993f861
+  instanceId: 969ad270-7c26-4ecd-bfa2-f6a7ffa5c1ae
+  version: 1
+  installationRoutineCheckpoint:
+    _installationRoutineId: 0c456cf4-4441-4639-9b87-784ce8c2e6ca
+    _installationVariants:
+    - _memberName: installMatchmaking
+      _value: '{"value__":0}'
+--- !u!4 &329329613
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 329329609}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &348685626
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 348685629}
+  - component: {fileID: 348685628}
+  - component: {fileID: 348685627}
+  m_Layer: 0
+  m_Name: '[BuildingBlock] Local Matchmaking'
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &348685627
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 348685626}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f20814e397d74414847bc84052bdd497, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  automaticHostOrJoin: 1
+  timeDiscoveringInSec: 5
+--- !u!114 &348685628
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 348685626}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b023183069df224080314a560e6e1ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  blockId: 9141594f-eab4-43f9-b05e-17f2f40db586
+  instanceId: 249e2fc3-0ae3-4bc6-b337-af163ad45d27
+  version: 1
+  installationRoutineCheckpoint:
+    _installationRoutineId: 871efd9e-7c98-49a6-bd84-bf6663c44e3f
+    _installationVariants: []
+--- !u!4 &348685629
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 348685626}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
@@ -502,7 +659,7 @@ MonoBehaviour:
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
   m_SoftShadowQuality: 1
---- !u!1 &588503873
+--- !u!1 &646280984
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -510,82 +667,112 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 588503877}
-  - component: {fileID: 588503876}
-  - component: {fileID: 588503875}
-  - component: {fileID: 588503874}
+  - component: {fileID: 646280987}
+  - component: {fileID: 646280986}
+  - component: {fileID: 646280985}
   m_Layer: 0
-  m_Name: '[BuildingBlock] Custom Matchmaking'
+  m_Name: '[BuildingBlock] MR Utility Kit'
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &588503874
+--- !u!114 &646280985
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 588503873}
+  m_GameObject: {fileID: 646280984}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 010a1293387438b4dae447f1ef96508d, type: 3}
+  m_Script: {fileID: 11500000, guid: de27d7f2f20024e18898941292d6c164, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  automaticallySignIn: 1
---- !u!114 &588503875
+  <SceneLoadedEvent>k__BackingField:
+    m_PersistentCalls:
+      m_Calls: []
+  <RoomCreatedEvent>k__BackingField:
+    m_PersistentCalls:
+      m_Calls: []
+  <RoomUpdatedEvent>k__BackingField:
+    m_PersistentCalls:
+      m_Calls: []
+  <RoomRemovedEvent>k__BackingField:
+    m_PersistentCalls:
+      m_Calls: []
+  EnableWorldLock: 1
+  TrackingSpaceOffset:
+    e00: 1
+    e01: 0
+    e02: 0
+    e03: 0
+    e10: 0
+    e11: 1
+    e12: 0
+    e13: 0
+    e20: 0
+    e21: 0
+    e22: 1
+    e23: 0
+    e30: 0
+    e31: 0
+    e32: 0
+    e33: 1
+  SceneSettings:
+    DataSource: 2
+    RoomIndex: -1
+    RoomPrefabs:
+    - {fileID: 5618556046422172173, guid: 4b454e8ccd6764ccdbcd91586969863f, type: 3}
+    - {fileID: 5618556046422172173, guid: 029ede24e76b24d0888dc235dd0b96f2, type: 3}
+    - {fileID: 5618556046422172173, guid: caa3755f1f2184eb7a9fd17b7cf1f1d3, type: 3}
+    - {fileID: 1766085727792645261, guid: 989283c9dcb36a24aac11a601001dce0, type: 3}
+    - {fileID: 5618556046422172173, guid: b2217186fc11b47638c925d674e7f526, type: 3}
+    - {fileID: 5618556046422172173, guid: 531aeca35d703a64cb0e1fd73a128fc0, type: 3}
+    - {fileID: 5618556046422172173, guid: 3aaa7f66d6713834ca31af8c3d9bebda, type: 3}
+    - {fileID: 5618556046422172173, guid: 1550cf68ffa5a344e881275021bc3ffe, type: 3}
+    - {fileID: 5618556046422172173, guid: 31818101cde292945ab80af5d14bec54, type: 3}
+    - {fileID: 5618556046422172173, guid: c2bd5595e9fe2493a92d4bc0bb264603, type: 3}
+    SceneJsons: []
+    LoadSceneOnStartup: 0
+    SeatWidth: 0.6
+    SceneJson: 
+    <TrackerConfiguration>k__BackingField:
+      <KeyboardTrackingEnabled>k__BackingField: 0
+      <QRCodeTrackingEnabled>k__BackingField: 0
+    <TrackableAdded>k__BackingField:
+      m_PersistentCalls:
+        m_Calls: []
+    <TrackableRemoved>k__BackingField:
+      m_PersistentCalls:
+        m_Calls: []
+  _immersiveSceneDebuggerPrefab: {fileID: 7641788235762528044, guid: 950d12aea00a70449b5b7b746f142acf,
+    type: 3}
+--- !u!114 &646280986
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 588503873}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 81f3c1e4a481d66498886c35ae307bd2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  onRoomCreationFinished:
-    m_PersistentCalls:
-      m_Calls: []
-  onRoomJoinFinished:
-    m_PersistentCalls:
-      m_Calls: []
-  onRoomLeaveFinished:
-    m_PersistentCalls:
-      m_Calls: []
-  lobbyName: myLobby
-  isPrivate: 0
-  maxPlayersPerRoom: 4
-  isPasswordProtected: 0
---- !u!114 &588503876
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 588503873}
+  m_GameObject: {fileID: 646280984}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5b023183069df224080314a560e6e1ff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  blockId: c5bea02f-8079-4142-87f9-56da5993f861
-  instanceId: 6dd07712-c89b-4930-88bb-aab5f4057cb8
+  blockId: d4413f4f-542f-451f-92ee-4801f27d676a
+  instanceId: f79cab80-c63c-4c56-a640-48bf2bc68051
   version: 1
   installationRoutineCheckpoint:
-    _installationRoutineId: 0c456cf4-4441-4639-9b87-784ce8c2e6ca
-    _installationVariants:
-    - _memberName: installMatchmaking
-      _value: '{"value__":0}'
---- !u!4 &588503877
+    _installationRoutineId: 
+    _installationVariants: []
+--- !u!4 &646280987
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 588503873}
+  m_GameObject: {fileID: 646280984}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -755,71 +942,6 @@ MonoBehaviour:
     m_MipBias: 0
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
---- !u!1 &878375225
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 878375228}
-  - component: {fileID: 878375227}
-  - component: {fileID: 878375226}
-  m_Layer: 0
-  m_Name: '[BuildingBlock] Local Matchmaking'
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &878375226
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 878375225}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f20814e397d74414847bc84052bdd497, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  automaticHostOrJoin: 1
-  timeDiscoveringInSec: 5
---- !u!114 &878375227
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 878375225}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5b023183069df224080314a560e6e1ff, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  blockId: 9141594f-eab4-43f9-b05e-17f2f40db586
-  instanceId: 3ae3b079-267c-49e1-891d-bc7297d4338b
-  version: 1
-  installationRoutineCheckpoint:
-    _installationRoutineId: 871efd9e-7c98-49a6-bd84-bf6663c44e3f
-    _installationVariants: []
---- !u!4 &878375228
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 878375225}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &919393076
 GameObject:
   m_ObjectHideFlags: 0
@@ -1027,7 +1149,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2106112899}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1350793912
+--- !u!1 &1303188359
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1035,112 +1157,110 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1350793915}
-  - component: {fileID: 1350793914}
-  - component: {fileID: 1350793913}
+  - component: {fileID: 1303188363}
+  - component: {fileID: 1303188362}
+  - component: {fileID: 1303188361}
+  - component: {fileID: 1303188360}
   m_Layer: 0
-  m_Name: '[BuildingBlock] MR Utility Kit'
+  m_Name: '[BuildingBlock] Network Manager'
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1350793913
+--- !u!114 &1303188360
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1350793912}
+  m_GameObject: {fileID: 1303188359}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: de27d7f2f20024e18898941292d6c164, type: 3}
+  m_Script: {fileID: 11500000, guid: 6960e84d07fb87f47956e7a81d71c4e6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  <SceneLoadedEvent>k__BackingField:
-    m_PersistentCalls:
-      m_Calls: []
-  <RoomCreatedEvent>k__BackingField:
-    m_PersistentCalls:
-      m_Calls: []
-  <RoomUpdatedEvent>k__BackingField:
-    m_PersistentCalls:
-      m_Calls: []
-  <RoomRemovedEvent>k__BackingField:
-    m_PersistentCalls:
-      m_Calls: []
-  EnableWorldLock: 1
-  TrackingSpaceOffset:
-    e00: 1
-    e01: 0
-    e02: 0
-    e03: 0
-    e10: 0
-    e11: 1
-    e12: 0
-    e13: 0
-    e20: 0
-    e21: 0
-    e22: 1
-    e23: 0
-    e30: 0
-    e31: 0
-    e32: 0
-    e33: 1
-  SceneSettings:
-    DataSource: 2
-    RoomIndex: -1
-    RoomPrefabs:
-    - {fileID: 5618556046422172173, guid: 4b454e8ccd6764ccdbcd91586969863f, type: 3}
-    - {fileID: 5618556046422172173, guid: 029ede24e76b24d0888dc235dd0b96f2, type: 3}
-    - {fileID: 5618556046422172173, guid: caa3755f1f2184eb7a9fd17b7cf1f1d3, type: 3}
-    - {fileID: 1766085727792645261, guid: 989283c9dcb36a24aac11a601001dce0, type: 3}
-    - {fileID: 5618556046422172173, guid: b2217186fc11b47638c925d674e7f526, type: 3}
-    - {fileID: 5618556046422172173, guid: 531aeca35d703a64cb0e1fd73a128fc0, type: 3}
-    - {fileID: 5618556046422172173, guid: 3aaa7f66d6713834ca31af8c3d9bebda, type: 3}
-    - {fileID: 5618556046422172173, guid: 1550cf68ffa5a344e881275021bc3ffe, type: 3}
-    - {fileID: 5618556046422172173, guid: 31818101cde292945ab80af5d14bec54, type: 3}
-    - {fileID: 5618556046422172173, guid: c2bd5595e9fe2493a92d4bc0bb264603, type: 3}
-    SceneJsons: []
-    LoadSceneOnStartup: 1
-    SeatWidth: 0.6
-    SceneJson: 
-    <TrackerConfiguration>k__BackingField:
-      <KeyboardTrackingEnabled>k__BackingField: 0
-      <QRCodeTrackingEnabled>k__BackingField: 0
-    <TrackableAdded>k__BackingField:
-      m_PersistentCalls:
-        m_Calls: []
-    <TrackableRemoved>k__BackingField:
-      m_PersistentCalls:
-        m_Calls: []
-  _immersiveSceneDebuggerPrefab: {fileID: 7641788235762528044, guid: 950d12aea00a70449b5b7b746f142acf,
-    type: 3}
---- !u!114 &1350793914
+  m_ProtocolType: 0
+  m_UseWebSockets: 0
+  m_UseEncryption: 0
+  m_MaxPacketQueueSize: 128
+  m_MaxPayloadSize: 6144
+  m_HeartbeatTimeoutMS: 500
+  m_ConnectTimeoutMS: 1000
+  m_MaxConnectAttempts: 60
+  m_DisconnectTimeoutMS: 30000
+  ConnectionData:
+    Address: 127.0.0.1
+    Port: 7777
+    ServerListenAddress: 127.0.0.1
+  DebugSimulator:
+    PacketDelayMS: 0
+    PacketJitterMS: 0
+    PacketDropRate: 0
+--- !u!114 &1303188361
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1350793912}
+  m_GameObject: {fileID: 1303188359}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 593a2fe42fa9d37498c96f9a383b6521, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  NetworkConfig:
+    ProtocolVersion: 0
+    NetworkTransport: {fileID: 1303188360}
+    PlayerPrefab: {fileID: 0}
+    Prefabs:
+      NetworkPrefabsLists:
+      - {fileID: 11400000, guid: 7e54518069e85104a9745f20c4cdac4e, type: 2}
+    TickRate: 30
+    ClientConnectionBufferTimeout: 10
+    ConnectionApproval: 0
+    ConnectionData: 
+    EnableTimeResync: 0
+    TimeResyncInterval: 30
+    EnsureNetworkVariableLengthSafety: 0
+    EnableSceneManagement: 1
+    ForceSamePrefabs: 0
+    RecycleNetworkIds: 1
+    NetworkIdRecycleDelay: 120
+    RpcHashSize: 0
+    LoadSceneTimeOut: 120
+    SpawnTimeout: 10
+    EnableNetworkLogs: 1
+    OldPrefabList: []
+  RunInBackground: 1
+  LogLevel: 1
+--- !u!114 &1303188362
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1303188359}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5b023183069df224080314a560e6e1ff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  blockId: d4413f4f-542f-451f-92ee-4801f27d676a
-  instanceId: be9d3068-e084-422c-9dfa-516f45eb0ab9
+  blockId: 1d8db162-54f6-43df-b4ef-b499df1f6769
+  instanceId: 9ab66f06-33e7-44c6-ab48-7143eb52b203
   version: 1
   installationRoutineCheckpoint:
-    _installationRoutineId: 
-    _installationVariants: []
---- !u!4 &1350793915
+    _installationRoutineId: 45364db4-f880-45c3-9d76-d366c46500d3
+    _installationVariants:
+    - _memberName: installMatchmaking
+      _value: '{"value__":0}'
+--- !u!4 &1303188363
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1350793912}
+  m_GameObject: {fileID: 1303188359}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -1550,7 +1670,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 101101670}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2066200449
+--- !u!1 &2098493650
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1558,111 +1678,79 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 2066200453}
-  - component: {fileID: 2066200452}
-  - component: {fileID: 2066200451}
-  - component: {fileID: 2066200450}
+  - component: {fileID: 2098493654}
+  - component: {fileID: 2098493653}
+  - component: {fileID: 2098493652}
+  - component: {fileID: 2098493651}
   m_Layer: 0
-  m_Name: '[BuildingBlock] Network Manager'
+  m_Name: '[BuildingBlock] Colocation'
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &2066200450
+--- !u!114 &2098493651
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2066200449}
+  m_GameObject: {fileID: 2098493650}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6960e84d07fb87f47956e7a81d71c4e6, type: 3}
+  m_Script: {fileID: 11500000, guid: c4157a8a4b7d44f59c8cd6a79f9d818e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_ProtocolType: 0
-  m_UseWebSockets: 0
-  m_UseEncryption: 0
-  m_MaxPacketQueueSize: 128
-  m_MaxPayloadSize: 6144
-  m_HeartbeatTimeoutMS: 500
-  m_ConnectTimeoutMS: 1000
-  m_MaxConnectAttempts: 60
-  m_DisconnectTimeoutMS: 30000
-  ConnectionData:
-    Address: 127.0.0.1
-    Port: 7777
-    ServerListenAddress: 127.0.0.1
-  DebugSimulator:
-    PacketDelayMS: 0
-    PacketJitterMS: 0
-    PacketDropRate: 0
---- !u!114 &2066200451
+  basis: 1
+  AnchorPrefab: {fileID: 3105173346702953323, guid: d675ca738ca229f41a80c9105cacfb75,
+    type: 3}
+--- !u!114 &2098493652
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2066200449}
+  m_GameObject: {fileID: 2098493650}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 593a2fe42fa9d37498c96f9a383b6521, type: 3}
+  m_Script: {fileID: 11500000, guid: 90e4eb9f4c4632e4293b56356613ab86, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  NetworkConfig:
-    ProtocolVersion: 0
-    NetworkTransport: {fileID: 2066200450}
-    PlayerPrefab: {fileID: 0}
-    Prefabs:
-      NetworkPrefabsLists:
-      - {fileID: 11400000, guid: 7e54518069e85104a9745f20c4cdac4e, type: 2}
-      - {fileID: 11400000, guid: 7e54518069e85104a9745f20c4cdac4e, type: 2}
-    TickRate: 30
-    ClientConnectionBufferTimeout: 10
-    ConnectionApproval: 0
-    ConnectionData: 
-    EnableTimeResync: 0
-    TimeResyncInterval: 30
-    EnsureNetworkVariableLengthSafety: 0
-    EnableSceneManagement: 1
-    ForceSamePrefabs: 0
-    RecycleNetworkIds: 1
-    NetworkIdRecycleDelay: 120
-    RpcHashSize: 0
-    LoadSceneTimeOut: 120
-    SpawnTimeout: 10
-    EnableNetworkLogs: 1
-    OldPrefabList: []
-  RunInBackground: 1
-  LogLevel: 1
---- !u!114 &2066200452
+  ColocationReadyCallbacks:
+    m_PersistentCalls:
+      m_Calls: []
+  DebuggingOptions:
+    visualizeAlignmentAnchor: 1
+    enableVerboseLogging: 0
+--- !u!114 &2098493653
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2066200449}
+  m_GameObject: {fileID: 2098493650}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5b023183069df224080314a560e6e1ff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  blockId: 1d8db162-54f6-43df-b4ef-b499df1f6769
-  instanceId: 8da950a1-dde5-420c-8b26-0e6f734d9e39
-  version: 1
+  blockId: f308c8f0-7a4b-4cd5-88be-c15b6399f823
+  instanceId: f2d34332-12e5-46d3-84c4-d70f16ec4c00
+  version: 3
   installationRoutineCheckpoint:
-    _installationRoutineId: 45364db4-f880-45c3-9d76-d366c46500d3
+    _installationRoutineId: 4ec10206-4327-44cd-ae75-ff2b80d3422e
     _installationVariants:
+    - _memberName: shareSpaceToGuests
+      _value: '{}'
     - _memberName: installMatchmaking
       _value: '{"value__":0}'
---- !u!4 &2066200453
+--- !u!4 &2098493654
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2066200449}
+  m_GameObject: {fileID: 2098493650}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -1710,7 +1798,8 @@ SceneRoots:
   - {fileID: 410087041}
   - {fileID: 41135293}
   - {fileID: 1560911846}
-  - {fileID: 1350793915}
-  - {fileID: 2066200453}
-  - {fileID: 588503877}
-  - {fileID: 878375228}
+  - {fileID: 1303188363}
+  - {fileID: 329329613}
+  - {fileID: 348685629}
+  - {fileID: 646280987}
+  - {fileID: 2098493654}
