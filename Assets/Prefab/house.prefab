@@ -10,6 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 2879252266355482954}
   - component: {fileID: 2237116721428805957}
+  - component: {fileID: 1050134050073023565}
+  - component: {fileID: 2466671671972184565}
   m_Layer: 0
   m_Name: house
   m_TagString: Untagged
@@ -27,7 +29,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.119282804, y: 0.119282804, z: 0.119282804}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1217539466385422350}
@@ -48,8 +50,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 143361943
-  InScenePlacedSourceGlobalObjectIdHash: 0
+  GlobalObjectIdHash: 4174250655
+  InScenePlacedSourceGlobalObjectIdHash: 1533307541
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -57,6 +59,35 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+--- !u!114 &1050134050073023565
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 445651036928715687}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 78fff097da0cf4040a5f1a56d00d347f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  childObjects:
+  - {fileID: 2935591697280915217}
+  - {fileID: 3388103465480267606}
+  - {fileID: 8528497081695044959}
+  - {fileID: 3398166708958678392}
+--- !u!114 &2466671671972184565
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 445651036928715687}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92eb64aa37e4f5a4589741dc62c4c745, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &2935591697280915217
 GameObject:
   m_ObjectHideFlags: 0
