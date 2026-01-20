@@ -1,36 +1,59 @@
+using System;
 using UnityEngine;
 using Unity.Netcode;
 
 public class ToolController : NetworkBehaviour
 {
-    public NetworkVariable<int> CurrentState = new NetworkVariable<int>(
+    // =========================
+    // Networked State
+    // =========================
+
+    private NetworkVariable<int> netState = new NetworkVariable<int>(
         0,
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server
     );
+
+    // 公開唯讀狀態（給其他系統用）
+    public int CurrentState => netState.Value;
+
+    // 狀態變化事件（給 UI / SFX / 教學系統監聽）
+    public event Action<int> OnToolStateChanged;
+
+    // =========================
+    // Tool Objects
+    // =========================
 
     [Header("Tool Objects (children under this object, index = global state)")]
     public GameObject[] toolObjects;
 
     private int lastState = -1;
 
+    // =========================
+    // Network Lifecycle
+    // =========================
+
     public override void OnNetworkSpawn()
     {
-        CurrentState.OnValueChanged += OnStateChanged;
+        netState.OnValueChanged += OnNetStateChanged;
 
         if (IsServer)
         {
             SetupInitialStateByStage();
         }
 
-        // 初始化顯示
-        ApplyState(CurrentState.Value);
+        // 確保 Host / Client / Late Join 都會初始化
+        ApplyState(netState.Value, invokeEvent: false);
     }
 
     public override void OnNetworkDespawn()
     {
-        CurrentState.OnValueChanged -= OnStateChanged;
+        netState.OnValueChanged -= OnNetStateChanged;
     }
+
+    // =========================
+    // Server Logic
+    // =========================
 
     private void SetupInitialStateByStage()
     {
@@ -38,48 +61,57 @@ public class ToolController : NetworkBehaviour
 
         switch (stage)
         {
-            case 1:
-                CurrentState.Value = 0;
-                break;
-            case 2:
-                CurrentState.Value = 3;
-                break;
-            default:
-                CurrentState.Value = 0;
-                break;
+            case 1: netState.Value = 0; break;
+            case 2: netState.Value = 3; break;
+            default: netState.Value = 0; break;
         }
     }
 
     [ServerRpc(RequireOwnership = false)]
-    public void SetStateServerRpc(int state)
+    public void SetStateServerRpc(int newState)
     {
-        int stage = SceneController.CurrentLevel;
-
-        bool invalid =
-            (stage == 1 && (state < 0 || state > 2)) ||
-            (stage == 2 && (state < 3 || state > 4));
-
-        if (invalid)
+        if (!IsValidStateForStage(newState))
         {
-            Debug.LogWarning($"Wrong state {state} for stage {stage}");
+            Debug.LogWarning($"[ToolController] Invalid state {newState} for stage {SceneController.CurrentLevel}");
             return;
         }
 
-        CurrentState.Value = state;
+        if (newState == netState.Value)
+            return;
+
+        netState.Value = newState;
     }
 
-    private void OnStateChanged(int oldValue, int newValue)
+    private bool IsValidStateForStage(int state)
     {
-        ApplyState(newValue);
+        int stage = SceneController.CurrentLevel;
+
+        return
+            (stage == 1 && state >= 0 && state <= 2) ||
+            (stage == 2 && state >= 3 && state <= 4);
     }
 
-    private void ApplyState(int state)
+    // =========================
+    // Client Sync
+    // =========================
+
+    private void OnNetStateChanged(int oldValue, int newValue)
     {
-        if (!IsSpawned) return;
+        ApplyState(newValue, invokeEvent: true);
+    }
+
+    // =========================
+    // Visual Application
+    // =========================
+
+    private void ApplyState(int state, bool invokeEvent)
+    {
+        if (!IsSpawned)
+            return;
 
         if (state < 0 || state >= toolObjects.Length)
         {
-            Debug.LogWarning("Invalid tool index");
+            Debug.LogWarning("[ToolController] Invalid tool index");
             return;
         }
 
@@ -89,9 +121,14 @@ public class ToolController : NetworkBehaviour
             toolObjects[lastState].SetActive(false);
         }
 
-        // 打開新的
+        // 開新的
         toolObjects[state].SetActive(true);
 
         lastState = state;
+
+        if (invokeEvent)
+        {
+            OnToolStateChanged?.Invoke(state);
+        }
     }
 }

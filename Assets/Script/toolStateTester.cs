@@ -38,11 +38,14 @@ public class XRToolStateController : MonoBehaviour
 
     private void CycleNextState()
     {
-        int current = toolController.CurrentState.Value;
+        int current = toolController.CurrentState;
         int next = current + 1;
 
-        Debug.Log($"[XR-Test] Switch tool: {current} → {next}");
+        // 可選：簡單循環
+        if (SceneController.CurrentLevel == 1 && next > 2) next = 0;
+        if (SceneController.CurrentLevel == 2 && next > 4) next = 3;
 
         toolController.SetStateServerRpc(next);
     }
+
 }
