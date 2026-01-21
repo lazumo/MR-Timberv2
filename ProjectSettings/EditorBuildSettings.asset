@@ -8,9 +8,12 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/MainScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/ControllerScene.unity
     guid: cefed1385b72265468e11d08a25f47d1
+  - enabled: 1
+    path: Assets/Scenes/Tree Resource To Position.unity
+    guid: 814cb5a214bda9b4fa9a73e62dcef45f
   m_configObjects:
     Unity.XR.Oculus.Settings: {fileID: 11400000, guid: 6daec31388bb8a443a2b594d5c7df403,
       type: 2}
