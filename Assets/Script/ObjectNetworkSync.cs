@@ -50,10 +50,10 @@ public class ObjectNetworkSync : NetworkBehaviour
         if (!IsServer) return;
 
         // 測試用：按下 Trigger 循環切換狀態 (Unbuilt -> Built -> Colored ...)
-        if (OVRInput.GetDown(OVRInput.Button.PrimaryIndexTrigger, OVRInput.Controller.RTouch))
-        {
-            CycleStateOnServer();
-        }
+        //if (OVRInput.GetDown(OVRInput.Button.PrimaryIndexTrigger, OVRInput.Controller.RTouch))
+        //{
+        //    CycleStateOnServer();
+        //}
     }
 
     private void CycleStateOnServer()

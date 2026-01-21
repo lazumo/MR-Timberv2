@@ -1,10 +1,12 @@
 using UnityEngine;
 using UnityEngine.XR;
+using Unity.Netcode;
 using System.Collections.Generic;
 
-public class XRToolStateController : MonoBehaviour
+public class XRResourceSpawnTester : MonoBehaviour
 {
-    public ToolController toolController;
+    [Header("Reference")]
+    public ResourceHandlerNetworked resourceHandler;
 
     private InputDevice rightHandDevice;
     private bool lastTriggerPressed = false;
@@ -16,7 +18,7 @@ public class XRToolStateController : MonoBehaviour
 
     void Update()
     {
-        if (toolController == null) return;
+        if (resourceHandler == null) return;
 
         if (!rightHandDevice.isValid)
         {
@@ -26,10 +28,10 @@ public class XRToolStateController : MonoBehaviour
 
         if (rightHandDevice.TryGetFeatureValue(CommonUsages.triggerButton, out bool triggerPressed))
         {
-            // 只在「剛按下」時切換一次
+            // 只在「剛按下」時執行一次
             if (triggerPressed && !lastTriggerPressed)
             {
-                CycleNextState();
+                SpawnResource();
             }
 
             lastTriggerPressed = triggerPressed;
@@ -48,17 +50,11 @@ public class XRToolStateController : MonoBehaviour
         }
     }
 
-    private void CycleNextState()
+    private void SpawnResource()
     {
-        int current = toolController.CurrentState;
-        int next = current + 1;
+        Debug.Log("[XR] Trigger pressed → Request spawn resource");
 
-        // 合法範圍循環
-        if (SceneController.CurrentLevel == 1 && next > 2) next = 0;
-        if (SceneController.CurrentLevel == 2 && next > 4) next = 3;
-
-        Debug.Log($"[XR] Switch tool: {current} → {next}");
-
-        toolController.SetStateServerRpc(next);
+        // 呼叫 Server 生成 resource
+        resourceHandler.SpawnResourceServerRpc();
     }
 }
