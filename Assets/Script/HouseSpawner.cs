@@ -7,9 +7,6 @@ public class HouseSpawnerNetworked : NetworkBehaviour
 {
     public static HouseSpawnerNetworked Instance { get; private set; }
 
-    // --- 1. Define the Data Structure ---
-    // This struct holds the ID and Position together.
-    // INetworkSerializable allows Netcode to sync it automatically.
     public struct HouseData : INetworkSerializable, System.IEquatable<HouseData>
     {
         public int Id;
@@ -21,22 +18,18 @@ public class HouseSpawnerNetworked : NetworkBehaviour
             serializer.SerializeValue(ref Position);
         }
 
-        public bool Equals(HouseData other)
-        {
-            return Id == other.Id && Position == other.Position;
-        }
+        public bool Equals(HouseData other) { return Id == other.Id && Position == other.Position; }
     }
 
     [Header("Settings")]
-    public GameObject housePrefab; // Needs NetworkObject component
+    public GameObject housePrefab;
     public int numberOfHouses = 5;
-    
-    [Header("Placement Rules")]
-    public LayerMask obstacleLayerMask;
-    public Vector3 collisionCheckSize = new Vector3(0.1f, 0.1f, 0.1f);
 
-    // --- 2. The Networked List ---
-    // This list syncs the HouseData (ID + Position) to all clients.
+    [Header("Safety Area (1m x 1m)")]
+    // 0.5f Half-Extents = 1.0m Total Size
+    public Vector3 collisionCheckSize = new Vector3(0.5f, 0.5f, 0.5f);
+    public LayerMask obstacleLayerMask; // Select Default, House, Tree
+
     private NetworkList<HouseData> _spawnedHouseData;
 
     private void Awake()
@@ -74,8 +67,8 @@ public class HouseSpawnerNetworked : NetworkBehaviour
         int successfulSpawns = 0;
         int attempts = 0;
 
-        // Setup Filters (MRUK v81+)
-        MRUK.SurfaceType allowedSurfaces = MRUK.SurfaceType.FACING_UP | MRUK.SurfaceType.VERTICAL;
+        // 1. Setup Filters (Floor + Walls + Ceiling)
+        MRUK.SurfaceType allowedSurfaces = MRUK.SurfaceType.FACING_UP | MRUK.SurfaceType.VERTICAL | MRUK.SurfaceType.FACING_DOWN;
         MRUKAnchor.SceneLabels allowedLabels = MRUKAnchor.SceneLabels.FLOOR | MRUKAnchor.SceneLabels.WALL_FACE | MRUKAnchor.SceneLabels.CEILING;
         LabelFilter filter = new LabelFilter(allowedLabels);
 
@@ -85,30 +78,29 @@ public class HouseSpawnerNetworked : NetworkBehaviour
 
             if (room.GenerateRandomPositionOnSurface(allowedSurfaces, 0.1f, filter, out Vector3 pos, out Vector3 normal))
             {
-                // Simple rotation logic
-                Quaternion rot = (Mathf.Abs(Vector3.Dot(normal, Vector3.up)) < 0.1f) 
-                    ? Quaternion.LookRotation(normal, Vector3.up) 
-                    : Quaternion.Euler(0, Random.Range(0, 360), 0);
+                // --- FIXED ROTATION LOGIC ---
+                // "House Top (Y) should face Out (Normal)"
+                // This works for Floor (Up), Ceiling (Down), and Walls (Out).
+                
+                Quaternion rot = Quaternion.FromToRotation(Vector3.up, normal);
 
+                // Add a random spin around the "pole" (the normal axis)
+                // This ensures the house isn't always rotated the same way relative to its base
+                rot *= Quaternion.Euler(0, Random.Range(0, 360), 0);
+
+                // 3. Collision Check (1m x 1m)
                 if (IsSpaceEmpty(pos, rot))
                 {
-                    // 1. Spawn the physical object
                     GameObject houseObj = Instantiate(housePrefab, pos, rot);
                     houseObj.GetComponent<NetworkObject>().Spawn();
 
-                    // 2. Create the Data Entry (ID + Position)
-                    successfulSpawns++; // ID starts at 1
-                    HouseData data = new HouseData
-                    {
-                        Id = successfulSpawns,
-                        Position = pos
-                    };
-
-                    // 3. Add to NetworkList (Syncs to everyone)
+                    successfulSpawns++;
+                    HouseData data = new HouseData { Id = successfulSpawns, Position = pos };
                     _spawnedHouseData.Add(data);
                 }
             }
         }
+        Debug.Log($"HouseSpawner: Generated {successfulSpawns} houses.");
     }
 
     private bool IsSpaceEmpty(Vector3 center, Quaternion rotation)
@@ -117,30 +109,12 @@ public class HouseSpawnerNetworked : NetworkBehaviour
         return hits.Length == 0;
     }
 
-    // --- 3. PUBLIC API for Other Scripts ---
-    
-    /// <summary>
-    /// Returns the position of a specific house ID (e.g., GetPositionForHouse(3)).
-    /// Returns Vector3.zero if not found.
-    /// </summary>
     public Vector3 GetPositionForHouse(int houseId)
     {
         foreach (var house in _spawnedHouseData)
         {
-            if (house.Id == houseId)
-                return house.Position;
+            if (house.Id == houseId) return house.Position;
         }
-        Debug.LogWarning($"House ID {houseId} not found!");
         return Vector3.zero;
-    }
-
-    /// <summary>
-    /// Returns all house data (IDs and Positions).
-    /// </summary>
-    public List<HouseData> GetAllHouseData()
-    {
-        List<HouseData> list = new List<HouseData>();
-        foreach (var h in _spawnedHouseData) list.Add(h);
-        return list;
     }
 }
