@@ -1,39 +1,51 @@
 using UnityEngine;
+using UnityEngine.XR;
+using System.Collections.Generic;
 
 public class XRToolStateController : MonoBehaviour
 {
     public ToolController toolController;
 
-    [Header("Random Interval (seconds)")]
-    public float minInterval = 1.0f;
-    public float maxInterval = 3.0f;
-
-    private float timer;
-    private float nextInterval;
+    private InputDevice rightHandDevice;
+    private bool lastTriggerPressed = false;
 
     void Start()
     {
-        ScheduleNext();
+        TryInitializeDevice();
     }
 
     void Update()
     {
         if (toolController == null) return;
 
-        timer += Time.deltaTime;
-
-        if (timer >= nextInterval)
+        if (!rightHandDevice.isValid)
         {
-            timer = 0f;
-            ScheduleNext();
-            CycleNextState();
+            TryInitializeDevice();
+            return;
+        }
+
+        if (rightHandDevice.TryGetFeatureValue(CommonUsages.triggerButton, out bool triggerPressed))
+        {
+            // 只在「剛按下」時切換一次
+            if (triggerPressed && !lastTriggerPressed)
+            {
+                CycleNextState();
+            }
+
+            lastTriggerPressed = triggerPressed;
         }
     }
 
-    private void ScheduleNext()
+    private void TryInitializeDevice()
     {
-        nextInterval = Random.Range(minInterval, maxInterval);
-        Debug.Log($"[XR-Test] Next switch in {nextInterval:F2} seconds");
+        var devices = new List<InputDevice>();
+        InputDevices.GetDevicesAtXRNode(XRNode.RightHand, devices);
+
+        if (devices.Count > 0)
+        {
+            rightHandDevice = devices[0];
+            Debug.Log("[XR] Right hand device found: " + rightHandDevice.name);
+        }
     }
 
     private void CycleNextState()
@@ -41,11 +53,12 @@ public class XRToolStateController : MonoBehaviour
         int current = toolController.CurrentState;
         int next = current + 1;
 
-        // 可選：簡單循環
+        // 合法範圍循環
         if (SceneController.CurrentLevel == 1 && next > 2) next = 0;
         if (SceneController.CurrentLevel == 2 && next > 4) next = 3;
 
+        Debug.Log($"[XR] Switch tool: {current} → {next}");
+
         toolController.SetStateServerRpc(next);
     }
-
 }
