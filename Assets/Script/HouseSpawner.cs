@@ -38,7 +38,7 @@ public class HouseSpawnerNetworked : NetworkBehaviour
     // --- 2. The Networked List ---
     // This list syncs the HouseData (ID + Position) to all clients.
     private NetworkList<HouseData> _spawnedHouseData;
-
+    private int _nextQueryID;
     private void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
@@ -73,6 +73,7 @@ public class HouseSpawnerNetworked : NetworkBehaviour
         _spawnedHouseData.Clear();
         int successfulSpawns = 0;
         int attempts = 0;
+        _nextQueryID = 0;
 
         // Setup Filters (MRUK v81+)
         MRUK.SurfaceType allowedSurfaces = MRUK.SurfaceType.FACING_UP | MRUK.SurfaceType.VERTICAL;
@@ -97,13 +98,12 @@ public class HouseSpawnerNetworked : NetworkBehaviour
                     houseObj.GetComponent<NetworkObject>().Spawn();
 
                     // 2. Create the Data Entry (ID + Position)
-                    successfulSpawns++; // ID starts at 1
                     HouseData data = new HouseData
                     {
                         Id = successfulSpawns,
                         Position = pos
                     };
-
+                    successfulSpawns++; // ID starts at 0
                     // 3. Add to NetworkList (Syncs to everyone)
                     _spawnedHouseData.Add(data);
                 }
@@ -123,17 +123,33 @@ public class HouseSpawnerNetworked : NetworkBehaviour
     /// Returns the position of a specific house ID (e.g., GetPositionForHouse(3)).
     /// Returns Vector3.zero if not found.
     /// </summary>
-    public Vector3 GetPositionForHouse(int houseId)
+    //public Vector3 GetPositionForHouse(int houseId)
+    //{
+    //    foreach (var house in _spawnedHouseData)
+    //    {
+    //        if (house.Id == houseId)
+    //            return house.Position;
+    //    }
+    //    Debug.LogWarning($"House ID {houseId} not found!");
+    //    return Vector3.zero;
+    //}
+    public bool TryGetNextHouse(out HouseData data)
     {
-        foreach (var house in _spawnedHouseData)
+        if (!IsServer)
         {
-            if (house.Id == houseId)
-                return house.Position;
+            data = default;
+            return false;
         }
-        Debug.LogWarning($"House ID {houseId} not found!");
-        return Vector3.zero;
-    }
+        if (_nextQueryID >= _spawnedHouseData.Count)
+        {
+            data = default;
+            return false;
+        }
 
+        data = _spawnedHouseData[_nextQueryID];
+        _nextQueryID++;
+        return true;
+    }
     /// <summary>
     /// Returns all house data (IDs and Positions).
     /// </summary>
