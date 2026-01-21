@@ -65,4 +65,8 @@ public class ObjectNetworkSync : NetworkBehaviour
 
         Debug.Log($"Server changed house state to: {currentHouseState.Value}, color: {colorIndex.Value}");
     }
+    public int GetColorValue()
+    {
+        return colorIndex.Value;
+    }
 }

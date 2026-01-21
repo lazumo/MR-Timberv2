@@ -11,6 +11,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/ControllerScene.unity
     guid: cefed1385b72265468e11d08a25f47d1
+  - enabled: 1
+    path: Assets/Scenes/ZiyunScene.unity
+    guid: 9b0516178a34a9d45b9335f54110bf78
   m_configObjects:
     Unity.XR.Oculus.Settings: {fileID: 11400000, guid: 6daec31388bb8a443a2b594d5c7df403,
       type: 2}
