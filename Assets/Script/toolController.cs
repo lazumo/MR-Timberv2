@@ -30,6 +30,18 @@ public class ToolController : NetworkBehaviour
     private int lastState = -1;
 
     // =========================
+    // Hand Tracking
+    // =========================
+
+    [Header("Hand Tracking")]
+    public Transform leftHand;
+    public Transform rightHand;
+
+    [Header("Tool Follow Settings")]
+    public bool followHands = true;
+    public float followSmooth = 12f;
+
+    // =========================
     // Network Lifecycle
     // =========================
 
@@ -131,4 +143,32 @@ public class ToolController : NetworkBehaviour
             OnToolStateChanged?.Invoke(state);
         }
     }
+
+    // =========================
+    // Follow hands
+    // =========================
+
+    void Update()
+    {
+        if (!followHands) return;
+        if (!leftHand || !rightHand) return;
+        if (lastState < 0 || lastState >= toolObjects.Length) return;
+
+        GameObject currentTool = toolObjects[lastState];
+        if (!currentTool.activeSelf) return;
+
+        Vector3 mid = (leftHand.position + rightHand.position) * 0.5f;
+
+        if (followSmooth <= 0f)
+        {
+            currentTool.transform.position = mid;
+        }
+        else
+        {
+            float t = 1f - Mathf.Exp(-followSmooth * Time.deltaTime);
+            currentTool.transform.position = Vector3.Lerp(currentTool.transform.position, mid, t);
+        }
+    }
+
+
 }
