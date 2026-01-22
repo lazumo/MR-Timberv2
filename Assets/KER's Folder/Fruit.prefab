@@ -52,7 +52,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3531512998
+  GlobalObjectIdHash: 1991797117
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -73,8 +73,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e2fb4377b024d4bd298eeda705f04d85, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  fruitTypeNetwork:
-    m_InternalValue: 0
   firstBounceForce: 2
   secondBounceForce: 1
   maxBounces: 2
