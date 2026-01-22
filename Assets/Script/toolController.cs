@@ -49,11 +49,14 @@ public class ToolController : NetworkBehaviour
         {
             SetupInitialStateByStage();
         }
+        
+        // Initially hide all to ensure clean slate
         for (int i = 0; i < toolObjects.Length; i++)
         {
             SetToolVisible(toolObjects[i], false);
         }
-        // 初始化顯示狀態
+        
+        // Apply current state
         ApplyState(netState.Value, invokeEvent: false);
     }
 
@@ -68,14 +71,8 @@ public class ToolController : NetworkBehaviour
 
     private void SetupInitialStateByStage()
     {
-        int stage = SceneController.CurrentLevel;
-
-        switch (stage)
-        {
-            case 1: netState.Value = 0; break;
-            case 2: netState.Value = 3; break;
-            default: netState.Value = 0; break;
-        }
+        // TUNED: Always default to 0 regardless of stage
+        netState.Value = 0; 
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -95,11 +92,22 @@ public class ToolController : NetworkBehaviour
 
     private bool IsValidStateForStage(int state)
     {
+        // TUNED: Allow switching stages, but always permit 0
         int stage = SceneController.CurrentLevel;
 
-        return
-            (stage == 1 && state >= 0 && state <= 2) ||
-            (stage == 2 && state >= 3 && state <= 4);
+        if (stage == 1)
+        {
+            // Stage 1: Tools 0, 1, 2
+            return (state >= 0 && state <= 2);
+        }
+        else if (stage == 2)
+        {
+            // Stage 2: Tools 3, 4 ... AND 0 (Default)
+            return (state == 0) || (state >= 3 && state <= 4);
+        }
+
+        // Fallback for other stages / Lobby: Only 0
+        return state == 0;
     }
 
     // =========================
@@ -126,13 +134,13 @@ public class ToolController : NetworkBehaviour
             return;
         }
 
-        // 關閉舊工具顯示
+        // Hide Old
         if (lastState >= 0 && lastState < toolObjects.Length)
         {
             SetToolVisible(toolObjects[lastState], false);
         }
 
-        // 開啟新工具顯示
+        // Show New
         SetToolVisible(toolObjects[state], true);
 
         lastState = state;

@@ -4,44 +4,33 @@ using Unity.Netcode;
 public class WoodTree : NetworkBehaviour
 {
     [Header("Cutting Settings")]
-    public int hitsToCut = 3;
-    public GameObject woodMaterialPrefab; // The item to spawn when cut
+    public int hitsToCut = 3; // Optional if using velocity cut
+    public GameObject woodMaterialPrefab; 
     
     private int _currentHits = 0;
 
-    // Call this function from your Saw/Axe script when it triggers the collider
     public void TakeSawDamage()
     {
-        // Only the Server manages damage and death
         if (!IsServer) return;
-
         _currentHits++;
-        if (_currentHits >= hitsToCut)
-        {
-            SpawnMaterials();
-            KillTree();
-        }
+        if (_currentHits >= hitsToCut) { SpawnMaterials(); KillTree(); }
     }
 
-    private void SpawnMaterials()
+    // MUST BE PUBLIC for SliceObject to call
+    public void SpawnMaterials()
     {
         if (woodMaterialPrefab != null)
         {
-            // Spawn logic for the wood item
             GameObject mat = Instantiate(woodMaterialPrefab, transform.position + Vector3.up * 0.5f, Quaternion.identity);
-            mat.GetComponent<NetworkObject>().Spawn();
+            var netObj = mat.GetComponent<NetworkObject>();
+            if (netObj != null) netObj.Spawn();
         }
     }
 
     private void KillTree()
     {
-        // 1. Tell Manager we died
         if (TreeSpawnerNetworked.Instance != null)
-        {
             TreeSpawnerNetworked.Instance.NotifyTreeDestroyed(TreeSpawnerNetworked.TreeType.Wood);
-        }
-
-        // 2. Despawn self
         GetComponent<NetworkObject>().Despawn();
     }
 }

@@ -63,11 +63,14 @@ public class SliceObject : NetworkBehaviour
 
             float speed = ((transform.position - lastPos) / Time.fixedDeltaTime).magnitude;
             energy += speed * velocityWeight * Time.fixedDeltaTime;
+            
+            // Debug Info (Preserved)
             Debug.Log(
                 $"[Saw Energy] Hit={hit.collider.name} | " +
                 $"Speed={speed:F2} | " +
                 $"Energy={energy:F2}/{energyThreshold}"
             );
+
             if (energy >= energyThreshold)
             {
                 Vector3 bladeDir = (endPoint.position - startPoint.position).normalized;
@@ -102,7 +105,35 @@ public class SliceObject : NetworkBehaviour
     [ServerRpc]
     void RequestSliceServerRpc(ulong objId, Vector3 point, Vector3 normal)
     {
-        PerformSliceClientRpc(objId, point, normal);
+        // 1. Identify the object
+        if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(objId, out var netObj))
+        {
+            // 2. Check for WoodTree script (to handle Loot + Respawn)
+            WoodTree treeScript = netObj.GetComponent<WoodTree>();
+
+            // --- TUNED SAFETY CHECK ---
+            // If the object hit is NOT a WoodTree (e.g., it is a House), STOP immediately.
+            // This prevents Houses from being sliced even if they are on the "Sliceable" layer.
+            if (treeScript == null) 
+            {
+                Debug.LogWarning($"[SliceObject] Rejected slice on non-tree object: {netObj.name}");
+                return;
+            }
+            // ---------------------------
+
+            // A. Spawn Materials (Loot)
+            treeScript.SpawnMaterials();
+
+            // B. Notify Spawner (Decrements count so new tree grows)
+            if (TreeSpawnerNetworked.Instance != null)
+            {
+                TreeSpawnerNetworked.Instance.NotifyTreeDestroyed(TreeSpawnerNetworked.TreeType.Wood);
+                Debug.Log("[SliceObject] Notified Spawner of Wood Tree death.");
+            }
+
+            // 3. Perform Visual Slice on all clients (MOVED INSIDE CHECK)
+            PerformSliceClientRpc(objId, point, normal);
+        }
     }
 
     [ClientRpc]
@@ -139,7 +170,6 @@ public class SliceObject : NetworkBehaviour
             rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
             rb.interpolation = RigidbodyInterpolation.Interpolate;
 
-            // 推倒方向（用鋸子方向）
             Vector3 sawDir = (endPoint.position - startPoint.position).normalized;
             Vector3 fallDir = (sawDir + Vector3.down * 0.4f).normalized;
 
@@ -162,7 +192,6 @@ public class SliceObject : NetworkBehaviour
             rb.useGravity = false;
             rb.isKinematic = true;
 
-            // 加縮小消失效果
             LowerHullShrinkDisappear shrink = lower.AddComponent<LowerHullShrinkDisappear>();
             shrink.vfxPrefab = vfxPrefab;
             shrink.delayBeforeShrink = lowerDelay;
@@ -170,8 +199,7 @@ public class SliceObject : NetworkBehaviour
             shrink.StartShrinkDisappear();
         }
 
-        // 刪除原始樹
+        // Delete Original
         Destroy(target);
-
     }
 }
