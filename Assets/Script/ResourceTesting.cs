@@ -55,6 +55,6 @@ public class XRResourceSpawnTester : MonoBehaviour
         Debug.Log("[XR] Trigger pressed → Request spawn resource");
 
         // 呼叫 Server 生成 resource
-        resourceHandler.SpawnResourceServerRpc();
+        resourceHandler.SpawnResourceServerRpc(transform.position);
     }
 }

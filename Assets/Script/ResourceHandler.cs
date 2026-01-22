@@ -12,31 +12,34 @@ public class ResourceHandlerNetworked : NetworkBehaviour
     private bool _isMoving = false;
 
     // =============================
-    // Server: Spawn resource
+    // Server: Spawn resource (with position)
     // =============================
     [ServerRpc(RequireOwnership = false)]
-    public void SpawnResourceServerRpc()
+    public void SpawnResourceServerRpc(Vector3 spawnPos)
     {
-        SpawnResourceInternal();
+        SpawnResourceInternal(spawnPos);
     }
 
-    private void SpawnResourceInternal()
+    private void SpawnResourceInternal(Vector3 spawnPos)
     {
         if (!IsServer) return;
 
-        // 1. Spawn resource
-        GameObject obj = Instantiate(resourcePrefab, transform.position, Quaternion.identity);
+        // 1. Spawn resource at given position
+        GameObject obj = Instantiate(resourcePrefab, spawnPos, Quaternion.identity);
         var netObj = obj.GetComponent<NetworkObject>();
         netObj.Spawn();
 
         _currentResource = netObj;
 
         // 2. Query next house
-        if (HouseSpawnerNetworked.Instance.TryGetNextHouse(out var house))
+        if (HouseSpawnerNetworked.Instance != null &&
+            HouseSpawnerNetworked.Instance.TryGetNextHouse(out var house))
         {
             _targetPosition = house.Position;
             _isMoving = true;
+
             Debug.Log($"[ResourceHandler][Server] Assign resource {netObj.NetworkObjectId} → House ID {house.Id} at {house.Position}");
+
             // Sync target to clients
             SetTargetClientRpc(_targetPosition, _currentResource.NetworkObjectId);
         }
@@ -52,7 +55,8 @@ public class ResourceHandlerNetworked : NetworkBehaviour
     [ClientRpc]
     private void SetTargetClientRpc(Vector3 target, ulong resourceNetId)
     {
-        if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(resourceNetId, out var netObj))
+        if (NetworkManager.Singleton.SpawnManager.SpawnedObjects
+            .TryGetValue(resourceNetId, out var netObj))
         {
             _currentResource = netObj;
             _targetPosition = target;
@@ -61,10 +65,11 @@ public class ResourceHandlerNetworked : NetworkBehaviour
     }
 
     // =============================
-    // Movement (runs on all)
+    // Movement (Server authoritative version recommended)
     // =============================
     private void Update()
     {
+        if (!IsServer) return;   // ⭐ 建議保留（server authoritative）
         if (!_isMoving || _currentResource == null) return;
 
         Transform t = _currentResource.transform;

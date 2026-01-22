@@ -144,6 +144,9 @@ public class SliceObject : NetworkBehaviour
             Vector3 fallDir = (sawDir + Vector3.down * 0.4f).normalized;
 
             rb.AddForce(fallDir * cutForce * 0.002f, ForceMode.Impulse);
+            HullDisappear hd = upper.AddComponent<HullDisappear>();
+            hd.SetDisappearTime(3f);
+            hd.vfxPrefab = vfxPrefab;
         }
 
         // ---------- Lower Hull ----------
