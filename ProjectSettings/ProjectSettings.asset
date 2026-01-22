@@ -175,9 +175,13 @@ PlayerSettings:
     tvOS: 0
   overrideDefaultApplicationIdentifier: 1
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   AndroidBundleVersionCode: 6
 =======
   AndroidBundleVersionCode: 29
+>>>>>>> Stashed changes
+=======
+  AndroidBundleVersionCode: 38
 >>>>>>> Stashed changes
   AndroidMinSdkVersion: 32
   AndroidTargetSdkVersion: 32

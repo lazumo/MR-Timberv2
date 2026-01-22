@@ -3,45 +3,39 @@ using Unity.Netcode;
 
 public class WoodTree : NetworkBehaviour
 {
-    [Header("Cutting Settings")]
-    public int hitsToCut = 3;
-    public GameObject woodMaterialPrefab; // The item to spawn when cut
+    [Header("Loot Settings")]
+    public GameObject woodMaterialPrefab; // Drag your Wood Item Prefab here
+    public int dropCount = 1;
+
+    // --- OLD HIT LOGIC (Optional) ---
+    // If you want the saw to cut INSTANTLY using velocity, you don't need 'hitsToCut'.
+    // If you want to require 3 hits, we would need to change SliceObject to call this instead.
+    // For now, we assume SliceObject handles the cut immediately.
     
-    private int _currentHits = 0;
-
-    // Call this function from your Saw/Axe script when it triggers the collider
-    public void TakeSawDamage()
+    /// <summary>
+    /// Called by SliceObject.cs (ServerRpc) right before the tree is destroyed.
+    /// </summary>
+    public void SpawnMaterials()
     {
-        // Only the Server manages damage and death
-        if (!IsServer) return;
+        // Safety Checks
+        if (!IsServer || woodMaterialPrefab == null) return;
 
-        _currentHits++;
-        if (_currentHits >= hitsToCut)
+        for (int i = 0; i < dropCount; i++)
         {
-            SpawnMaterials();
-            KillTree();
-        }
-    }
+            // 1. Calculate Position
+            // Spawn slightly above and randomized so they don't stack perfectly
+            Vector3 spawnPos = transform.position + Vector3.up * 0.5f;
+            spawnPos += new Vector3(Random.Range(-0.2f, 0.2f), 0, Random.Range(-0.2f, 0.2f));
 
-    private void SpawnMaterials()
-    {
-        if (woodMaterialPrefab != null)
-        {
-            // Spawn logic for the wood item
-            GameObject mat = Instantiate(woodMaterialPrefab, transform.position + Vector3.up * 0.5f, Quaternion.identity);
-            mat.GetComponent<NetworkObject>().Spawn();
-        }
-    }
+            // 2. Instantiate
+            GameObject mat = Instantiate(woodMaterialPrefab, spawnPos, Quaternion.identity);
 
-    private void KillTree()
-    {
-        // 1. Tell Manager we died
-        if (TreeSpawnerNetworked.Instance != null)
-        {
-            TreeSpawnerNetworked.Instance.NotifyTreeDestroyed(TreeSpawnerNetworked.TreeType.Wood);
+            // 3. Spawn on Network (CRITICAL for clients to see it)
+            var netObj = mat.GetComponent<NetworkObject>();
+            if (netObj != null)
+            {
+                netObj.Spawn();
+            }
         }
-
-        // 2. Despawn self
-        GetComponent<NetworkObject>().Despawn();
     }
 }

@@ -59,6 +59,7 @@ public class HouseSpawnerNetworked : NetworkBehaviour
     }
 
     private void SpawnHousesLogic()
+<<<<<<< Updated upstream
     {
         MRUKRoom room = MRUK.Instance.GetCurrentRoom();
         if (room == null) return;
@@ -73,11 +74,25 @@ public class HouseSpawnerNetworked : NetworkBehaviour
         LabelFilter filter = new LabelFilter(allowedLabels);
 
         while (successfulSpawns < numberOfHouses && attempts < 100)
+=======
+>>>>>>> Stashed changes
         {
-            attempts++;
+            MRUKRoom room = MRUK.Instance.GetCurrentRoom();
+            if (room == null) return;
 
-            if (room.GenerateRandomPositionOnSurface(allowedSurfaces, 0.1f, filter, out Vector3 pos, out Vector3 normal))
+            _spawnedHouseData.Clear();
+            int successfulSpawns = 0;
+            int attempts = 0;
+            _nextQueryID = 0;
+
+            // Setup Filters (MRUK v81+)
+            MRUK.SurfaceType allowedSurfaces = MRUK.SurfaceType.FACING_UP | MRUK.SurfaceType.VERTICAL | MRUK.SurfaceType.FACING_DOWN;
+            MRUKAnchor.SceneLabels allowedLabels = MRUKAnchor.SceneLabels.FLOOR | MRUKAnchor.SceneLabels.WALL_FACE | MRUKAnchor.SceneLabels.CEILING;
+            LabelFilter filter = new LabelFilter(allowedLabels);
+
+            while (successfulSpawns < numberOfHouses && attempts < 100)
             {
+<<<<<<< Updated upstream
                 // --- FIXED ROTATION LOGIC ---
                 // "House Top (Y) should face Out (Normal)"
                 // This works for Floor (Up), Ceiling (Down), and Walls (Out).
@@ -103,11 +118,61 @@ public class HouseSpawnerNetworked : NetworkBehaviour
         Debug.Log($"HouseSpawner: Generated {successfulSpawns} houses.");
     }
 
+=======
+                attempts++;
+
+                if (room.GenerateRandomPositionOnSurface(allowedSurfaces, 0.1f, filter, out Vector3 pos, out Vector3 normal))
+                {
+                    // --- ROTATION LOGIC ---
+                    Quaternion rot;
+
+                    // Check if surface is a WALL (Normal is horizontal)
+                    if (Mathf.Abs(Vector3.Dot(normal, Vector3.up)) < 0.1f)
+                    {
+                        // WALL LOGIC:
+                        // You want "House Top" (Y) to point Inward (Normal).
+                        // We align the object's Up (Y) to the Surface Normal.
+                        rot = Quaternion.FromToRotation(Vector3.up, normal);
+                        
+                        // Optional: Rotate it around the normal so the "Door" (Z) faces Up or Down if needed.
+                        // Currently, this keeps the Z axis aligned based on the shortest rotation.
+                    }
+                    else
+                    {
+                        // FLOOR / CEILING LOGIC:
+                        // Align Y with Normal (Up for floor, Down for ceiling)
+                        rot = Quaternion.FromToRotation(Vector3.up, normal);
+                        
+                        // Add random spin around the Y axis (vertical spin)
+                        rot *= Quaternion.Euler(0, Random.Range(0, 360), 0);
+                    }
+
+                    if (IsSpaceEmpty(pos, rot))
+                    {
+                        // 1. Spawn the physical object
+                        GameObject houseObj = Instantiate(housePrefab, pos, rot);
+                        houseObj.GetComponent<NetworkObject>().Spawn();
+
+                        // 2. Create the Data Entry (ID + Position)
+                        HouseData data = new HouseData
+                        {
+                            Id = successfulSpawns,
+                            Position = pos
+                        };
+                        successfulSpawns++; 
+                        
+                        // 3. Add to NetworkList
+                        _spawnedHouseData.Add(data);
+                    }
+                }
+            }
+        }
+>>>>>>> Stashed changes
     private bool IsSpaceEmpty(Vector3 center, Quaternion rotation)
-    {
-        Collider[] hits = Physics.OverlapBox(center, collisionCheckSize, rotation, obstacleLayerMask);
-        return hits.Length == 0;
-    }
+        {
+                Collider[] hits = Physics.OverlapBox(center, collisionCheckSize, rotation, obstacleLayerMask);
+                return hits.Length == 0;
+        }
 
     public Vector3 GetPositionForHouse(int houseId)
     {
