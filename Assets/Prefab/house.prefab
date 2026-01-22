@@ -467,6 +467,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Wooden_House 1
       objectReference: {fileID: 0}
+    - target: {fileID: 7115578258007711103, guid: 72e74826db57611459aefd15ce3e4e42,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7634810922765813701, guid: 72e74826db57611459aefd15ce3e4e42,
         type: 3}
       propertyPath: m_LocalScale.x
@@ -566,6 +571,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: coloredhouse
+      objectReference: {fileID: 0}
+    - target: {fileID: 7115578258007711103, guid: 72e74826db57611459aefd15ce3e4e42,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7634810922765813701, guid: 72e74826db57611459aefd15ce3e4e42,
         type: 3}
@@ -1049,6 +1059,36 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4861794311269110437}
     m_Modifications:
+    - target: {fileID: 2053583067306098826, guid: 244b1cc8940bd0844a05812855fbe45d,
+        type: 3}
+      propertyPath: ColorModule.gradient.maxGradient.ctime1
+      value: 28758
+      objectReference: {fileID: 0}
+    - target: {fileID: 2053583067306098826, guid: 244b1cc8940bd0844a05812855fbe45d,
+        type: 3}
+      propertyPath: ColorModule.gradient.maxGradient.ctime2
+      value: 37702
+      objectReference: {fileID: 0}
+    - target: {fileID: 2053583067306098826, guid: 244b1cc8940bd0844a05812855fbe45d,
+        type: 3}
+      propertyPath: ColorModule.gradient.maxGradient.key1.g
+      value: 0.27156729
+      objectReference: {fileID: 0}
+    - target: {fileID: 2053583067306098826, guid: 244b1cc8940bd0844a05812855fbe45d,
+        type: 3}
+      propertyPath: ColorModule.gradient.maxGradient.key2.g
+      value: 0.6666667
+      objectReference: {fileID: 0}
+    - target: {fileID: 2053583067306098826, guid: 244b1cc8940bd0844a05812855fbe45d,
+        type: 3}
+      propertyPath: ColorModule.gradient.maxGradient.m_ColorSpace
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2053583067306098826, guid: 244b1cc8940bd0844a05812855fbe45d,
+        type: 3}
+      propertyPath: ColorModule.gradient.maxGradient.m_NumColorKeys
+      value: 4
+      objectReference: {fileID: 0}
     - target: {fileID: 8829451551789304537, guid: 244b1cc8940bd0844a05812855fbe45d,
         type: 3}
       propertyPath: m_LocalScale.x
