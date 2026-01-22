@@ -14,10 +14,7 @@ public class ToolController : NetworkBehaviour
         NetworkVariableWritePermission.Server
     );
 
-    // 公開唯讀狀態（給其他系統用）
     public int CurrentState => netState.Value;
-
-    // 狀態變化事件（給 UI / SFX / 教學系統監聽）
     public event Action<int> OnToolStateChanged;
 
     // =========================
@@ -28,6 +25,17 @@ public class ToolController : NetworkBehaviour
     public GameObject[] toolObjects;
 
     private int lastState = -1;
+
+    // =========================
+    // Hand Tracking
+    // =========================
+
+    [Header("Midpoint Provider")]
+    public MetaMidpointFollower midpointProvider;
+
+    [Header("Tool Follow Settings")]
+    public bool followHands = true;
+    public float followSmooth = 12f;
 
     // =========================
     // Network Lifecycle
@@ -41,8 +49,11 @@ public class ToolController : NetworkBehaviour
         {
             SetupInitialStateByStage();
         }
-
-        // 確保 Host / Client / Late Join 都會初始化
+        for (int i = 0; i < toolObjects.Length; i++)
+        {
+            SetToolVisible(toolObjects[i], false);
+        }
+        // 初始化顯示狀態
         ApplyState(netState.Value, invokeEvent: false);
     }
 
@@ -101,7 +112,7 @@ public class ToolController : NetworkBehaviour
     }
 
     // =========================
-    // Visual Application
+    // Visual Application (Netcode-safe)
     // =========================
 
     private void ApplyState(int state, bool invokeEvent)
@@ -115,14 +126,14 @@ public class ToolController : NetworkBehaviour
             return;
         }
 
-        // 關掉舊的
+        // 關閉舊工具顯示
         if (lastState >= 0 && lastState < toolObjects.Length)
         {
-            toolObjects[lastState].SetActive(false);
+            SetToolVisible(toolObjects[lastState], false);
         }
 
-        // 開新的
-        toolObjects[state].SetActive(true);
+        // 開啟新工具顯示
+        SetToolVisible(toolObjects[state], true);
 
         lastState = state;
 
@@ -130,5 +141,41 @@ public class ToolController : NetworkBehaviour
         {
             OnToolStateChanged?.Invoke(state);
         }
+    }
+
+    // =========================
+    // Tool visibility (Renderer + Collider)
+    // =========================
+
+    private void SetToolVisible(GameObject tool, bool visible)
+    {
+        if (!tool) return;
+
+        foreach (var r in tool.GetComponentsInChildren<Renderer>(true))
+            r.enabled = visible;
+
+        foreach (var c in tool.GetComponentsInChildren<Collider>(true))
+            c.enabled = visible;
+    }
+
+    // =========================
+    // Follow hands
+    // =========================
+
+    void Update()
+    {
+        if (!followHands) return;
+        if (!midpointProvider) return;
+        if (lastState < 0 || lastState >= toolObjects.Length) return;
+
+        GameObject currentTool = toolObjects[lastState];
+
+        Vector3 target = midpointProvider.Midpoint;
+
+        float t = 1f - Mathf.Exp(-followSmooth * Time.deltaTime);
+        currentTool.transform.position =
+            Vector3.Lerp(currentTool.transform.position, target, t);
+
+        currentTool.transform.rotation = midpointProvider.MidRotation;
     }
 }
