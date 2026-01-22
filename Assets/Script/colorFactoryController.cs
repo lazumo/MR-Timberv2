@@ -2,27 +2,39 @@ using UnityEngine;
 
 public class ColorFactoryController : MonoBehaviour
 {
+    [Header("基礎設定")]
     [SerializeField] private BoxDetector detector;
     [SerializeField] private GameObject cylinder;
+    [SerializeField] private int threshold = 5;
 
-    // 將此變數設為 public，現在它會出現在 Inspector 面板中
-    public bool shouldBeActive;
-    public int threshold = 5;
+    [Header("Middle Point 偵測")]
+    public Transform middlePoint;
+    public Collider anchorCollider;
+
+    // 讓這兩個變數可以被外部讀取
+    public bool countSatisfied { get; private set; }
+    public bool isMiddlePointInside { get; private set; }
+    public bool shouldBeActive { get; private set; }
 
     void Update()
     {
-        if (detector != null)
+        if (detector != null && anchorCollider != null && middlePoint != null)
         {
-            // 1. 更新這個 public 變數的數值
-            // 只要偵測到的物件數量大於 0，shouldBeActive 就會是 true
-            shouldBeActive = detector.itemsInBox.Count > threshold;
+            countSatisfied = detector.itemsInBox.Count > threshold;
+            isMiddlePointInside = IsPointInsideCollider(anchorCollider, middlePoint.position);
 
-            // 2. 根據該變數控制 Cylinder 的開關
+            // Cylinder 的邏輯：數量夠且手不在裡面才開
+            shouldBeActive = countSatisfied && !isMiddlePointInside;
+
             if (cylinder != null && cylinder.activeSelf != shouldBeActive)
             {
                 cylinder.SetActive(shouldBeActive);
-                Debug.Log($"Cylinder 狀態更新為: {shouldBeActive}");
             }
         }
+    }
+
+    private bool IsPointInsideCollider(Collider col, Vector3 point)
+    {
+        return col.ClosestPoint(point) == point;
     }
 }
