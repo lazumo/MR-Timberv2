@@ -3123,26 +3123,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: treeSpawner
       objectReference: {fileID: 0}
-    - target: {fileID: 6873156181121848096, guid: 183d70e2332751744824b132356e8481,
-        type: 3}
-      propertyPath: woodTreePrefab
-      value: 
-      objectReference: {fileID: 4642628543286289692, guid: 93a46272a4a18ff46b5b5a14f5e78781,
-        type: 3}
-    - target: {fileID: 6873156181121848096, guid: 183d70e2332751744824b132356e8481,
-        type: 3}
-      propertyPath: collisionLayerMask.m_Bits
-      value: 449
-      objectReference: {fileID: 0}
     - target: {fileID: 8055981638512374603, guid: 183d70e2332751744824b132356e8481,
         type: 3}
       propertyPath: GlobalObjectIdHash
       value: 22695905
-      objectReference: {fileID: 0}
-    - target: {fileID: 8055981638512374603, guid: 183d70e2332751744824b132356e8481,
-        type: 3}
-      propertyPath: InScenePlacedSourceGlobalObjectIdHash
-      value: 1101221895
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
