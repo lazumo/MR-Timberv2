@@ -45,8 +45,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2695883486
-  InScenePlacedSourceGlobalObjectIdHash: 0
+  GlobalObjectIdHash: 22695905
+  InScenePlacedSourceGlobalObjectIdHash: 1101221895
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -66,7 +66,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8e51e13ef996c944d97663e9da878161, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  woodTreePrefab: {fileID: 1743353957770956, guid: 82a6bf9ca38d9d443997ccec084ba669,
+  woodTreePrefab: {fileID: 4642628543286289692, guid: 93a46272a4a18ff46b5b5a14f5e78781,
     type: 3}
   fruitTreePrefab: {fileID: 1364922359172550, guid: 1aaf3ef80841d9c4990a27fee328eb1c,
     type: 3}
@@ -79,4 +79,4 @@ MonoBehaviour:
   safetyCheckSize: {x: 0.5, y: 0.5, z: 0.5}
   collisionLayerMask:
     serializedVersion: 2
-    m_Bits: 193
+    m_Bits: 449

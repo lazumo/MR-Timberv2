@@ -8,8 +8,6 @@ public class HouseSpawnerNetworked : NetworkBehaviour
     public static HouseSpawnerNetworked Instance { get; private set; }
 
     // --- 1. Define the Data Structure ---
-    // This struct holds the ID and Position together.
-    // INetworkSerializable allows Netcode to sync it automatically.
     public struct HouseData : INetworkSerializable, System.IEquatable<HouseData>
     {
         public int Id;
@@ -28,17 +26,20 @@ public class HouseSpawnerNetworked : NetworkBehaviour
     }
 
     [Header("Settings")]
-    public GameObject housePrefab; // Needs NetworkObject component
+    public GameObject housePrefab; 
     public int numberOfHouses = 5;
     
     [Header("Placement Rules")]
     public LayerMask obstacleLayerMask;
-    public Vector3 collisionCheckSize = new Vector3(0.1f, 0.1f, 0.1f);
+    
+    // TUNED: Set to 0.5f. (0.5 + 0.5 = 1.0 meter total size). 
+    // 0.1f is often too small to stop overlaps.
+    public Vector3 collisionCheckSize = new Vector3(0.5f, 0.5f, 0.5f);
 
     // --- 2. The Networked List ---
-    // This list syncs the HouseData (ID + Position) to all clients.
     private NetworkList<HouseData> _spawnedHouseData;
     private int _nextQueryID;
+
     private void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
@@ -86,10 +87,13 @@ public class HouseSpawnerNetworked : NetworkBehaviour
 
             if (room.GenerateRandomPositionOnSurface(allowedSurfaces, 0.1f, filter, out Vector3 pos, out Vector3 normal))
             {
-                // Simple rotation logic
-                Quaternion rot = (Mathf.Abs(Vector3.Dot(normal, Vector3.up)) < 0.1f) 
-                    ? Quaternion.LookRotation(normal, Vector3.up) 
-                    : Quaternion.Euler(0, Random.Range(0, 360), 0);
+                // --- ROTATION LOGIC ---
+                // Goal: Top of house (Y-Axis) faces inward (Normal).
+                // Floor: Top faces Up. Wall: Top faces In.
+                Quaternion rot = Quaternion.FromToRotation(Vector3.up, normal);
+
+                // Add random spin around the "Normal" axis (the pole sticking out of the wall)
+                rot *= Quaternion.Euler(0, Random.Range(0, 360), 0);
 
                 if (IsSpaceEmpty(pos, rot))
                 {
@@ -103,7 +107,8 @@ public class HouseSpawnerNetworked : NetworkBehaviour
                         Id = successfulSpawns,
                         Position = pos
                     };
-                    successfulSpawns++; // ID starts at 0
+                    successfulSpawns++; 
+
                     // 3. Add to NetworkList (Syncs to everyone)
                     _spawnedHouseData.Add(data);
                 }
@@ -111,28 +116,24 @@ public class HouseSpawnerNetworked : NetworkBehaviour
         }
     }
 
+    // --- TUNED: COLUMN COLLISION CHECK ---
     private bool IsSpaceEmpty(Vector3 center, Quaternion rotation)
     {
-        Collider[] hits = Physics.OverlapBox(center, collisionCheckSize, rotation, obstacleLayerMask);
+        // 1. Create a "Column" shape instead of a small box.
+        // We set Y to 10.0f (Total 20 meters tall).
+        // This ensures a House on the Floor detects a Tree on the Ceiling above it.
+        Vector3 columnSize = collisionCheckSize;
+        columnSize.y = 10.0f; 
+
+        // 2. Use Quaternion.identity (No Rotation) for the check box.
+        // Rotating a tall column sideways usually causes it to hit walls incorrectly.
+        // We just want to know "Is this vertical space occupied?".
+        Collider[] hits = Physics.OverlapBox(center, columnSize, Quaternion.identity, obstacleLayerMask);
+        
         return hits.Length == 0;
     }
 
     // --- 3. PUBLIC API for Other Scripts ---
-    
-    /// <summary>
-    /// Returns the position of a specific house ID (e.g., GetPositionForHouse(3)).
-    /// Returns Vector3.zero if not found.
-    /// </summary>
-    //public Vector3 GetPositionForHouse(int houseId)
-    //{
-    //    foreach (var house in _spawnedHouseData)
-    //    {
-    //        if (house.Id == houseId)
-    //            return house.Position;
-    //    }
-    //    Debug.LogWarning($"House ID {houseId} not found!");
-    //    return Vector3.zero;
-    //}
     public bool TryGetNextHouse(out HouseData data)
     {
         if (!IsServer)
@@ -150,9 +151,7 @@ public class HouseSpawnerNetworked : NetworkBehaviour
         _nextQueryID++;
         return true;
     }
-    /// <summary>
-    /// Returns all house data (IDs and Positions).
-    /// </summary>
+
     public List<HouseData> GetAllHouseData()
     {
         List<HouseData> list = new List<HouseData>();
