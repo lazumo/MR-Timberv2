@@ -26,12 +26,12 @@ public class HouseSpawnerNetworked : NetworkBehaviour
     }
 
     [Header("Settings")]
-    public GameObject housePrefab; 
+    public GameObject housePrefab;
     public int numberOfHouses = 5;
-    
+
     [Header("Placement Rules")]
     public LayerMask obstacleLayerMask;
-    
+
     // TUNED: Set to 0.5f. (0.5 + 0.5 = 1.0 meter total size). 
     // 0.1f is often too small to stop overlaps.
     public Vector3 collisionCheckSize = new Vector3(0.5f, 0.5f, 0.5f);
@@ -39,7 +39,7 @@ public class HouseSpawnerNetworked : NetworkBehaviour
     // --- 2. The Networked List ---
     private NetworkList<HouseData> _spawnedHouseData;
     private int _nextQueryID;
-
+    private Dictionary<int, GameObject> _houseObjectMap = new();
     private void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
@@ -107,13 +107,18 @@ public class HouseSpawnerNetworked : NetworkBehaviour
                         Id = successfulSpawns,
                         Position = pos
                     };
-                    successfulSpawns++; 
+                    _houseObjectMap[data.Id] = houseObj;
+                    successfulSpawns++;
 
                     // 3. Add to NetworkList (Syncs to everyone)
                     _spawnedHouseData.Add(data);
                 }
             }
         }
+    }
+    public bool TryGetHouseObject(int id, out GameObject houseObj)
+    {
+        return _houseObjectMap.TryGetValue(id, out houseObj);
     }
 
     // --- TUNED: COLUMN COLLISION CHECK ---
@@ -123,13 +128,13 @@ public class HouseSpawnerNetworked : NetworkBehaviour
         // We set Y to 10.0f (Total 20 meters tall).
         // This ensures a House on the Floor detects a Tree on the Ceiling above it.
         Vector3 columnSize = collisionCheckSize;
-        columnSize.y = 10.0f; 
+        columnSize.y = 10.0f;
 
         // 2. Use Quaternion.identity (No Rotation) for the check box.
         // Rotating a tall column sideways usually causes it to hit walls incorrectly.
         // We just want to know "Is this vertical space occupied?".
         Collider[] hits = Physics.OverlapBox(center, columnSize, Quaternion.identity, obstacleLayerMask);
-        
+
         return hits.Length == 0;
     }
 

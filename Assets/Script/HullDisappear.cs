@@ -1,6 +1,7 @@
-using UnityEngine;
 using System.Collections;
+using System.Resources;
 using Unity.Netcode;
+using UnityEngine;
 
 public class HullDisappear : MonoBehaviour
 {
@@ -38,17 +39,15 @@ public class HullDisappear : MonoBehaviour
                 Destroy(vfx, 2f);
         }
 
-        // 找 ResourceHandler 並呼叫 ServerRpc
-        ResourceHandlerNetworked handler = FindObjectOfType<ResourceHandlerNetworked>();
+        if (NetworkManager.Singleton.IsServer)
+        {
+            ResourceManager rm = ResourceManager.Instance;
+            if (rm == null) rm = FindObjectOfType<ResourceManager>();
 
-        if (handler != null)
-        {
-            Vector3 spawnPos = transform.position + Vector3.up * 0.1f; // 稍微浮起來
-            handler.SpawnResourceServerRpc(spawnPos);
-        }
-        else
-        {
-            Debug.LogError("ResourceHandlerNetworked not found in scene!");
+            if (rm != null)
+            {
+                rm.SpawnResource(transform.position + Vector3.up * 0.1f);
+            }
         }
 
         // Destroy Hull

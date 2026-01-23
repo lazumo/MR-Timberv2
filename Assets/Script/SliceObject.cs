@@ -7,7 +7,7 @@ public class SliceObject : NetworkBehaviour
 {
     [Header("Knife Points")]
     public Transform startPoint;
-    public Transform endPoint; 
+    public Transform endPoint;
     public Transform frontEnd;
     public Transform backEnd;
 
@@ -64,7 +64,7 @@ public class SliceObject : NetworkBehaviour
 
             float speed = ((transform.position - lastPos) / Time.fixedDeltaTime).magnitude;
             energy += speed * velocityWeight * Time.fixedDeltaTime;
-            
+
             // Debug Info (Preserved)
             Debug.Log(
                 $"[Saw Energy] Hit={hit.collider.name} | " +

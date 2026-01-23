@@ -15,7 +15,7 @@ public class TreeSpawnerNetworked : NetworkBehaviour
 
     [Header("Settings")]
     public int targetWoodTrees = 3;
-    public float woodStartDelay = 2.0f; 
+    public float woodStartDelay = 2.0f;
     public float woodSpawnInterval = 5.0f;
 
     public int targetFruitTrees = 3;
@@ -25,7 +25,7 @@ public class TreeSpawnerNetworked : NetworkBehaviour
     [Header("Safety Area")]
     // X/Z = 0.5f (1m width). Y will be overwritten by column check.
     public Vector3 safetyCheckSize = new Vector3(0.5f, 0.5f, 0.5f);
-    public LayerMask collisionLayerMask; 
+    public LayerMask collisionLayerMask;
 
     private int _currentWoodCount = 0;
     private int _currentFruitCount = 0;
@@ -59,11 +59,11 @@ public class TreeSpawnerNetworked : NetworkBehaviour
             if (_currentWoodCount < targetWoodTrees)
             {
                 bool success = SpawnTree(TreeType.Wood);
-                if (success) yield return new WaitForSeconds(woodSpawnInterval); 
-                else 
+                if (success) yield return new WaitForSeconds(woodSpawnInterval);
+                else
                 {
                     Debug.LogWarning("Failed to find space for Wood Tree. Retrying in 1s...");
-                    yield return new WaitForSeconds(1.0f); 
+                    yield return new WaitForSeconds(1.0f);
                 }
             }
             else yield return new WaitForSeconds(1.0f);
@@ -79,7 +79,7 @@ public class TreeSpawnerNetworked : NetworkBehaviour
             {
                 bool success = SpawnTree(TreeType.Fruit);
                 if (success) yield return new WaitForSeconds(fruitSpawnInterval);
-                else 
+                else
                 {
                     Debug.LogWarning("Failed to find space for Fruit Tree. Retrying in 1s...");
                     yield return new WaitForSeconds(1.0f);
@@ -109,11 +109,11 @@ public class TreeSpawnerNetworked : NetworkBehaviour
                 if (IsSpaceEmpty(pos, rotation))
                 {
                     PerformSpawn(type, pos, rotation);
-                    return true; 
+                    return true;
                 }
             }
         }
-        return false; 
+        return false;
     }
 
     // --- COLUMN CHECK LOGIC ---
