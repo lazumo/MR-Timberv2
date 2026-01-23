@@ -4,17 +4,7 @@ using Unity.Netcode;
 public class WoodTree : NetworkBehaviour
 {
     [Header("Cutting Settings")]
-    public int hitsToCut = 3; // Optional if using velocity cut
     public GameObject woodMaterialPrefab; 
-    
-    private int _currentHits = 0;
-
-    public void TakeSawDamage()
-    {
-        if (!IsServer) return;
-        _currentHits++;
-        if (_currentHits >= hitsToCut) { SpawnMaterials(); KillTree(); }
-    }
 
     // MUST BE PUBLIC for SliceObject to call
     public void SpawnMaterials()
