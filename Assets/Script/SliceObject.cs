@@ -1,12 +1,13 @@
 using UnityEngine;
 using Unity.Netcode;
 using EzySlice;
+using System.Collections;
 
 public class SliceObject : NetworkBehaviour
 {
     [Header("Knife Points")]
     public Transform startPoint;
-    public Transform endPoint; 
+    public Transform endPoint;
     public Transform frontEnd;
     public Transform backEnd;
 
@@ -63,11 +64,14 @@ public class SliceObject : NetworkBehaviour
 
             float speed = ((transform.position - lastPos) / Time.fixedDeltaTime).magnitude;
             energy += speed * velocityWeight * Time.fixedDeltaTime;
+
+            // Debug Info (Preserved)
             Debug.Log(
                 $"[Saw Energy] Hit={hit.collider.name} | " +
                 $"Speed={speed:F2} | " +
                 $"Energy={energy:F2}/{energyThreshold}"
             );
+
             if (energy >= energyThreshold)
             {
                 Vector3 bladeDir = (endPoint.position - startPoint.position).normalized;
@@ -102,7 +106,25 @@ public class SliceObject : NetworkBehaviour
     [ServerRpc]
     void RequestSliceServerRpc(ulong objId, Vector3 point, Vector3 normal)
     {
+        // B. Notify Spawner (Decrements count so new tree grows)
+        if (TreeSpawnerNetworked.Instance != null)
+        {
+            TreeSpawnerNetworked.Instance.NotifyTreeDestroyed(TreeSpawnerNetworked.TreeType.Wood);
+            Debug.Log("[SliceObject] Notified Spawner of Wood Tree death.");
+            StartCoroutine(DelayedSpawnTree(5f));
+        }
+        // 3. Perform Visual Slice on all clients (MOVED INSIDE CHECK)
         PerformSliceClientRpc(objId, point, normal);
+    }
+    private IEnumerator DelayedSpawnTree(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        if (TreeSpawnerNetworked.Instance != null)
+        {
+            TreeSpawnerNetworked.Instance.SpawnTree(TreeSpawnerNetworked.TreeType.Wood);
+            Debug.Log("[SliceObject] Delayed Wood Tree generation.");
+        }
     }
 
     [ClientRpc]
@@ -139,11 +161,13 @@ public class SliceObject : NetworkBehaviour
             rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
             rb.interpolation = RigidbodyInterpolation.Interpolate;
 
-            // 推倒方向（用鋸子方向）
             Vector3 sawDir = (endPoint.position - startPoint.position).normalized;
             Vector3 fallDir = (sawDir + Vector3.down * 0.4f).normalized;
 
             rb.AddForce(fallDir * cutForce * 0.002f, ForceMode.Impulse);
+            HullDisappear hd = upper.AddComponent<HullDisappear>();
+            hd.SetDisappearTime(3f);
+            hd.vfxPrefab = vfxPrefab;
         }
 
         // ---------- Lower Hull ----------
@@ -162,7 +186,6 @@ public class SliceObject : NetworkBehaviour
             rb.useGravity = false;
             rb.isKinematic = true;
 
-            // 加縮小消失效果
             LowerHullShrinkDisappear shrink = lower.AddComponent<LowerHullShrinkDisappear>();
             shrink.vfxPrefab = vfxPrefab;
             shrink.delayBeforeShrink = lowerDelay;
@@ -170,8 +193,7 @@ public class SliceObject : NetworkBehaviour
             shrink.StartShrinkDisappear();
         }
 
-        // 刪除原始樹
+        // Delete Original
         Destroy(target);
-
     }
 }

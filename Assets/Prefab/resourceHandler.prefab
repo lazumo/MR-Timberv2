@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &5989986086086259928
+--- !u!1 &5318629711262200893
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,23 +8,23 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 4613622639475189594}
-  - component: {fileID: 8055981638512374603}
-  - component: {fileID: 6873156181121848096}
+  - component: {fileID: 3850311599792410309}
+  - component: {fileID: 4163512989804605656}
+  - component: {fileID: 780575422526265807}
   m_Layer: 0
-  m_Name: treeSpawner
+  m_Name: resourceHandler
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &4613622639475189594
+--- !u!4 &3850311599792410309
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5989986086086259928}
+  m_GameObject: {fileID: 5318629711262200893}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -33,20 +33,20 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &8055981638512374603
+--- !u!114 &4163512989804605656
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5989986086086259928}
+  m_GameObject: {fileID: 5318629711262200893}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 22695905
-  InScenePlacedSourceGlobalObjectIdHash: 1101221895
+  GlobalObjectIdHash: 3112282029
+  InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -54,29 +54,18 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
---- !u!114 &6873156181121848096
+--- !u!114 &780575422526265807
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5989986086086259928}
+  m_GameObject: {fileID: 5318629711262200893}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8e51e13ef996c944d97663e9da878161, type: 3}
+  m_Script: {fileID: 11500000, guid: fa406075683d4904fb6b0ded4696d340, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  woodTreePrefab: {fileID: 4642628543286289692, guid: 93a46272a4a18ff46b5b5a14f5e78781,
+  resourcePrefab: {fileID: 6670254937295770477, guid: c50e2923a170c6f4db66b27e14936f28,
     type: 3}
-  fruitTreePrefab: {fileID: 1364922359172550, guid: 1aaf3ef80841d9c4990a27fee328eb1c,
-    type: 3}
-  targetWoodTrees: 3
-  woodStartDelay: 2
-  woodSpawnInterval: 5
-  targetFruitTrees: 3
-  fruitStartDelay: 15
-  fruitSpawnInterval: 8
-  safetyCheckSize: {x: 0.5, y: 0.5, z: 0.5}
-  collisionLayerMask:
-    serializedVersion: 2
-    m_Bits: 449
+  moveSpeed: 1.5

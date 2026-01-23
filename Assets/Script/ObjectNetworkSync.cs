@@ -86,4 +86,14 @@ public class ObjectNetworkSync : NetworkBehaviour
     {
         return colorIndex.Value;
     }
+    public void SetState(HouseState newState)
+    {
+        if (!IsServer)
+        {
+            Debug.LogWarning("Only server can change house state.");
+            return;
+        }
+
+        currentHouseState.Value = newState;
+    }
 }
