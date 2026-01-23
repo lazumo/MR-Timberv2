@@ -88,8 +88,7 @@ public class TreeSpawnerNetworked : NetworkBehaviour
             else yield return new WaitForSeconds(1.0f);
         }
     }
-
-    private bool SpawnTree(TreeType type)
+    public bool SpawnTree(TreeType type)
     {
         MRUKRoom room = MRUK.Instance.GetCurrentRoom();
         if (room == null) return false;
@@ -124,7 +123,15 @@ public class TreeSpawnerNetworked : NetworkBehaviour
         Vector3 columnSize = safetyCheckSize;
         columnSize.y = 10.0f; // 20m Tall box to hit Floor AND Ceiling
         Collider[] hits = Physics.OverlapBox(center, columnSize, Quaternion.identity, collisionLayerMask);
-        if (hits.Length > 0) return false;
+        if (hits.Length > 0)
+        {
+            Debug.Log($"[TreeSpawn] Blocked by {hits.Length} colliders:");
+            foreach (var h in hits)
+                Debug.Log($" - {h.name} | layer={LayerMask.LayerToName(h.gameObject.layer)}");
+
+            return false;
+        }
+        //if (hits.Length > 0) return false;
 
         // 2. House Logic Column Check (Distance ignoring Y)
         if (HouseSpawnerNetworked.Instance != null)

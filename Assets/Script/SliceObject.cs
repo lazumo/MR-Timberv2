@@ -105,35 +105,16 @@ public class SliceObject : NetworkBehaviour
     [ServerRpc]
     void RequestSliceServerRpc(ulong objId, Vector3 point, Vector3 normal)
     {
-        // 1. Identify the object
-        if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(objId, out var netObj))
+        // B. Notify Spawner (Decrements count so new tree grows)
+        if (TreeSpawnerNetworked.Instance != null)
         {
-            // 2. Check for WoodTree script (to handle Loot + Respawn)
-            WoodTree treeScript = netObj.GetComponent<WoodTree>();
-
-            // --- TUNED SAFETY CHECK ---
-            // If the object hit is NOT a WoodTree (e.g., it is a House), STOP immediately.
-            // This prevents Houses from being sliced even if they are on the "Sliceable" layer.
-            if (treeScript == null) 
-            {
-                Debug.LogWarning($"[SliceObject] Rejected slice on non-tree object: {netObj.name}");
-                return;
-            }
-            // ---------------------------
-
-            // A. Spawn Materials (Loot)
-            treeScript.SpawnMaterials();
-
-            // B. Notify Spawner (Decrements count so new tree grows)
-            if (TreeSpawnerNetworked.Instance != null)
-            {
-                TreeSpawnerNetworked.Instance.NotifyTreeDestroyed(TreeSpawnerNetworked.TreeType.Wood);
-                Debug.Log("[SliceObject] Notified Spawner of Wood Tree death.");
-            }
-
-            // 3. Perform Visual Slice on all clients (MOVED INSIDE CHECK)
-            PerformSliceClientRpc(objId, point, normal);
+            TreeSpawnerNetworked.Instance.NotifyTreeDestroyed(TreeSpawnerNetworked.TreeType.Wood);
+            Debug.Log("[SliceObject] Notified Spawner of Wood Tree death.");
+            TreeSpawnerNetworked.Instance.SpawnTree(TreeSpawnerNetworked.TreeType.Wood);
+            Debug.Log("[SliceObject] Notified Spawner of Wood Tree generation.");
         }
+        // 3. Perform Visual Slice on all clients (MOVED INSIDE CHECK)
+        PerformSliceClientRpc(objId, point, normal);
     }
 
     [ClientRpc]
