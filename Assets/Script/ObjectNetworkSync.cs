@@ -6,6 +6,9 @@ using System;
 public class ObjectNetworkSync : NetworkBehaviour
 {
     private ObjectDisplayController _logicController;
+    [Header("關聯控制器")]
+    // 在 Inspector 中將所有子物件的 ColorController 拖進來
+    public ColorController[] bColorControllers;
 
     // 同步目前的狀態 Enum
     private NetworkVariable<HouseState> currentHouseState = new NetworkVariable<HouseState>(
@@ -43,17 +46,31 @@ public class ObjectNetworkSync : NetworkBehaviour
         // 初始化目前的視覺狀態
         _logicController.ApplyState(currentHouseState.Value);
         _logicController.ApplyColor(colorIndex.Value);
+        UpdateAllControllers(colorIndex.Value);
+    }
+
+    private void UpdateAllControllers(int newIndex)
+    {
+        if (bColorControllers == null || bColorControllers.Length == 0) return;
+
+        foreach (var controller in bColorControllers)
+        {
+            if (controller != null)
+            {
+                controller.InitializeColor(newIndex);
+            }
+        }
     }
 
     void Update()
     {
         if (!IsServer) return;
 
-        // 測試用：按下 Trigger 循環切換狀態 (Unbuilt -> Built -> Colored ...)
-        //if (OVRInput.GetDown(OVRInput.Button.PrimaryIndexTrigger, OVRInput.Controller.RTouch))
-        //{
-        //    CycleStateOnServer();
-        //}
+        //測試用：按下 Trigger 循環切換狀態 (Unbuilt -> Built -> Colored ...)
+        if (OVRInput.GetDown(OVRInput.Button.PrimaryIndexTrigger, OVRInput.Controller.RTouch))
+        {
+            CycleStateOnServer();
+        }
     }
 
     private void CycleStateOnServer()
@@ -68,5 +85,15 @@ public class ObjectNetworkSync : NetworkBehaviour
     public int GetColorValue()
     {
         return colorIndex.Value;
+    }
+    public void SetState(HouseState newState)
+    {
+        if (!IsServer)
+        {
+            Debug.LogWarning("Only server can change house state.");
+            return;
+        }
+
+        currentHouseState.Value = newState;
     }
 }
