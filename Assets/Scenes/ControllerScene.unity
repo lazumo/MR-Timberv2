@@ -3407,6 +3407,11 @@ PrefabInstance:
       propertyPath: GlobalObjectIdHash
       value: 1316253371
       objectReference: {fileID: 0}
+    - target: {fileID: 170266873907938023, guid: 93a46272a4a18ff46b5b5a14f5e78781,
+        type: 3}
+      propertyPath: InScenePlacedSourceGlobalObjectIdHash
+      value: 2364175593
+      objectReference: {fileID: 0}
     - target: {fileID: 1043134581335037961, guid: 93a46272a4a18ff46b5b5a14f5e78781,
         type: 3}
       propertyPath: m_LocalPosition.x

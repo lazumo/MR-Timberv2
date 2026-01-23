@@ -99,7 +99,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3133524507
+  GlobalObjectIdHash: 2364175593
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -143,5 +143,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eb2d8fe65f6f2364f85e431b1042d6aa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  hitsToCut: 3
-  woodMaterialPrefab: {fileID: 0}
+  woodMaterialPrefab: {fileID: 4642628543286289692}
