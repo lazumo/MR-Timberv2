@@ -1,6 +1,7 @@
 using UnityEngine;
 using Unity.Netcode;
 using EzySlice;
+using System.Collections;
 
 public class SliceObject : NetworkBehaviour
 {
@@ -110,11 +111,20 @@ public class SliceObject : NetworkBehaviour
         {
             TreeSpawnerNetworked.Instance.NotifyTreeDestroyed(TreeSpawnerNetworked.TreeType.Wood);
             Debug.Log("[SliceObject] Notified Spawner of Wood Tree death.");
-            TreeSpawnerNetworked.Instance.SpawnTree(TreeSpawnerNetworked.TreeType.Wood);
-            Debug.Log("[SliceObject] Notified Spawner of Wood Tree generation.");
+            StartCoroutine(DelayedSpawnTree(5f));
         }
         // 3. Perform Visual Slice on all clients (MOVED INSIDE CHECK)
         PerformSliceClientRpc(objId, point, normal);
+    }
+    private IEnumerator DelayedSpawnTree(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        if (TreeSpawnerNetworked.Instance != null)
+        {
+            TreeSpawnerNetworked.Instance.SpawnTree(TreeSpawnerNetworked.TreeType.Wood);
+            Debug.Log("[SliceObject] Delayed Wood Tree generation.");
+        }
     }
 
     [ClientRpc]
