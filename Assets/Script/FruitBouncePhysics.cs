@@ -17,10 +17,12 @@ public class FruitBouncePhysics : NetworkBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        dropState = GetComponent<FruitDropState>();
+    }
+    public override void OnNetworkSpawn()
+    {
         rb.isKinematic = true;
         rb.useGravity = false;
-
-        dropState = GetComponent<FruitDropState>();
     }
 
     // ===== Server 呼叫 =====
