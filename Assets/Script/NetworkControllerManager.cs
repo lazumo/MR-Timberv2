@@ -1,28 +1,34 @@
 using Unity.Netcode;
 using UnityEngine;
 
-public class ExtinguisherManager : NetworkBehaviour
+public class NetworkSpawner : NetworkBehaviour
 {
-    public NetworkObject serverExtinguisher;
-    public NetworkObject clientExtinguisher;
+    [SerializeField] private GameObject objectToSpawn; // 拖入剛才做好的 Prefab
 
     public override void OnNetworkSpawn()
     {
-        // 只有 Server (Host) 有權力更改擁有權
-        if (!IsServer) return;
-
-        // 1. 將 Server 滅火器的擁有權給自己 (ServerID 永遠是 0)
-        serverExtinguisher.ChangeOwnership(NetworkManager.ServerClientId);
-
-        // 2. 監聽 Client 連線事件
-        NetworkManager.OnClientConnectedCallback += (clientId) =>
+        // 只有 Server (Host) 負責監聽玩家連入
+        if (IsServer)
         {
-            if (clientId != NetworkManager.ServerClientId)
-            {
-                // 當 Client 加入時，把 Client 滅火器的擁有權給他
-                clientExtinguisher.ChangeOwnership(clientId);
-                Debug.Log($"已將左手滅火器分配給 Client: {clientId}");
-            }
-        };
+            NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
+        }
+    }
+
+    private void OnClientConnected(ulong clientId)
+    {
+        // 當有玩家（包括 Host 自己）連線時
+        GameObject spawnedObj = Instantiate(objectToSpawn);
+
+        // 生成並把擁有權 (Ownership) 交給該 clientId
+        var networkObj = spawnedObj.GetComponent<NetworkObject>();
+        networkObj.SpawnWithOwnership(clientId);
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        if (IsServer && NetworkManager.Singleton != null)
+        {
+            NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
+        }
     }
 }

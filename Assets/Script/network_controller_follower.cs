@@ -1,48 +1,74 @@
 using Unity.Netcode;
 using UnityEngine;
 
-public class ExtinguisherFollower : NetworkBehaviour
+[RequireComponent(typeof(NetworkObject))]
+public class HandFollower : NetworkBehaviour
 {
-    private OVRInput.Controller targetController;
+    [Header("追蹤設定")]
+    [SerializeField] private string cameraRigName = "[BuildingBlock] Camera Rig";
+    [SerializeField] private string handPath = "TrackingSpace/RightHandAnchor/RightControllerAnchor";
 
-    // 當物件在網路生成或擁有權轉移時執行
+    private Transform _targetAnchor;
+    private Rigidbody _rb;
+
     public override void OnNetworkSpawn()
     {
-        UpdateControllerTracking();
-    }
+        _rb = GetComponent<Rigidbody>();
 
-    public override void OnGainedOwnership()
-    {
-        UpdateControllerTracking();
-    }
-
-    private void UpdateControllerTracking()
-    {
-        // 只有擁有權者 (Owner) 需要決定追蹤哪隻手
         if (IsOwner)
         {
-            // 如果我是 Server (Host)，追蹤右手
-            if (IsServer)
+            // 如果我是主人，嘗試尋找本地的相機與控制器
+            FindLocalHandAnchor();
+
+            // 確保主人的物理狀態是正常的（如果需要物理碰撞可設為 false）
+            if (_rb != null) _rb.isKinematic = false;
+        }
+        else
+        {
+            // 重要：如果不是本人，必須關閉物理模擬，否則會與網路同步的位置產生衝突
+            if (_rb != null)
             {
-                targetController = OVRInput.Controller.RTouch;
-                Debug.Log($"{gameObject.name}: 我是 Server，追蹤右手");
+                _rb.isKinematic = true;
+                _rb.useGravity = false;
             }
-            // 如果我是 Client，追蹤左手
-            else
-            {
-                targetController = OVRInput.Controller.LTouch;
-                Debug.Log($"{gameObject.name}: 我是 Client，追蹤左手");
-            }
+
+            // 非主人不需要執行 Update 裡的追蹤邏輯，直接由 ClientNetworkTransform 處理
+            enabled = false;
         }
     }
 
-    void Update()
+    private void FindLocalHandAnchor()
     {
-        // 核心：只有 Owner 負責驅動座標，ClientNetworkTransform 會幫你同步給別人
-        if (IsOwner)
+        // 1. 根據你截圖中的名稱尋找 Camera Rig
+        GameObject cameraRig = GameObject.Find(cameraRigName);
+
+        if (cameraRig != null)
         {
-            transform.position = OVRInput.GetLocalControllerPosition(targetController);
-            transform.rotation = OVRInput.GetLocalControllerRotation(targetController);
+            // 2. 根據層級結構尋找最底層的 Anchor
+            _targetAnchor = cameraRig.transform.Find(handPath);
+
+            if (_targetAnchor != null)
+            {
+                Debug.Log($"<color=green>[HandFollower]</color> 成功對齊：{_targetAnchor.name}");
+            }
+            else
+            {
+                Debug.LogError($"<color=red>[HandFollower]</color> 找不到路徑：{handPath}");
+            }
+        }
+        else
+        {
+            Debug.LogError($"<color=red>[HandFollower]</color> 找不到物件：{cameraRigName}。請檢查場景物件名稱。");
+        }
+    }
+
+    private void LateUpdate()
+    {
+        // 只有擁有者會執行此段，將物件強行校準到控制器位置
+        if (IsOwner && _targetAnchor != null)
+        {
+            transform.position = _targetAnchor.position;
+            transform.rotation = _targetAnchor.rotation;
         }
     }
 }
