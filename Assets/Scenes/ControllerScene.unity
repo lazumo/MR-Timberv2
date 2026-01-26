@@ -2338,6 +2338,12 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6873156181121848096, guid: 183d70e2332751744824b132356e8481,
         type: 3}
+      propertyPath: fruitTreePrefab
+      value: 
+      objectReference: {fileID: 7619399544758069808, guid: 96ea4d277a06eea43839bdeb913861ae,
+        type: 3}
+    - target: {fileID: 6873156181121848096, guid: 183d70e2332751744824b132356e8481,
+        type: 3}
       propertyPath: targetWoodTrees
       value: 1
       objectReference: {fileID: 0}
