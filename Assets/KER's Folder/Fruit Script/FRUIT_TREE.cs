@@ -234,7 +234,6 @@ public class FRUIT_TREE : NetworkBehaviour
 
             indicator.Initialize(
                 shadowPlanePrefab,
-                shadowSize * 3f,   // 建議直接放大
                 fruitColor
             );
         }
