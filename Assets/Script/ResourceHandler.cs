@@ -1,84 +1,41 @@
 using UnityEngine;
 using Unity.Netcode;
+using System.Collections;
 
-public class ResourceHandlerNetworked : NetworkBehaviour
+public class ResourceManager : NetworkBehaviour
 {
+    public static ResourceManager Instance;
+
     [Header("Settings")]
     public GameObject resourcePrefab;
-    public float moveSpeed = 1.5f;
 
-    private NetworkObject _currentResource;
-    private Vector3 _targetPosition;
-    private bool _isMoving = false;
-
-    // =============================
-    // Server: Spawn resource
-    // =============================
-    [ServerRpc(RequireOwnership = false)]
-    public void SpawnResourceServerRpc()
+    private void Awake()
     {
-        SpawnResourceInternal();
+        if (Instance == null) Instance = this;
     }
 
-    private void SpawnResourceInternal()
+    public void SpawnResource(Vector3 spawnPos)
     {
         if (!IsServer) return;
 
-        // 1. Spawn resource
-        GameObject obj = Instantiate(resourcePrefab, transform.position, Quaternion.identity);
-        var netObj = obj.GetComponent<NetworkObject>();
-        netObj.Spawn();
-
-        _currentResource = netObj;
-
-        // 2. Query next house
-        if (HouseSpawnerNetworked.Instance.TryGetNextHouse(out var house))
+        if (resourcePrefab == null)
         {
-            _targetPosition = house.Position;
-            _isMoving = true;
-            Debug.Log($"[ResourceHandler][Server] Assign resource {netObj.NetworkObjectId} → House ID {house.Id} at {house.Position}");
-            // Sync target to clients
-            SetTargetClientRpc(_targetPosition, _currentResource.NetworkObjectId);
+            Debug.LogError("[ResourceManager] resourcePrefab missing!");
+            return;
         }
-        else
+
+        GameObject resObj = Instantiate(resourcePrefab, spawnPos, Quaternion.identity);
+        NetworkObject netObj = resObj.GetComponent<NetworkObject>();
+        netObj.Spawn(true);
+
+        if (HouseSpawnerNetworked.Instance != null &&
+            HouseSpawnerNetworked.Instance.TryGetNextHouse(out var house))
         {
-            Debug.LogWarning("No more houses available.");
-        }
-    }
-
-    // =============================
-    // Client sync
-    // =============================
-    [ClientRpc]
-    private void SetTargetClientRpc(Vector3 target, ulong resourceNetId)
-    {
-        if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(resourceNetId, out var netObj))
-        {
-            _currentResource = netObj;
-            _targetPosition = target;
-            _isMoving = true;
-        }
-    }
-
-    // =============================
-    // Movement (runs on all)
-    // =============================
-    private void Update()
-    {
-        if (!_isMoving || _currentResource == null) return;
-
-        Transform t = _currentResource.transform;
-
-        t.position = Vector3.MoveTowards(
-            t.position,
-            _targetPosition,
-            moveSpeed * Time.deltaTime
-        );
-
-        if (Vector3.Distance(t.position, _targetPosition) < 0.02f)
-        {
-            t.position = _targetPosition;
-            _isMoving = false;
+            NetworkResourceController rc = resObj.GetComponent<NetworkResourceController>();
+            if (rc != null)
+            {
+                rc.AssignJob(house.Id, house.Position);
+            }
         }
     }
 }

@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 4699967739435152}
   - component: {fileID: 33652085307817142}
   - component: {fileID: 23968705409988316}
-  m_Layer: 7
+  m_Layer: 8
   m_Name: Conifer Small BOTD LOD1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -94,7 +94,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4454104241866706}
   - component: {fileID: 227092337440914680}
-  m_Layer: 7
+  m_Layer: 8
   m_Name: Conifer Small BOTD Billboard
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -170,7 +170,7 @@ GameObject:
   - component: {fileID: 205709636835153214}
   - component: {fileID: 136614995598757014}
   - component: {fileID: -8785151950289257594}
-  m_Layer: 7
+  m_Layer: 8
   m_Name: fruitTree
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -187,7 +187,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4591230394645006}
@@ -257,7 +257,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1050899381
+  GlobalObjectIdHash: 3881397433
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -277,7 +277,7 @@ GameObject:
   - component: {fileID: 4591230394645006}
   - component: {fileID: 33710429429353474}
   - component: {fileID: 23713938712392732}
-  m_Layer: 7
+  m_Layer: 8
   m_Name: Conifer Small BOTD LOD0
   m_TagString: Untagged
   m_Icon: {fileID: 0}

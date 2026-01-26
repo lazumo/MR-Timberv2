@@ -2,6 +2,7 @@ using UnityEngine;
 using Unity.Netcode;
 using Meta.XR.MRUtilityKit;
 using System.Collections;
+using System.Collections.Generic;
 
 public class TreeSpawnerNetworked : NetworkBehaviour
 {
@@ -14,7 +15,7 @@ public class TreeSpawnerNetworked : NetworkBehaviour
 
     [Header("Settings")]
     public int targetWoodTrees = 3;
-    public float woodStartDelay = 2.0f; 
+    public float woodStartDelay = 2.0f;
     public float woodSpawnInterval = 5.0f;
 
     public int targetFruitTrees = 3;
@@ -22,9 +23,9 @@ public class TreeSpawnerNetworked : NetworkBehaviour
     public float fruitSpawnInterval = 8.0f;
 
     [Header("Safety Area")]
-    // 0.5f Half Extents = 1.0m Total Size
+    // X/Z = 0.5f (1m width). Y will be overwritten by column check.
     public Vector3 safetyCheckSize = new Vector3(0.5f, 0.5f, 0.5f);
-    public LayerMask collisionLayerMask; 
+    public LayerMask collisionLayerMask;
 
     private int _currentWoodCount = 0;
     private int _currentFruitCount = 0;
@@ -50,7 +51,6 @@ public class TreeSpawnerNetworked : NetworkBehaviour
         StartCoroutine(ManageFruitLifecycle());
     }
 
-    // --- UPDATED LOGIC: Smart Retry ---
     private IEnumerator ManageWoodLifecycle()
     {
         yield return new WaitForSeconds(woodStartDelay);
@@ -58,26 +58,15 @@ public class TreeSpawnerNetworked : NetworkBehaviour
         {
             if (_currentWoodCount < targetWoodTrees)
             {
-                // Try to spawn
                 bool success = SpawnTree(TreeType.Wood);
-                
-                if (success) 
+                if (success) yield return new WaitForSeconds(woodSpawnInterval);
+                else
                 {
-                    // Success! Wait the full growth interval before checking again
-                    yield return new WaitForSeconds(woodSpawnInterval); 
-                }
-                else 
-                {
-                    // Failed (No space found)? Wait briefly and retry.
-                    // Don't wait 5 seconds, or it looks broken.
                     Debug.LogWarning("Failed to find space for Wood Tree. Retrying in 1s...");
-                    yield return new WaitForSeconds(1.0f); 
+                    yield return new WaitForSeconds(1.0f);
                 }
             }
-            else 
-            {
-                yield return new WaitForSeconds(1.0f);
-            }
+            else yield return new WaitForSeconds(1.0f);
         }
     }
 
@@ -89,9 +78,8 @@ public class TreeSpawnerNetworked : NetworkBehaviour
             if (_currentFruitCount < targetFruitTrees)
             {
                 bool success = SpawnTree(TreeType.Fruit);
-                
                 if (success) yield return new WaitForSeconds(fruitSpawnInterval);
-                else 
+                else
                 {
                     Debug.LogWarning("Failed to find space for Fruit Tree. Retrying in 1s...");
                     yield return new WaitForSeconds(1.0f);
@@ -100,9 +88,7 @@ public class TreeSpawnerNetworked : NetworkBehaviour
             else yield return new WaitForSeconds(1.0f);
         }
     }
-
-    // Changed return type to BOOL so we know if it worked
-    private bool SpawnTree(TreeType type)
+    public bool SpawnTree(TreeType type)
     {
         MRUKRoom room = MRUK.Instance.GetCurrentRoom();
         if (room == null) return false;
@@ -111,43 +97,59 @@ public class TreeSpawnerNetworked : NetworkBehaviour
         MRUKAnchor.SceneLabels labels = (type == TreeType.Wood) ? MRUKAnchor.SceneLabels.FLOOR : MRUKAnchor.SceneLabels.CEILING;
         LabelFilter filter = new LabelFilter(labels);
 
-        // Increased attempts to 50 to help find empty spots
         int attempts = 0;
         while (attempts < 50)
         {
             attempts++;
             if (room.GenerateRandomPositionOnSurface(surfaceType, 0.1f, filter, out Vector3 pos, out Vector3 normal))
             {
-                Quaternion rotation;
-                if (type == TreeType.Wood)
-                {
-                    // Wood: Upright
-                    rotation = Quaternion.FromToRotation(Vector3.up, normal);
-                    rotation *= Quaternion.Euler(0, Random.Range(0, 360), 0);
-                }
-                else
-                {
-                    // Fruit: Hang Down (Inward)
-                    // Align Tree Up to Ceiling Normal (Down)
-                    rotation = Quaternion.FromToRotation(Vector3.up, normal);
-                    rotation *= Quaternion.Euler(0, Random.Range(0, 360), 0);
-                }
+                Quaternion rotation = Quaternion.FromToRotation(Vector3.up, normal);
+                rotation *= Quaternion.Euler(0, Random.Range(0, 360), 0);
 
                 if (IsSpaceEmpty(pos, rotation))
                 {
                     PerformSpawn(type, pos, rotation);
-                    return true; // SUCCESS
+                    return true;
                 }
             }
         }
-        
-        return false; // FAILED (No space found after 50 tries)
+        return false;
     }
 
+    // --- COLUMN CHECK LOGIC ---
     private bool IsSpaceEmpty(Vector3 center, Quaternion rotation)
     {
-        Collider[] hits = Physics.OverlapBox(center, safetyCheckSize, rotation, collisionLayerMask);
-        return hits.Length == 0;
+        // 1. Physics Column Check (Tall Box)
+        Vector3 columnSize = safetyCheckSize;
+        columnSize.y = 10.0f; // 20m Tall box to hit Floor AND Ceiling
+        Collider[] hits = Physics.OverlapBox(center, columnSize, Quaternion.identity, collisionLayerMask);
+        if (hits.Length > 0)
+        {
+            Debug.Log($"[TreeSpawn] Blocked by {hits.Length} colliders:");
+            foreach (var h in hits)
+                Debug.Log($" - {h.name} | layer={LayerMask.LayerToName(h.gameObject.layer)}");
+
+            return false;
+        }
+        //if (hits.Length > 0) return false;
+
+        // 2. House Logic Column Check (Distance ignoring Y)
+        if (HouseSpawnerNetworked.Instance != null)
+        {
+            var houses = HouseSpawnerNetworked.Instance.GetAllHouseData();
+            foreach (var house in houses)
+            {
+                Vector3 treePosFlat = new Vector3(center.x, 0, center.z);
+                Vector3 housePosFlat = new Vector3(house.Position.x, 0, house.Position.z);
+
+                if (Vector3.Distance(treePosFlat, housePosFlat) < 1.0f) // 1m Radius
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     private void PerformSpawn(TreeType type, Vector3 pos, Quaternion rot)
