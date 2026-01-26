@@ -353,8 +353,8 @@ MonoBehaviour:
   fruitSpawnMinDelay: 1
   fruitSpawnMaxDelay: 3
   fruitFadeInDuration: 1.5
-  fruitFallMinDelay: 10
-  fruitFallMaxDelay: 10
+  fruitFallMinDelay: 2
+  fruitFallMaxDelay: 5
 --- !u!1 &6620830117828833582
 GameObject:
   m_ObjectHideFlags: 0
@@ -398,7 +398,7 @@ GameObject:
   - component: {fileID: 2097218354048985858}
   - component: {fileID: 631379263846579226}
   m_Layer: 0
-  m_Name: FruitTree
+  m_Name: fruitTree
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

@@ -18,7 +18,7 @@ public class FruitBouncePhysics : NetworkBehaviour
     {
         rb = GetComponent<Rigidbody>();
         rb.isKinematic = true;
-        rb.useGravity = true;
+        rb.useGravity = false;
 
         dropState = GetComponent<FruitDropState>();
     }
@@ -28,10 +28,11 @@ public class FruitBouncePhysics : NetworkBehaviour
     {
         if (!IsServer) return;
         if (physicsEnabled) return;
-
+        Debug.Log($"[Server] EnablePhysics called on {name}, isServer={IsServer}");
         physicsEnabled = true;
 
         rb.isKinematic = false;          // ⭐ 真正開始掉落
+        rb.useGravity = true;
         dropState?.MarkDropped();        // ⭐ 同步邏輯狀態
     }
 

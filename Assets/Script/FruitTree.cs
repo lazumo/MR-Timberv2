@@ -107,6 +107,11 @@ public class FruitTree : NetworkBehaviour
         // 成熟期
         yield return new WaitForSeconds(aliveDuration);
 
+        if (fruitSpawnController != null)
+            fruitSpawnController.ForceDropAllFruits();
+
+        // 小延遲，確保掉落狀態同步（可選但推薦）
+        yield return new WaitForSeconds(0.1f);
         if (IsSpawned)
             NetworkObject.Despawn();
     }

@@ -16,8 +16,8 @@ GameObject:
   - component: {fileID: 7561875931165707044}
   - component: {fileID: 6467260626030533140}
   - component: {fileID: 6740747829058567825}
-  - component: {fileID: 7206973556769414634}
   - component: {fileID: -8993169100490363951}
+  - component: {fileID: 1764209322767018558}
   m_Layer: 9
   m_Name: Fruit
   m_TagString: Untagged
@@ -174,7 +174,7 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 0
+  m_Interpolate: 1
   m_Constraints: 0
   m_CollisionDetection: 0
 --- !u!114 &6740747829058567825
@@ -208,18 +208,6 @@ MonoBehaviour:
   InLocalSpace: 0
   Interpolate: 1
   SlerpPosition: 0
---- !u!114 &7206973556769414634
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3437219668375729335}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f6c0be61502bb534f922ebb746851216, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &-8993169100490363951
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -235,3 +223,17 @@ MonoBehaviour:
   firstBounceForce: 2.5
   secondBounceForce: 1.2
   maxBounces: 2
+--- !u!114 &1764209322767018558
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3437219668375729335}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5edc8f12dabcf624786e81afd78cce7d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  HasDropped:
+    m_InternalValue: 0

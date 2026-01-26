@@ -65,12 +65,6 @@ public class FruitSpawnController : NetworkBehaviour
     private void SpawnSingleFruit(Transform spawnPoint)
     {
         GameObject fruit = Instantiate(fruitPrefab, spawnPoint.position, Quaternion.identity);
-        Rigidbody rb = fruit.GetComponent<Rigidbody>();
-        if (rb != null)
-        {
-            rb.isKinematic = true;
-            rb.useGravity = false;
-        }
         NetworkObject netObj = fruit.GetComponent<NetworkObject>();
         netObj.Spawn();
 
@@ -138,5 +132,21 @@ public class FruitSpawnController : NetworkBehaviour
 
         if (mat != null)
             mat.color = targetColor;
+    }
+    public void ForceDropAllFruits()
+    {
+        if (!IsServer) return;
+
+        foreach (var fruit in spawnedFruits)
+        {
+            if (fruit == null) continue;
+
+            var netObj = fruit.GetComponent<NetworkObject>();
+            if (netObj == null || !netObj.IsSpawned) continue;
+
+            fruit.GetComponent<FruitBouncePhysics>()?.EnablePhysics();
+        }
+
+        spawnedFruits.Clear();
     }
 }
