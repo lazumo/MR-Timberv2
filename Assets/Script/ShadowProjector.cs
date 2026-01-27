@@ -78,6 +78,11 @@ public class FruitShadowProjector : MonoBehaviour
 
             validHit = h;
             found = true;
+            var receiver = h.collider.GetComponent<ToolShadowReceiver>();
+            if (receiver != null)
+            {
+                receiver.OnShadowHit();
+            }
             break;
         }
 
