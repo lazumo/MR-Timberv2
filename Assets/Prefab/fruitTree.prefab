@@ -350,11 +350,11 @@ MonoBehaviour:
   - {fileID: 4956673445666264774}
   - {fileID: 5969580744303620148}
   fruitCount: 5
-  fruitSpawnMinDelay: 1
-  fruitSpawnMaxDelay: 3
+  fruitSpawnMinDelay: 2
+  fruitSpawnMaxDelay: 4
   fruitFadeInDuration: 1.5
-  fruitFallMinDelay: 2
-  fruitFallMaxDelay: 5
+  fruitFallMinDelay: 5
+  fruitFallMaxDelay: 10
 --- !u!1 &6620830117828833582
 GameObject:
   m_ObjectHideFlags: 0

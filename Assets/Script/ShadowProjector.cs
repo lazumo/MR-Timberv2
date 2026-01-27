@@ -69,20 +69,25 @@ public class FruitShadowProjector : MonoBehaviour
 
         RaycastHit validHit = default;
         bool found = false;
-
+        bool isTrigger = false;
         foreach (var h in hits)
         {
             if (h.collider.gameObject == gameObject)
                 continue;
-
-            validHit = h;
-            found = true;
             var receiver = h.collider.GetComponent<ToolShadowReceiver>();
             if (receiver != null)
             {
+                Debug.Log("[ShadowProjector] Hit ShadowDetector");
                 receiver.RegisterShadowHit();
+                isTrigger = true;
+                continue;
             }
-            break;
+            validHit = h;
+            found = true;
+            if(isTrigger && found)
+            {
+                break;
+            }
         }
 
         if (found)

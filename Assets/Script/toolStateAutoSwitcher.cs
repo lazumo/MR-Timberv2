@@ -26,6 +26,7 @@ public class ToolStateResolver : NetworkBehaviour
         int current = toolController.CurrentState;
         bool shadow = shadowReceiver.ShadowHitThisFrame;
         bool touching = shadowReceiver.IsTouchingFruit;
+        Debug.Log($"[Resolver] current={current}, shadow={shadow}, touching={touching}");
 
         if (current == boxState)
         {
@@ -44,8 +45,10 @@ public class ToolStateResolver : NetworkBehaviour
         {
             // 只有 shadow 才能進 box
             if (shadow)
+            {
+                Debug.Log("change to box");
                 return boxState;
-
+            }
             return sawState;
         }
     }
