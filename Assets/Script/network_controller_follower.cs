@@ -6,65 +6,81 @@ public class HandFollower : NetworkBehaviour
 {
     [Header("追蹤設定")]
     [SerializeField] private string cameraRigName = "[BuildingBlock] Camera Rig";
-    [SerializeField] private string handPath = "TrackingSpace/RightHandAnchor/RightControllerAnchor";
+
+    [Header("手把路徑")]
+    [SerializeField] private string rightHandPath = "TrackingSpace/RightHandAnchor/RightControllerInHandAnchor";
+    [SerializeField] private string leftHandPath = "TrackingSpace/LeftHandAnchor/LeftControllerInHandAnchor";
 
     private Transform _targetAnchor;
     private Rigidbody _rb;
+    private Renderer[] _renderers;
+    private Collider[] _colliders;
+
+    // Server 控制顯示/隱藏（所有人同步）
+    public NetworkVariable<bool> VisualsOn =
+        new NetworkVariable<bool>(true, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
     public override void OnNetworkSpawn()
     {
         _rb = GetComponent<Rigidbody>();
+        _renderers = GetComponentsInChildren<Renderer>(true);
+        _colliders = GetComponentsInChildren<Collider>(true);
+
+        VisualsOn.OnValueChanged += (_, v) => ApplyVisuals(v);
+        ApplyVisuals(VisualsOn.Value);
 
         if (IsOwner)
         {
-            // 如果我是主人，嘗試尋找本地的相機與控制器
-            FindLocalHandAnchor();
+            // Host -> 右手；Client -> 左手
+            bool isHost = NetworkManager.Singleton != null && NetworkManager.Singleton.IsHost;
+            string handPath = isHost ? rightHandPath : leftHandPath;
 
-            // 確保主人的物理狀態是正常的（如果需要物理碰撞可設為 false）
+            FindLocalHandAnchor(handPath);
+
             if (_rb != null) _rb.isKinematic = false;
         }
         else
         {
-            // 重要：如果不是本人，必須關閉物理模擬，否則會與網路同步的位置產生衝突
+            // 非 owner：關掉物理避免跟同步打架（但不要 disabled，後面需要同步隱藏/顯示）
             if (_rb != null)
             {
                 _rb.isKinematic = true;
                 _rb.useGravity = false;
             }
-
-            // 非主人不需要執行 Update 裡的追蹤邏輯，直接由 ClientNetworkTransform 處理
-            enabled = false;
         }
     }
 
-    private void FindLocalHandAnchor()
+    public override void OnNetworkDespawn()
     {
-        // 1. 根據你截圖中的名稱尋找 Camera Rig
+        VisualsOn.OnValueChanged -= (_, v) => ApplyVisuals(v);
+    }
+
+    private void ApplyVisuals(bool on)
+    {
+        if (_renderers != null)
+            foreach (var r in _renderers) if (r != null) r.enabled = on;
+
+        if (_colliders != null)
+            foreach (var c in _colliders) if (c != null) c.enabled = on;
+    }
+
+    private void FindLocalHandAnchor(string handPath)
+    {
         GameObject cameraRig = GameObject.Find(cameraRigName);
-
-        if (cameraRig != null)
+        if (cameraRig == null)
         {
-            // 2. 根據層級結構尋找最底層的 Anchor
-            _targetAnchor = cameraRig.transform.Find(handPath);
+            Debug.LogError($"[HandFollower] 找不到物件：{cameraRigName}");
+            return;
+        }
 
-            if (_targetAnchor != null)
-            {
-                Debug.Log($"<color=green>[HandFollower]</color> 成功對齊：{_targetAnchor.name}");
-            }
-            else
-            {
-                Debug.LogError($"<color=red>[HandFollower]</color> 找不到路徑：{handPath}");
-            }
-        }
-        else
-        {
-            Debug.LogError($"<color=red>[HandFollower]</color> 找不到物件：{cameraRigName}。請檢查場景物件名稱。");
-        }
+        _targetAnchor = cameraRig.transform.Find(handPath);
+        if (_targetAnchor == null)
+            Debug.LogError($"[HandFollower] 找不到路徑：{handPath}");
     }
 
     private void LateUpdate()
     {
-        // 只有擁有者會執行此段，將物件強行校準到控制器位置
+        // 只有擁有者才跟隨自己的手把
         if (IsOwner && _targetAnchor != null)
         {
             transform.position = _targetAnchor.position;
