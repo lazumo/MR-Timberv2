@@ -6,6 +6,31 @@ TagManager:
   tags:
   - Fruit
   - FxTemporaire
+  - QDSUIBackplateGradient
+  - QDSUIToggleBorderlessButton
+  - QDSUIToggleButton
+  - QDSUIToggleSwitch
+  - QDSUITooltip
+  - QDSUISharedThemeColor
+  - QDSUIAccentColor
+  - QDSUIBorderlessButton
+  - QDSUISecondaryButton
+  - QDSUIIcon
+  - QDSUITextSecondaryColor
+  - QDSUISection
+  - Locomotion
+  - PassThroughButton
+  - LocoButton
+  - LocoText
+  - PassThrough
+  - SamplesInfoPanel
+  - QDSUIDestructiveButton
+  - QDSUIPrimaryButton
+  - QDSUITextInvertedColor
+  - QDSUITextSecondaryInvertedColor
+  - QDSUIToggleCheckboxRadio
+  - QDSUITextInputField
+  - Ground
   layers:
   - Default
   - TransparentFX
@@ -16,7 +41,7 @@ TagManager:
   - House
   - Sliceable
   - Tree
-  - 
+  - Fruit
   - 
   - 
   - 
