@@ -36,7 +36,6 @@ public class FruitShadowProjector : MonoBehaviour
         }
 
         shadowInstance = Instantiate(shadowPrefab);
-        Debug.Log($"[Shadow] Initialize called on {gameObject.name}");
         // ===== 設定大小（依 sphere 半徑）=====
         float radius = GetFruitRadius();
         float diameter = radius * 3f;
@@ -57,7 +56,7 @@ public class FruitShadowProjector : MonoBehaviour
             return;
 
         // 如果開始掉落 → 移除投影
-        if (dropState != null && dropState.HasDropped.Value)
+        if (dropState != null && dropState.HasLanded.Value)
         {
             Destroy(shadowInstance);
             shadowInstance = null;
@@ -81,7 +80,7 @@ public class FruitShadowProjector : MonoBehaviour
             var receiver = h.collider.GetComponent<ToolShadowReceiver>();
             if (receiver != null)
             {
-                receiver.OnShadowHit();
+                receiver.RegisterShadowHit();
             }
             break;
         }
