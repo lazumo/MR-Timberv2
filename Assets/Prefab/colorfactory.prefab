@@ -517,7 +517,6 @@ GameObject:
   - component: {fileID: 2431504089753749064}
   - component: {fileID: 4301307681977840829}
   - component: {fileID: 2744267543509360909}
-  - component: {fileID: 7252534268323105275}
   - component: {fileID: 3558455425382054100}
   m_Layer: 0
   m_Name: colorfactory
@@ -598,27 +597,6 @@ MonoBehaviour:
   lidPositive: {fileID: 3915518275076415026}
   lidNegative: {fileID: 2151396562980388425}
   maxHandDistance: 0.35
---- !u!114 &7252534268323105275
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5045598425124257699}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1717211837
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
 --- !u!114 &3558455425382054100
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -633,6 +611,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   colorIndex: 0
   materialList: []
+  meshRenderer: {fileID: 0}
 --- !u!1 &5479367744216478756
 GameObject:
   m_ObjectHideFlags: 0
