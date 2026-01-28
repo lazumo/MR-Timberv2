@@ -559,9 +559,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   detector: {fileID: 6158639354982460269}
   cylinder: {fileID: 570492711348672739}
-  threshold: 5
-  middlePoint: {fileID: 0}
-  anchorCollider: {fileID: 0}
+  threshold: 0
+  isMiddlePointInside: 0
 --- !u!114 &4301307681977840829
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -592,8 +591,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   factory: {fileID: 2431504089753749064}
-  leftController: {fileID: 0}
-  rightController: {fileID: 0}
+  cameraRigName: '[BuildingBlock] Camera Rig'
+  rightHandPath: TrackingSpace/RightHandAnchor/RightControllerInHandAnchor
+  leftHandPath: TrackingSpace/LeftHandAnchor/LeftControllerInHandAnchor
   lidPositive: {fileID: 3915518275076415026}
   lidNegative: {fileID: 2151396562980388425}
   maxHandDistance: 0.35
@@ -624,7 +624,7 @@ GameObject:
   - component: {fileID: 7705306896840702111}
   m_Layer: 0
   m_Name: tool_anchor
-  m_TagString: Untagged
+  m_TagString: FactoryZone
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
