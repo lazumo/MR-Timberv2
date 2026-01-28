@@ -30,7 +30,6 @@ public class FruitBouncePhysics : NetworkBehaviour
     {
         if (!IsServer) return;
         if (physicsEnabled) return;
-        Debug.Log($"[Server] EnablePhysics called on {name}, isServer={IsServer}");
         physicsEnabled = true;
 
         rb.isKinematic = false;          // ⭐ 真正開始掉落
@@ -42,7 +41,11 @@ public class FruitBouncePhysics : NetworkBehaviour
     {
         if (!IsServer || !physicsEnabled) return;
         if (bounceCount >= maxBounces) return;
-
+        var dropState = GetComponent<FruitDropState>();
+        if (dropState != null && !dropState.HasLanded.Value)
+        {
+            dropState.MarkLanded();
+        }
         rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
 
         float force = bounceCount == 0 ? firstBounceForce : secondBounceForce;
