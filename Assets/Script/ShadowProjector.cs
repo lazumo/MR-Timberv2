@@ -5,25 +5,27 @@ public class FruitShadowProjector : MonoBehaviour
     [Header("Shadow Prefab")]
     public GameObject shadowPrefab;
 
-    [Header("Settings")]
+    [Header("Raycast Settings")]
     public float rayStartOffset = 0.25f;
     public float maxRayDistance = 50f;
-    public float groundOffset = 0.02f;
+
+    [Header("Shadow Visual")]
     public float shadowAlpha = 0.5f;
 
+    [Header("Layers")]
+    [Tooltip("Box + Ground layers")]
+    public LayerMask surfaceMask;
+
     private GameObject shadowInstance;
-    private Rigidbody rb;
     private bool initialized = false;
 
     private FruitDropState dropState;
 
     private void Awake()
     {
-        rb = GetComponent<Rigidbody>();
         dropState = GetComponent<FruitDropState>();
     }
 
-    // 由 Spawner 呼叫，傳入 fruit color
     public void Initialize(Color fruitColor)
     {
         if (initialized) return;
@@ -36,13 +38,11 @@ public class FruitShadowProjector : MonoBehaviour
         }
 
         shadowInstance = Instantiate(shadowPrefab);
-        Debug.Log($"[Shadow] Initialize called on {gameObject.name}");
-        // ===== 設定大小（依 sphere 半徑）=====
+
         float radius = GetFruitRadius();
         float diameter = radius * 3f;
         shadowInstance.transform.localScale = new Vector3(diameter, diameter, diameter);
 
-        // ===== 設定顏色 =====
         if (shadowInstance.TryGetComponent(out Renderer r))
         {
             Material mat = new Material(r.material);
@@ -56,8 +56,8 @@ public class FruitShadowProjector : MonoBehaviour
         if (shadowInstance == null)
             return;
 
-        // 如果開始掉落 → 移除投影
-        if (dropState != null && dropState.HasDropped.Value)
+        // 真正落地後移除 shadow
+        if (dropState != null && dropState.HasLanded.Value)
         {
             Destroy(shadowInstance);
             shadowInstance = null;
@@ -66,25 +66,26 @@ public class FruitShadowProjector : MonoBehaviour
 
         Vector3 origin = transform.position + Vector3.up * rayStartOffset;
 
-        RaycastHit[] hits = Physics.RaycastAll(origin, Vector3.down, maxRayDistance);
+        // ===== 1️⃣ 偵測 ShadowDetector (trigger) =====
+        RaycastHit[] triggerHits = Physics.RaycastAll(origin, Vector3.down, maxRayDistance);
 
-        RaycastHit validHit = default;
-        bool found = false;
-
-        foreach (var h in hits)
+        foreach (var h in triggerHits)
         {
-            if (h.collider.gameObject == gameObject)
-                continue;
-
-            validHit = h;
-            found = true;
-            break;
+            var receiver = h.collider.GetComponent<ToolShadowReceiver>();
+            if (receiver != null)
+            {
+                receiver.RegisterShadowHit();
+                break;
+            }
         }
 
-        if (found)
+        // ===== 2️⃣ 投影到最近實體表面 (Box / Ground) =====
+        if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit,
+                             maxRayDistance, surfaceMask,
+                             QueryTriggerInteraction.Ignore))
         {
             shadowInstance.SetActive(true);
-            shadowInstance.transform.position = validHit.point;
+            shadowInstance.transform.position = hit.point;
             shadowInstance.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
         }
         else
@@ -93,15 +94,13 @@ public class FruitShadowProjector : MonoBehaviour
         }
     }
 
-
     private float GetFruitRadius()
     {
-        // 優先用 SphereCollider
         if (TryGetComponent(out SphereCollider sphere))
         {
             return sphere.radius * Mathf.Max(transform.lossyScale.x, transform.lossyScale.y, transform.lossyScale.z);
         }
-        return 0.25f; // fallback
+        return 0.25f;
     }
 
     private void OnDestroy()
