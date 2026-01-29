@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 3172256942872072125}
   - component: {fileID: 147397991358664571}
   m_Layer: 0
-  m_Name: network_controller_track
+  m_Name: Formal_Extinguisher
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
