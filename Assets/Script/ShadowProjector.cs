@@ -5,6 +5,12 @@ public class FruitShadowProjector : MonoBehaviour
     [Header("Shadow Prefab")]
     public GameObject shadowPrefab;
 
+    public Color[] treeFruitColors = new Color[]
+    {
+        new Color(1f, 0.2f, 0.2f),
+        new Color(0.2f, 1f, 0.2f),
+        new Color(0.2f, 0.5f, 1f)
+    };
     [Header("Raycast Settings")]
     public float rayStartOffset = 0.25f;
     public float maxRayDistance = 50f;
@@ -24,6 +30,19 @@ public class FruitShadowProjector : MonoBehaviour
     private void Awake()
     {
         dropState = GetComponent<FruitDropState>();
+    }
+    public void InitializeFromFruit()
+    {
+        if (initialized) return;
+
+        FruitData data = GetComponent<FruitData>();
+        if (data == null)
+        {
+            Debug.LogError("[FruitShadowProjector] Missing FruitData");
+            return;
+        }
+        int index = data.colorIndex.Value;
+        Initialize(treeFruitColors[index]);
     }
 
     public void Initialize(Color fruitColor)
