@@ -1,12 +1,12 @@
 using UnityEngine;
 using System.Collections;
+using Unity.Netcode;
 
 public class LidController : MonoBehaviour
 {
-    [Header("引用設定")]
     [SerializeField] private ColorFactoryController factory;
 
-    [Header("XR Rig 尋找設定")]
+    [Header("XR Rig")]
     [SerializeField] private string cameraRigName = "[BuildingBlock] Camera Rig";
     [SerializeField] private string rightHandPath = "TrackingSpace/RightHandAnchor/RightControllerInHandAnchor";
     [SerializeField] private string leftHandPath = "TrackingSpace/LeftHandAnchor/LeftControllerInHandAnchor";
@@ -14,23 +14,25 @@ public class LidController : MonoBehaviour
     private Transform leftController;
     private Transform rightController;
 
-    [Header("蓋子物件")]
     [SerializeField] private Transform lidPositive;
     [SerializeField] private Transform lidNegative;
 
-    [Header("距離設定")]
     public float maxHandDistance = 0.35f;
-
     private float defaultZ = 0.35f;
 
     IEnumerator Start()
     {
-        // 等待 XR Rig + Controllers 出現
+        // 只在 Server 執行
+        if (!NetworkManager.Singleton.IsServer)
+            yield break;
+
         while (leftController == null || rightController == null)
         {
             TryFindControllers();
             yield return null;
         }
+
+        Debug.Log("[LidController] Server controllers found");
     }
 
     void TryFindControllers()
@@ -39,31 +41,24 @@ public class LidController : MonoBehaviour
         if (rig == null) return;
 
         if (leftController == null)
-        {
-            Transform t = rig.transform.Find(leftHandPath);
-            if (t != null) leftController = t;
-        }
+            leftController = rig.transform.Find(leftHandPath);
 
         if (rightController == null)
-        {
-            Transform t = rig.transform.Find(rightHandPath);
-            if (t != null) rightController = t;
-        }
-        Debug.Log("found two controllers");
+            rightController = rig.transform.Find(rightHandPath);
     }
 
     void LateUpdate()
     {
-        if (factory == null || lidPositive == null || lidNegative == null ||
-            leftController == null || rightController == null)
+        if (!NetworkManager.Singleton.IsServer)
             return;
 
-        // 條件：數量達標 + 手在工廠內
+        if (factory == null || leftController == null || rightController == null)
+            return;
+
         if (factory.countSatisfied && factory.isMiddlePointInside)
         {
-            Debug.Log("tracking 2 controllers");
-            float currentDist = Vector3.Distance(leftController.position, rightController.position);
-            float t = Mathf.Clamp01(currentDist / maxHandDistance);
+            float dist = Vector3.Distance(leftController.position, rightController.position);
+            float t = Mathf.Clamp01(dist / maxHandDistance);
             float targetZ = t * defaultZ;
 
             lidPositive.localPosition =
@@ -74,16 +69,16 @@ public class LidController : MonoBehaviour
         }
         else
         {
-            UpdateLidPosition(defaultZ);
+            ResetLid();
         }
     }
 
-    private void UpdateLidPosition(float z)
+    void ResetLid()
     {
         lidPositive.localPosition =
-            new Vector3(lidPositive.localPosition.x, lidPositive.localPosition.y, z);
+            new Vector3(lidPositive.localPosition.x, lidPositive.localPosition.y, defaultZ);
 
         lidNegative.localPosition =
-            new Vector3(lidNegative.localPosition.x, lidNegative.localPosition.y, -z);
+            new Vector3(lidNegative.localPosition.x, lidNegative.localPosition.y, -defaultZ);
     }
 }
