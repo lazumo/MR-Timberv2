@@ -18,6 +18,8 @@ GameObject:
   - component: {fileID: 6740747829058567825}
   - component: {fileID: -8993169100490363951}
   - component: {fileID: 1764209322767018558}
+  - component: {fileID: -4612141979757980225}
+  - component: {fileID: 91702700451082713}
   m_Layer: 9
   m_Name: Fruit
   m_TagString: Fruit
@@ -241,3 +243,30 @@ MonoBehaviour:
     m_InternalValue: 0
   HasLanded:
     m_InternalValue: 0
+--- !u!114 &-4612141979757980225
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3437219668375729335}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 126dcefee155b3740be5072547659bbd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  colorIndex: 0
+  color: {r: 0, g: 0, b: 0, a: 0}
+--- !u!114 &91702700451082713
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3437219668375729335}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 483b59aa155bd09488ff42b7f983eeac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  fadeDuration: 1.5
