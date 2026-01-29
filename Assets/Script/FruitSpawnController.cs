@@ -67,29 +67,15 @@ public class FruitSpawnController : NetworkBehaviour
         GameObject fruit = Instantiate(fruitPrefab, spawnPoint.position, Quaternion.identity);
         NetworkObject netObj = fruit.GetComponent<NetworkObject>();
 
-        // 先設定資料
         FruitData data = fruit.GetComponent<FruitData>();
-        int colorIndex = tree.selectedColorIndex;
-        Color color = tree.GetSelectedFruitColor();
+        data.colorIndex.Value = tree.selectedColorIndex;
 
-        data.colorIndex = colorIndex;
-        data.color = color;
-        MeshRenderer mr = fruit.GetComponent<MeshRenderer>();
-        if (mr != null)
-        {
-            Material mat = new Material(mr.material);
-            mat.color = new Color(color.r, color.g, color.b, 0f); // 從透明開始
-            mr.material = mat;
-        }
         netObj.Spawn();
         spawnedFruits.Add(fruit);
-
-        SetupFruitClientRpc(netObj.NetworkObjectId, fruitFadeInDuration);
 
         float fallDelay = Random.Range(fruitFallMinDelay, fruitFallMaxDelay);
         StartCoroutine(FruitFallRoutine(netObj.NetworkObjectId, fallDelay));
     }
-
 
     private IEnumerator FruitFallRoutine(ulong fruitId, float delay)
     {
@@ -102,44 +88,6 @@ public class FruitSpawnController : NetworkBehaviour
     }
 
 
-    // =====================
-    // Client Side
-    // =====================
-
-    [ClientRpc]
-    private void SetupFruitClientRpc(ulong fruitId, float fadeDuration)
-    {
-        if (!NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(fruitId, out NetworkObject netObj))
-            return;
-
-        GameObject fruit = netObj.gameObject;
-
-        // ===== Fade In =====
-        MeshRenderer mr = fruit.GetComponent<MeshRenderer>();
-        if (mr != null)
-        {
-            Material mat = mr.material; // 已是 instance
-
-            StartCoroutine(FadeInRoutine(mat, mat.color, fadeDuration));
-        }
-    }
-
-    private IEnumerator FadeInRoutine(Material mat, Color targetColor, float dur)
-    {
-        float t = 0f;
-        Color start = new(targetColor.r, targetColor.g, targetColor.b, 0f);
-
-        while (t < dur)
-        {
-            if (mat == null) yield break;
-            t += Time.deltaTime;
-            mat.color = Color.Lerp(start, targetColor, t / dur);
-            yield return null;
-        }
-
-        if (mat != null)
-            mat.color = targetColor;
-    }
     public void ForceDropAllFruits()
     {
         if (!IsServer) return;

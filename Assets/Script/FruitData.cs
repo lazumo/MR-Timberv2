@@ -3,11 +3,7 @@ using UnityEngine;
 
 public class FruitData : NetworkBehaviour
 {
-    [HideInInspector]
-    public int colorIndex;
-
-    [HideInInspector]
-    public Color color;
+    public NetworkVariable<int> colorIndex = new NetworkVariable<int>();
 
     public override void OnNetworkSpawn()
     {
