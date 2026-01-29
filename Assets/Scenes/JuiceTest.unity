@@ -398,6 +398,16 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9145156084225311983, guid: f21b0ebafcbedbd4fb41d7731ba74d06,
         type: 3}
+      propertyPath: barB
+      value: 
+      objectReference: {fileID: 253181065}
+    - target: {fileID: 9145156084225311983, guid: f21b0ebafcbedbd4fb41d7731ba74d06,
+        type: 3}
+      propertyPath: barC
+      value: 
+      objectReference: {fileID: 514803926}
+    - target: {fileID: 9145156084225311983, guid: f21b0ebafcbedbd4fb41d7731ba74d06,
+        type: 3}
       propertyPath: minSqueeze
       value: 0.15
       objectReference: {fileID: 0}
@@ -821,6 +831,12 @@ Transform:
   m_Children: []
   m_Father: {fileID: 919393077}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!4 &253181065 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 973387671851279969, guid: f21b0ebafcbedbd4fb41d7731ba74d06,
+    type: 3}
+  m_PrefabInstance: {fileID: 116837010}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &320522505
 GameObject:
   m_ObjectHideFlags: 0
@@ -1127,6 +1143,12 @@ MonoBehaviour:
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
   m_SoftShadowQuality: 1
+--- !u!4 &514803926 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7792807119993673652, guid: f21b0ebafcbedbd4fb41d7731ba74d06,
+    type: 3}
+  m_PrefabInstance: {fileID: 116837010}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &646280984
 GameObject:
   m_ObjectHideFlags: 0
