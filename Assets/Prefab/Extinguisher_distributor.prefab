@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 5515447181660433633}
   - component: {fileID: 5157462246270839686}
   m_Layer: 0
-  m_Name: network_controller_distributor
+  m_Name: Extinguisher_distributor
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

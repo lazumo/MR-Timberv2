@@ -1060,6 +1060,11 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 1472434335001688720, guid: ddd3549f3c1084f41ae3364d7fe302e3,
+        type: 3}
+      propertyPath: GlobalObjectIdHash
+      value: 1994853480
+      objectReference: {fileID: 0}
     - target: {fileID: 3892853041658467194, guid: ddd3549f3c1084f41ae3364d7fe302e3,
         type: 3}
       propertyPath: leftControllerAnchor
