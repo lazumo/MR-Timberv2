@@ -830,7 +830,7 @@ GameObject:
   - component: {fileID: -3125374513872612400}
   - component: {fileID: 6478364220531509538}
   m_Layer: 6
-  m_Name: colorfactory
+  m_Name: colorfactory 2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -846,7 +846,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
   m_LocalPosition: {x: 0.0010966074, y: 0.631, z: -0.038999975}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1, y: 0.5, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3323707955038980979}
@@ -920,9 +920,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c2cfa2e6ef1911459aaaa0cd4beb6a9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  colorIndex: 0
-  materialList: []
-  meshRenderer: {fileID: 0}
+  factoryColor: 0
+  ownerHouse: {fileID: 0}
 --- !u!114 &-3125374513872612400
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -935,7 +934,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2063868593
+  GlobalObjectIdHash: 721550672
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -1222,12 +1221,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c2cfa2e6ef1911459aaaa0cd4beb6a9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  colorIndex: 0
-  materialList:
-  - {fileID: 2100000, guid: bf2c28b804d43f440be207e45e34dc59, type: 2}
-  - {fileID: 2100000, guid: c58638914af70574194eeed7b8bb8adf, type: 2}
-  - {fileID: 2100000, guid: e101b7d4a42350f4c9adedaad970ff0a, type: 2}
-  meshRenderer: {fileID: 3916570169650322242}
+  factoryColor: 0
+  ownerHouse: {fileID: 0}
 --- !u!1 &6911267702405220117
 GameObject:
   m_ObjectHideFlags: 0

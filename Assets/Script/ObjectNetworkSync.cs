@@ -3,89 +3,108 @@ using Unity.Netcode;
 using System;
 
 [RequireComponent(typeof(ObjectDisplayController))]
+[RequireComponent(typeof(HouseColorFactoryPlacer))]
 public class ObjectNetworkSync : NetworkBehaviour
 {
     private ObjectDisplayController _logicController;
-    [Header("關聯控制器")]
-    // 在 Inspector 中將所有子物件的 ColorController 拖進來
-    public ColorController[] bColorControllers;
+    private HouseColorFactoryPlacer _factoryPlacer;
 
-    // 同步目前的狀態 Enum
-    private NetworkVariable<HouseState> currentHouseState = new NetworkVariable<HouseState>(
-        HouseState.Unbuilt, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server
-    );
+    // ===== Network Variables =====
 
-    // 同步顏色索引 (0, 1, 2)
-    private NetworkVariable<int> colorIndex = new NetworkVariable<int>(
-        0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server
-    );
+    private NetworkVariable<HouseState> currentHouseState =
+        new NetworkVariable<HouseState>(
+            HouseState.Unbuilt,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Server
+        );
+
+    private NetworkVariable<int> colorIndex =
+        new NetworkVariable<int>(
+            0,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Server
+        );
+
+    // House → ColorFactory reference
+    private NetworkVariable<NetworkObjectReference> colorFactoryRef =
+        new NetworkVariable<NetworkObjectReference>(
+            default,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Server
+        );
+
+    // ===== Unity =====
 
     private void Awake()
     {
         _logicController = GetComponent<ObjectDisplayController>();
+        _factoryPlacer = GetComponent<HouseColorFactoryPlacer>();
     }
 
     public override void OnNetworkSpawn()
     {
-        // 只有 Server 決定一次隨機顏色
         if (IsServer)
         {
             colorIndex.Value = UnityEngine.Random.Range(0, 3);
         }
 
-        // 綁定狀態同步：當 state 改變時執行切換邏輯
-        currentHouseState.OnValueChanged += (oldVal, newVal) => {
-            _logicController.ApplyState(newVal);
-        };
-
-        // 綁定顏色同步
-        colorIndex.OnValueChanged += (oldVal, newVal) => {
+        currentHouseState.OnValueChanged += OnHouseStateChanged;
+        colorIndex.OnValueChanged += (oldVal, newVal) =>
+        {
             _logicController.ApplyColor(newVal);
         };
 
-        // 初始化目前的視覺狀態
         _logicController.ApplyState(currentHouseState.Value);
         _logicController.ApplyColor(colorIndex.Value);
-        UpdateAllControllers(colorIndex.Value);
     }
 
-    private void UpdateAllControllers(int newIndex)
+    // ===== State handling =====
+    private void OnHouseStateChanged(HouseState oldVal, HouseState newVal)
     {
-        if (bColorControllers == null || bColorControllers.Length == 0) return;
+        _logicController.ApplyState(newVal);
 
-        foreach (var controller in bColorControllers)
+        if (!IsServer) return;
+
+        switch (newVal)
         {
-            if (controller != null)
-            {
-                controller.InitializeColor(newIndex);
-            }
+            case HouseState.Built:
+                TrySpawnAndBindFactory();
+                break;
+
+            case HouseState.Colored:
+                DespawnFactoryIfExists();
+                break;
         }
     }
 
-    void Update()
+    private void TrySpawnAndBindFactory()
+    {
+        if (_factoryPlacer == null) return;
+        if (colorFactoryRef.Value.TryGet(out _)) return;
+
+        NetworkObject factory = _factoryPlacer.SpawnColorFactory(colorIndex.Value);
+        if (factory != null)
+        {
+            colorFactoryRef.Value = factory;
+            Debug.Log($"[House] Bound ColorFactory id={factory.NetworkObjectId}");
+        }
+    }
+    private void DespawnFactoryIfExists()
     {
         if (!IsServer) return;
 
-        //測試用：按下 Trigger 循環切換狀態 (Unbuilt -> Built -> Colored ...)
-        if (OVRInput.GetDown(OVRInput.Button.PrimaryIndexTrigger, OVRInput.Controller.RTouch))
+        if (colorFactoryRef.Value.TryGet(out NetworkObject factory))
         {
-            CycleStateOnServer();
+            factory.Despawn(true);
+            Debug.Log($"[House] Despawned ColorFactory id={factory.NetworkObjectId}");
         }
+
+        // 清空 reference
+        colorFactoryRef.Value = default;
     }
 
-    private void CycleStateOnServer()
-    {
-        // 取得 Enum 的所有數值
-        Array states = Enum.GetValues(typeof(HouseState));
-        int nextIndex = ((int)currentHouseState.Value + 1) % states.Length;
-        currentHouseState.Value = (HouseState)states.GetValue(nextIndex);
+    // ===== Public API =====
 
-        Debug.Log($"Server changed house state to: {currentHouseState.Value}, color: {colorIndex.Value}");
-    }
-    public int GetColorValue()
-    {
-        return colorIndex.Value;
-    }
     public void SetState(HouseState newState)
     {
         if (!IsServer)
@@ -95,5 +114,36 @@ public class ObjectNetworkSync : NetworkBehaviour
         }
 
         currentHouseState.Value = newState;
+    }
+    public void InitializeColorIndex(int index)
+    {
+        if (!IsServer)
+        {
+            Debug.LogWarning("Only server can initialize colorIndex.");
+            return;
+        }
+
+        colorIndex.Value = index;
+    }
+
+    // ===== Debug/Test =====
+
+    void Update()
+    {
+        if (!IsServer) return;
+
+        if (OVRInput.GetDown(OVRInput.Button.PrimaryIndexTrigger, OVRInput.Controller.RTouch))
+        {
+            CycleStateOnServer();
+        }
+    }
+
+    private void CycleStateOnServer()
+    {
+        Array states = Enum.GetValues(typeof(HouseState));
+        int nextIndex = ((int)currentHouseState.Value + 1) % states.Length;
+        currentHouseState.Value = (HouseState)states.GetValue(nextIndex);
+
+        Debug.Log($"Server changed house state to: {currentHouseState.Value}, color: {colorIndex.Value}");
     }
 }
