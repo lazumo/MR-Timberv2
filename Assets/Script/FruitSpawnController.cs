@@ -66,17 +66,30 @@ public class FruitSpawnController : NetworkBehaviour
     {
         GameObject fruit = Instantiate(fruitPrefab, spawnPoint.position, Quaternion.identity);
         NetworkObject netObj = fruit.GetComponent<NetworkObject>();
-        netObj.Spawn();
 
-        spawnedFruits.Add(fruit);
-
+        // 先設定資料
+        FruitData data = fruit.GetComponent<FruitData>();
+        int colorIndex = tree.selectedColorIndex;
         Color color = tree.GetSelectedFruitColor();
 
-        SetupFruitClientRpc(netObj.NetworkObjectId, color, fruitFadeInDuration);
+        data.colorIndex = colorIndex;
+        data.color = color;
+        MeshRenderer mr = fruit.GetComponent<MeshRenderer>();
+        if (mr != null)
+        {
+            Material mat = new Material(mr.material);
+            mat.color = new Color(color.r, color.g, color.b, 0f); // 從透明開始
+            mr.material = mat;
+        }
+        netObj.Spawn();
+        spawnedFruits.Add(fruit);
+
+        SetupFruitClientRpc(netObj.NetworkObjectId, fruitFadeInDuration);
 
         float fallDelay = Random.Range(fruitFallMinDelay, fruitFallMaxDelay);
         StartCoroutine(FruitFallRoutine(netObj.NetworkObjectId, fallDelay));
     }
+
 
     private IEnumerator FruitFallRoutine(ulong fruitId, float delay)
     {
@@ -94,26 +107,20 @@ public class FruitSpawnController : NetworkBehaviour
     // =====================
 
     [ClientRpc]
-    private void SetupFruitClientRpc(ulong fruitId, Color color, float fadeDuration)
+    private void SetupFruitClientRpc(ulong fruitId, float fadeDuration)
     {
-        if (!NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(fruitId, out NetworkObject no))
+        if (!NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(fruitId, out NetworkObject netObj))
             return;
 
-        GameObject fruit = no.gameObject;
-        MeshRenderer mr = fruit.GetComponent<MeshRenderer>();
-        FruitShadowProjector projector = fruit.GetComponent<FruitShadowProjector>();
-        if (projector != null)
-        {
-            projector.Initialize(color);
-        }
+        GameObject fruit = netObj.gameObject;
 
+        // ===== Fade In =====
+        MeshRenderer mr = fruit.GetComponent<MeshRenderer>();
         if (mr != null)
         {
-            Material mat = new Material(mr.material);
-            mat.color = new Color(color.r, color.g, color.b, 0f);
-            mr.material = mat;
+            Material mat = mr.material; // 已是 instance
 
-            StartCoroutine(FadeInRoutine(mat, color, fadeDuration));
+            StartCoroutine(FadeInRoutine(mat, mat.color, fadeDuration));
         }
     }
 

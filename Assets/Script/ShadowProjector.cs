@@ -25,6 +25,19 @@ public class FruitShadowProjector : MonoBehaviour
     {
         dropState = GetComponent<FruitDropState>();
     }
+    public void InitializeFromFruit()
+    {
+        if (initialized) return;
+
+        FruitData data = GetComponent<FruitData>();
+        if (data == null)
+        {
+            Debug.LogError("[FruitShadowProjector] Missing FruitData");
+            return;
+        }
+
+        Initialize(data.color);
+    }
 
     public void Initialize(Color fruitColor)
     {

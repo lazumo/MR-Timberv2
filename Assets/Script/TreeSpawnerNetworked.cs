@@ -156,6 +156,14 @@ public class TreeSpawnerNetworked : NetworkBehaviour
     {
         GameObject prefab = (type == TreeType.Wood) ? woodTreePrefab : fruitTreePrefab;
         GameObject newObj = Instantiate(prefab, pos, rot);
+        if (type == TreeType.Fruit)
+        {
+            FruitTree tree = newObj.GetComponent<FruitTree>();
+            if (tree != null)
+            {
+                tree.selectedColorIndex = Random.Range(0, tree.treeFruitColors.Length);
+            }
+        }
         newObj.GetComponent<NetworkObject>().Spawn();
 
         if (type == TreeType.Wood) _currentWoodCount++;
