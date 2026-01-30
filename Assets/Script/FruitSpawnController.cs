@@ -74,6 +74,8 @@ public class FruitSpawnController : NetworkBehaviour
         spawnedFruits.Add(fruit);
 
         float fallDelay = Random.Range(fruitFallMinDelay, fruitFallMaxDelay);
+        fruit.GetComponent<FruitDropState>()
+         ?.SetDropAfterSeconds(fallDelay);
         StartCoroutine(FruitFallRoutine(netObj.NetworkObjectId, fallDelay));
     }
 

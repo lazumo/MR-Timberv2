@@ -15,6 +15,16 @@ public class FruitDropState : NetworkBehaviour
         NetworkVariableWritePermission.Server
     );
 
+    public NetworkVariable<double> DropTime = new(
+        0,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server
+    );
+    public void SetDropAfterSeconds(float delay)
+    {
+        if (!IsServer) return;
+        DropTime.Value = NetworkManager.Singleton.ServerTime.Time + delay;
+    }
     // Server 呼叫：開始掉落
     public void MarkDropped()
     {

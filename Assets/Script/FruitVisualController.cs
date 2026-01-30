@@ -5,12 +5,6 @@ using System.Collections;
 public class FruitVisualController : NetworkBehaviour
 {
     public float fadeDuration = 1.5f;
-    public Color[] treeFruitColors = new Color[]
-    {
-        new Color(1f, 0.2f, 0.2f),
-        new Color(0.2f, 1f, 0.2f),
-        new Color(0.2f, 0.5f, 1f)
-    };
     public override void OnNetworkSpawn()
     {
         FruitData data = GetComponent<FruitData>();
@@ -19,7 +13,7 @@ public class FruitVisualController : NetworkBehaviour
 
         int index = data.colorIndex.Value;
         Debug.Log($"[FruitVisualController] {index}");
-        Color target = treeFruitColors[index];
+        Color target = ColorTable.Get(index);
 
         Material mat = new Material(mr.sharedMaterial);
         mat.color = new Color(target.r, target.g, target.b, 0f);
