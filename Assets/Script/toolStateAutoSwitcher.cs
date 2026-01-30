@@ -1,9 +1,11 @@
 using Unity.Netcode;
 using UnityEngine;
+
 public class ToolStateResolver : NetworkBehaviour
 {
     public ToolController toolController;
     public ToolShadowReceiver shadowReceiver;
+    public MiddleAnchorZoneDetector zoneDetector;   // ⭐ 改成用 factory
 
     public int sawState = 0;
     public int boxState = 2;
@@ -12,6 +14,7 @@ public class ToolStateResolver : NetworkBehaviour
     void Update()
     {
         if (!IsOwner && !IsServer) return;
+        if (toolController == null) return;
 
         int targetState = ResolveState();
 
@@ -24,42 +27,31 @@ public class ToolStateResolver : NetworkBehaviour
     int ResolveState()
     {
         int current = toolController.CurrentState;
-        bool shadow = shadowReceiver.ShadowHitThisFrame;
-        bool touching = shadowReceiver.IsTouchingFruit;
-        Debug.Log($"[Resolver] current={current}, shadow={shadow}, touching={touching}");
 
+        bool shadow = shadowReceiver != null && shadowReceiver.ShadowHitThisFrame;
+        bool touching = shadowReceiver != null && shadowReceiver.IsTouchingFruit;
+        bool inFactory = zoneDetector != null && zoneDetector.isInsideFactory;
+
+        // ===== 1️⃣ Factory zone → 強制 Juicer =====
+        if (inFactory)
+            return juicerState;
+
+        // ===== 2️⃣ box 狀態維持 =====
         if (current == boxState)
         {
-            // 已經是 box → 只要還接觸水果就維持
             if (touching)
                 return boxState;
 
-            // 沒接觸 + 沒 shadow → 回 saw
             if (!shadow)
                 return sawState;
 
-            // 還有 shadow → 繼續 box
             return boxState;
         }
-        else // current == sawState (或其他)
-        {
-            // 只有 shadow 才能進 box
-            if (shadow)
-            {
-                Debug.Log("change to box");
-                return boxState;
-            }
-            return sawState;
-        }
-    }
 
+        // ===== 3️⃣ saw → box =====
+        if (shadow)
+            return boxState;
 
-    bool ShouldUseJuicer()
-    {
-        // 之後加：
-        // fruit type == juice
-        // user button
-        // zone detection
-        return false;
+        return sawState;
     }
 }

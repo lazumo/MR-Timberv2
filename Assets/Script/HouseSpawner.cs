@@ -99,6 +99,12 @@ public class HouseSpawnerNetworked : NetworkBehaviour
                 {
                     // 1. Spawn the physical object
                     GameObject houseObj = Instantiate(housePrefab, pos, rot);
+                    var houseSync = houseObj.GetComponent<ObjectNetworkSync>();
+                    if (houseSync != null)
+                    {
+                        int randomColor = Random.Range(0, 3);
+                        houseSync.InitializeColorIndex(randomColor);
+                    }
                     houseObj.GetComponent<NetworkObject>().Spawn();
 
                     // 2. Create the Data Entry (ID + Position)
