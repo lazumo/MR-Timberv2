@@ -10,18 +10,14 @@ GameObject:
   m_Component:
   - component: {fileID: 1221402609775927180}
   - component: {fileID: 9169944701259596684}
-  - component: {fileID: 5887761894963060774}
   - component: {fileID: 6396109692862557374}
   - component: {fileID: 6199483620456475894}
-  - component: {fileID: 7561875931165707044}
   - component: {fileID: 6467260626030533140}
   - component: {fileID: 6740747829058567825}
-  - component: {fileID: -8993169100490363951}
-  - component: {fileID: 1764209322767018558}
   - component: {fileID: -4612141979757980225}
-  - component: {fileID: 91702700451082713}
+  - component: {fileID: 5779797700135147244}
   m_Layer: 9
-  m_Name: Fruit
+  m_Name: FruitforJuicerTest
   m_TagString: Fruit
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -54,7 +50,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3531512998
+  GlobalObjectIdHash: 640510219
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -63,30 +59,6 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
---- !u!114 &5887761894963060774
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3437219668375729335}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 081d296707346bd43b0f60b67ce2c8ef, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  shadowPrefab: {fileID: 6115937064097319840, guid: 98bd560a36837844e9a91b0baabaaad4,
-    type: 3}
-  treeFruitColors:
-  - {r: 1, g: 0.2, b: 0.2, a: 1}
-  - {r: 0.2, g: 1, b: 0.2, a: 1}
-  - {r: 0.2, g: 0.5, b: 1, a: 1}
-  rayStartOffset: 0.25
-  maxRayDistance: 100
-  shadowAlpha: 0.5
-  surfaceMask:
-    serializedVersion: 2
-    m_Bits: 1
 --- !u!33 &6396109692862557374
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -137,27 +109,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!135 &7561875931165707044
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3437219668375729335}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 0.5
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!54 &6467260626030533140
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -181,7 +132,7 @@ Rigidbody:
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 1
-  m_IsKinematic: 0
+  m_IsKinematic: 1
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
@@ -216,37 +167,6 @@ MonoBehaviour:
   InLocalSpace: 0
   Interpolate: 1
   SlerpPosition: 0
---- !u!114 &-8993169100490363951
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3437219668375729335}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5dfeb80b850972548b13fa660f00751f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  firstBounceForce: 2.5
-  secondBounceForce: 1.2
-  maxBounces: 2
---- !u!114 &1764209322767018558
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3437219668375729335}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5edc8f12dabcf624786e81afd78cce7d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  HasDropped:
-    m_InternalValue: 0
-  HasLanded:
-    m_InternalValue: 0
 --- !u!114 &-4612141979757980225
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -261,20 +181,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   colorIndex:
     m_InternalValue: 0
---- !u!114 &91702700451082713
-MonoBehaviour:
+--- !u!135 &5779797700135147244
+SphereCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3437219668375729335}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
   m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 483b59aa155bd09488ff42b7f983eeac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  fadeDuration: 1.5
-  treeFruitColors:
-  - {r: 1, g: 0.2, b: 0.2, a: 1}
-  - {r: 0.2, g: 1, b: 0.2, a: 1}
-  - {r: 0.2, g: 0.5, b: 1, a: 1}
+  serializedVersion: 3
+  m_Radius: 0.5
+  m_Center: {x: 0, y: 0, z: 0}
