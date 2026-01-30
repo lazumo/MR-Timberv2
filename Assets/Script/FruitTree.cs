@@ -4,14 +4,6 @@ using Unity.Netcode;
 
 public class FruitTree : NetworkBehaviour
 {
-    [Header("Fruit Color Settings")]
-    public Color[] treeFruitColors = new Color[]
-    {
-        new Color(1f, 0.2f, 0.2f),
-        new Color(0.2f, 1f, 0.2f),
-        new Color(0.2f, 0.5f, 1f)
-    };
-
     [Range(0, 2)]
     public int selectedColorIndex = 0;
 
@@ -114,14 +106,6 @@ public class FruitTree : NetworkBehaviour
         yield return new WaitForSeconds(0.1f);
         if (IsSpawned)
             NetworkObject.Despawn();
-    }
-
-    public Color GetSelectedFruitColor()
-    {
-        if (treeFruitColors == null || treeFruitColors.Length == 0)
-            return Color.white;
-
-        return treeFruitColors[Mathf.Clamp(selectedColorIndex, 0, treeFruitColors.Length - 1)];
     }
 
     private void PlayGrowSFX()

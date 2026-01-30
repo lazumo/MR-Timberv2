@@ -161,7 +161,7 @@ public class TreeSpawnerNetworked : NetworkBehaviour
             FruitTree tree = newObj.GetComponent<FruitTree>();
             if (tree != null)
             {
-                tree.selectedColorIndex = Random.Range(0, tree.treeFruitColors.Length);
+                tree.selectedColorIndex = Random.Range(0, ColorTable.Count);
             }
         }
         newObj.GetComponent<NetworkObject>().Spawn();
