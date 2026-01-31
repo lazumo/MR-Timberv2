@@ -54,14 +54,14 @@ public class ObjectNetworkSync : NetworkBehaviour
             _logicController.ApplyColor(newVal);
         };
 
-        _logicController.ApplyState(currentHouseState.Value);
+        _logicController.ApplyState(currentHouseState.Value, 0);
         _logicController.ApplyColor(colorIndex.Value);
     }
 
     // ===== State handling =====
     private void OnHouseStateChanged(HouseState oldVal, HouseState newVal)
     {
-        _logicController.ApplyState(newVal);
+        _logicController.ApplyState(newVal, colorIndex.Value);
 
         if (!IsServer) return;
 
