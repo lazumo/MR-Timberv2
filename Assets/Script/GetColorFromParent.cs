@@ -1,14 +1,11 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
 public class ColorFactory : MonoBehaviour
 {
     [Header("Server-only data")]
-    public int factoryColor;
+    public GameObject ownerHouse;
 
-    [HideInInspector]
-    public GameObject ownerHouse;   // ©Î ObjectNetworkSync / NetworkObject
-
-    // ¤è«K server ºÝ¨Ï¥Î
+    // å¿«é€Ÿå­˜å–ï¼ˆserver ç«¯ç”¨ï¼‰
     public ObjectNetworkSync OwnerHouseSync =>
         ownerHouse != null ? ownerHouse.GetComponent<ObjectNetworkSync>() : null;
 }

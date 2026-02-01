@@ -161,7 +161,6 @@ public class FruitShadowProjector : MonoBehaviour
             minBlinkInterval,
             eased
         );
-        Debug.Log($"{interval}");
         return Mathf.FloorToInt(Time.time / interval) % 2 == 0;
     }
 }

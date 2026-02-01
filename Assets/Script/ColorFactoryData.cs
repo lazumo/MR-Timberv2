@@ -3,12 +3,7 @@ using UnityEngine;
 
 public class ColorFactoryData : NetworkBehaviour
 {
-    [Header("Design-time / Debug")]
-    [Tooltip("Only used if server does not assign explicitly")]
-    public int defaultColorIndex = 0;
-
-    [Header("Runtime (Networked)")]
-    public NetworkVariable<int> colorIndex =
+    public NetworkVariable<int> color =
         new NetworkVariable<int>(
             0,
             NetworkVariableReadPermission.Everyone,
@@ -17,27 +12,11 @@ public class ColorFactoryData : NetworkBehaviour
 
     private bool initialized;
 
-    public override void OnNetworkSpawn()
+    public void ServerInit(int c)
     {
-        base.OnNetworkSpawn();
+        if (!IsServer || initialized) return;
 
-        // 如果 server 還沒指定，就用 Inspector 設的 default
-        if (IsServer && !initialized)
-        {
-            colorIndex.Value = defaultColorIndex;
-            initialized = true;
-        }
-    }
-
-    /// <summary>
-    /// Server-only: explicitly assign color index (preferred in production)
-    /// </summary>
-    public void ServerInitColorIndex(int idx)
-    {
-        if (!IsServer) return;
-        if (initialized) return;
-
-        colorIndex.Value = idx;
+        color.Value = c;
         initialized = true;
     }
 }

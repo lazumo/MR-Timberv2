@@ -3,8 +3,8 @@ using UnityEngine;
 
 public class HouseColorFactoryPlacer : NetworkBehaviour
 {
-    [Header("Prefabs (index = colorIndex)")]
-    public GameObject[] colorFactoryPrefabs;
+    [Header("Single Factory Prefab")]
+    public GameObject colorFactoryPrefab;   // ⭐ 改成單一 prefab
 
     [Header("Layers")]
     public LayerMask groundLayer;
@@ -20,18 +20,9 @@ public class HouseColorFactoryPlacer : NetworkBehaviour
             return null;
         }
 
-        if (colorFactoryPrefabs == null || colorFactoryPrefabs.Length == 0)
+        if (colorFactoryPrefab == null)
         {
-            Debug.LogError("[HouseColorFactoryPlacer] colorFactoryPrefabs not assigned!");
-            return null;
-        }
-
-        int safeIndex = Mathf.Abs(colorIndex) % colorFactoryPrefabs.Length;
-        GameObject prefab = colorFactoryPrefabs[safeIndex];
-
-        if (prefab == null)
-        {
-            Debug.LogError($"[HouseColorFactoryPlacer] prefab at index {safeIndex} is null!");
+            Debug.LogError("[HouseColorFactoryPlacer] colorFactoryPrefab not assigned!");
             return null;
         }
 
@@ -40,6 +31,7 @@ public class HouseColorFactoryPlacer : NetworkBehaviour
 
         if (IsHouseOnWall())
         {
+            Debug.Log("wall");
             if (!TryCalculatePose(out spawnPos, out spawnRot))
                 return null;
         }
@@ -48,7 +40,8 @@ public class HouseColorFactoryPlacer : NetworkBehaviour
             CalculateSidePose(out spawnPos, out spawnRot);
         }
 
-        GameObject obj = Instantiate(prefab, spawnPos, spawnRot);
+        // ===== Instantiate =====
+        GameObject obj = Instantiate(colorFactoryPrefab, spawnPos, spawnRot);
         NetworkObject netObj = obj.GetComponent<NetworkObject>();
 
         if (netObj == null)
@@ -58,19 +51,28 @@ public class HouseColorFactoryPlacer : NetworkBehaviour
             return null;
         }
 
+        // ===== Spawn =====
         netObj.Spawn(true);
-        var colorComp = netObj.GetComponent<ColorFactory>();
-        if (colorComp != null)
-        {
-            colorComp.factoryColor = colorIndex;
-            colorComp.ownerHouse = this.gameObject; // 這棟 house
-        }
-        Debug.Log($"[HouseColorFactoryPlacer] ColorFactory spawned index={safeIndex} id={netObj.NetworkObjectId}");
 
+        // ===== 初始化顏色（NetworkVariable）=====
+        var data = netObj.GetComponent<ColorFactoryData>();
+        if (data != null)
+        {
+            data.ServerInit(colorIndex);
+        }
+
+        // ===== 保留你原本的 ownerHouse =====
+        var factory = netObj.GetComponent<ColorFactory>();
+        if (factory != null)
+        {
+            factory.ownerHouse = this.gameObject;
+        }
+
+        Debug.Log($"[HouseColorFactoryPlacer] ColorFactory spawned colorIndex={colorIndex} id={netObj.NetworkObjectId}");
         return netObj;
     }
 
-    // ===== existing functions unchanged =====
+    // ===== 以下維持你原本的 =====
 
     bool TryCalculatePose(out Vector3 pos, out Quaternion rot)
     {
