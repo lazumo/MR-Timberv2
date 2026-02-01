@@ -799,6 +799,7 @@ GameObject:
   - component: {fileID: 7175907965347539326}
   - component: {fileID: 3553471574298293159}
   - component: {fileID: 3308849157903602386}
+  - component: {fileID: 1872065602339807301}
   m_Layer: 0
   m_Name: NewColorFactory
   m_TagString: Untagged
@@ -976,6 +977,19 @@ MonoBehaviour:
     root: {fileID: 103230183231405629}
     barB: {fileID: 8180574835249305993}
     barC: {fileID: 5819106244147831053}
+--- !u!114 &1872065602339807301
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5084186442014815490}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c2cfa2e6ef1911459aaaa0cd4beb6a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ownerHouse: {fileID: 0}
 --- !u!1 &5169657565666995893
 GameObject:
   m_ObjectHideFlags: 0
