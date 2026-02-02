@@ -40,6 +40,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6938125193882961104}
     m_Modifications:
+    - target: {fileID: 2242549075288411182, guid: a5022cb472be248ae9ed49d6f0207fb8,
+        type: 3}
+      propertyPath: InitialModule.startSpeed.scalar
+      value: 8
+      objectReference: {fileID: 0}
     - target: {fileID: 3867849295301404749, guid: a5022cb472be248ae9ed49d6f0207fb8,
         type: 3}
       propertyPath: m_Name
