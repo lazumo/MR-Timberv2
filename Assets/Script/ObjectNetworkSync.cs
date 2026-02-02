@@ -167,7 +167,11 @@ public class ObjectNetworkSync : NetworkBehaviour
         if (!IsServer) return;
 
         if (currentHouseState.Value != HouseState.Coloring)
+        {
+            SetState(HouseState.Coloring);
             return;
+        }
+            
 
         if (paintStage.Value < PaintStage.Full)
         {
