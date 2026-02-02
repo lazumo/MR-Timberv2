@@ -139,4 +139,9 @@ public class BarShowWhenEnoughMatchingFruits : NetworkBehaviour
             RecountAndUpdate();
         }
     }
+    public bool IsRequirementMet()
+    {
+        return shouldShowBars.Value;
+    }
+
 }
