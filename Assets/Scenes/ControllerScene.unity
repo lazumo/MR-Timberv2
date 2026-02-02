@@ -2420,6 +2420,26 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2654308040872227189, guid: 0cda14b9e8db2d54986c45f62b140ae3,
+        type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2654308040872227189, guid: 0cda14b9e8db2d54986c45f62b140ae3,
+        type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2654308040872227189, guid: 0cda14b9e8db2d54986c45f62b140ae3,
+        type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2654308040872227189, guid: 0cda14b9e8db2d54986c45f62b140ae3,
+        type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3892853041658467194, guid: 0cda14b9e8db2d54986c45f62b140ae3,
         type: 3}
       propertyPath: leftControllerAnchor
@@ -2479,6 +2499,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4390159288302846184, guid: 0cda14b9e8db2d54986c45f62b140ae3,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.329
       objectReference: {fileID: 0}
     - target: {fileID: 4595815711462936679, guid: 0cda14b9e8db2d54986c45f62b140ae3,
         type: 3}
@@ -2735,6 +2760,12 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 5157462246270839686, guid: ca811eda20bbac34e842a8d79b244297,
+        type: 3}
+      propertyPath: objectToSpawn
+      value: 
+      objectReference: {fileID: 4295368331041777713, guid: 53b8c9d2695d68e41accfb2aeaf5049a,
+        type: 3}
     - target: {fileID: 5389852783919817518, guid: ca811eda20bbac34e842a8d79b244297,
         type: 3}
       propertyPath: m_LocalPosition.x
