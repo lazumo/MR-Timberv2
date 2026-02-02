@@ -73,10 +73,6 @@ public class FruitSqueezeInContainer_Tag : NetworkBehaviour
         float gap = GetGap();
         float t = gap / gap0;
         float squeeze = Mathf.Clamp(t, minSqueeze, maxSqueeze);
-        Debug.Log(
-            $"[FruitSqueeze] gap={gap:F3} (gap0={gap0:F3}) | " +
-            $"t={t:F3} | squeeze={squeeze:F3} (min={minSqueeze:F2})"
-        );
         // ===== 榨到極限：直接刪掉所有 fruit =====
         if (!hasDestroyed && squeeze <= threshold + 0.001f)
         {

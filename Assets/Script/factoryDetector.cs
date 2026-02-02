@@ -3,13 +3,13 @@ using System.Collections.Generic;
 
 public class BoxDetector : MonoBehaviour
 {
-    // ¥Î¨Ó°O¿ý¥Ø«e¦b²°¤l¤ºªº¥Ø¼Ðª«¥ó²M³æ
+    // ï¿½Î¨Ó°Oï¿½ï¿½ï¿½Ø«eï¿½bï¿½ï¿½ï¿½lï¿½ï¿½ï¿½ï¿½ï¿½Ø¼Ðªï¿½ï¿½ï¿½Mï¿½ï¿½
     public List<GameObject> itemsInBox = new List<GameObject>();
 
-    // ³]©w­n°»´úªº¼ÐÅÒ¦WºÙ
+    // ï¿½]ï¿½wï¿½nï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò¦Wï¿½ï¿½
     [SerializeField] private string targetTag = "Fruit";
 
-    // ·íª«¥ó¶i¤J²°¤l®É
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½iï¿½Jï¿½ï¿½ï¿½lï¿½ï¿½
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag(targetTag))
@@ -17,12 +17,11 @@ public class BoxDetector : MonoBehaviour
             if (!itemsInBox.Contains(other.gameObject))
             {
                 itemsInBox.Add(other.gameObject);
-                Debug.Log($"{other.name} ¶i¤J¤F²°¤l¡I¥Ø«e¼Æ¶q: {itemsInBox.Count}");
             }
         }
     }
 
-    // ·íª«¥óÂ÷¶}²°¤l®É
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½}ï¿½ï¿½ï¿½lï¿½ï¿½
     private void OnTriggerExit(Collider other)
     {
         if (other.CompareTag(targetTag))
@@ -30,12 +29,11 @@ public class BoxDetector : MonoBehaviour
             if (itemsInBox.Contains(other.gameObject))
             {
                 itemsInBox.Remove(other.gameObject);
-                Debug.Log($"{other.name} Â÷¶}¤F²°¤l¡I¥Ø«e¼Æ¶q: {itemsInBox.Count}");
             }
         }
     }
 
-    // ´£¨Ñ¤@­ÓÂ²³æªº API ¨Ñ¥~³¡¬d¸ß
+    // ï¿½ï¿½ï¿½Ñ¤@ï¿½ï¿½Â²ï¿½æªº API ï¿½Ñ¥~ï¿½ï¿½ï¿½dï¿½ï¿½
     public bool HasTargetObject()
     {
         return itemsInBox.Count > 0;

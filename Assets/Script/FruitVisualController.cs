@@ -12,7 +12,6 @@ public class FruitVisualController : NetworkBehaviour
         if (data == null || mr == null) return;
 
         int index = data.colorIndex.Value;
-        Debug.Log($"[FruitVisualController] {index}");
         Color target = ColorTable.Get(index);
 
         Material mat = new Material(mr.sharedMaterial);

@@ -31,7 +31,6 @@ public class HouseColorFactoryPlacer : NetworkBehaviour
 
         if (IsHouseOnWall())
         {
-            Debug.Log("wall");
             if (!TryCalculatePose(out spawnPos, out spawnRot))
                 return null;
         }

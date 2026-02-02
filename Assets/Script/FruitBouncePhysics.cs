@@ -44,7 +44,6 @@ public class FruitBouncePhysics : NetworkBehaviour
         var dropState = GetComponent<FruitDropState>();
         if (dropState != null && !dropState.HasLanded.Value)
         {
-            Debug.Log("landed");
             dropState.MarkLanded();
         }
         rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);

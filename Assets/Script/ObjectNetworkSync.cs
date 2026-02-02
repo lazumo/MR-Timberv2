@@ -8,6 +8,7 @@ public class ObjectNetworkSync : NetworkBehaviour
 {
     private ObjectDisplayController _logicController;
     private HouseColorFactoryPlacer _factoryPlacer;
+    private HouseFireController _fireController;
 
     // =============================
     // Network Variables
@@ -50,6 +51,7 @@ public class ObjectNetworkSync : NetworkBehaviour
     {
         _logicController = GetComponent<ObjectDisplayController>();
         _factoryPlacer = GetComponent<HouseColorFactoryPlacer>();
+        _fireController = GetComponent<HouseFireController>();
     }
 
     public override void OnNetworkSpawn()
@@ -82,6 +84,7 @@ public class ObjectNetworkSync : NetworkBehaviour
 
     private void OnHouseStateEntered(HouseState newState)
     {
+        _fireController?.OnHouseStateChanged(newState);
         switch (newState)
         {
             case HouseState.Built:
