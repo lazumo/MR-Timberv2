@@ -1107,6 +1107,7 @@ GameObject:
   - component: {fileID: 3308849157903602386}
   - component: {fileID: 1872065602339807301}
   - component: {fileID: 2590232978854806685}
+  - component: {fileID: 388580838661595607}
   m_Layer: 0
   m_Name: NewColorFactory
   m_TagString: Untagged
@@ -1315,6 +1316,21 @@ MonoBehaviour:
   moveUpCm: 50
   delaySeconds: 2
   lerpSpeed: 1.5
+--- !u!114 &388580838661595607
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5084186442014815490}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f8527be594621946b2341bae90ffa54, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  factory: {fileID: 1872065602339807301}
+  requirement: {fileID: 6522433059020539350}
+  cPrefab: {fileID: 7724484823467438344, guid: 73a283886a6d0db40a58e29ed069a9bd, type: 3}
 --- !u!1 &5169657565666995893
 GameObject:
   m_ObjectHideFlags: 0
