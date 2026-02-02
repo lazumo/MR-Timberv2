@@ -14,16 +14,31 @@ public class FruitColorActivator : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
-        ApplyColor();
+        fruitData.colorIndex.OnValueChanged += OnColorChanged;
+
+        ApplyColor(fruitData.colorIndex.Value);
     }
 
-    private void ApplyColor()
+    public override void OnNetworkDespawn()
     {
-        int index = fruitData.colorIndex.Value;
+        // ⭐ 記得解除訂閱
+        if (fruitData != null)
+        {
+            fruitData.colorIndex.OnValueChanged -= OnColorChanged;
+        }
+    }
 
+    private void OnColorChanged(int oldValue, int newValue)
+    {
+        ApplyColor(newValue);
+    }
+
+    private void ApplyColor(int index)
+    {
         for (int i = 0; i < colorObjects.Length; i++)
         {
-            colorObjects[i].SetActive(i == index);
+            if (colorObjects[i] != null)
+                colorObjects[i].SetActive(i == index);
         }
     }
 }

@@ -8,7 +8,7 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/MainScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
-  - enabled: 0
+  - enabled: 1
     path: Assets/Scenes/ControllerScene.unity
     guid: cefed1385b72265468e11d08a25f47d1
   - enabled: 0
@@ -20,7 +20,7 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/extinguisher.unity
     guid: b14a7071c7e1c5d4aa4258482fe85572
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/JuiceTest.unity
     guid: 5e84f14867266b74387a49689f21fdec
   m_configObjects:

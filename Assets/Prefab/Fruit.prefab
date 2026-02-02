@@ -81,10 +81,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   shadowPrefab: {fileID: 6115937064097319840, guid: 98bd560a36837844e9a91b0baabaaad4,
     type: 3}
-  treeFruitColors:
-  - {r: 1, g: 0.2, b: 0.2, a: 1}
-  - {r: 0.2, g: 1, b: 0.2, a: 1}
-  - {r: 0.2, g: 0.5, b: 1, a: 1}
   rayStartOffset: 0.25
   maxRayDistance: 100
   blinkStartTime: 5
@@ -284,10 +280,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   fadeDuration: 1.5
-  treeFruitColors:
-  - {r: 1, g: 0.2, b: 0.2, a: 1}
-  - {r: 0.2, g: 1, b: 0.2, a: 1}
-  - {r: 0.2, g: 0.5, b: 1, a: 1}
 --- !u!114 &98190781925280831
 MonoBehaviour:
   m_ObjectHideFlags: 0

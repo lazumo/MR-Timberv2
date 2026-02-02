@@ -66,16 +66,16 @@ public class FruitSpawnController : NetworkBehaviour
     {
         GameObject fruit = Instantiate(fruitPrefab, spawnPoint.position, Quaternion.identity);
         NetworkObject netObj = fruit.GetComponent<NetworkObject>();
-
         FruitData data = fruit.GetComponent<FruitData>();
+        netObj.Spawn();
+        Debug.Log($"{tree.selectedColorIndex}");
         data.colorIndex.Value = tree.selectedColorIndex;
 
-        netObj.Spawn();
         spawnedFruits.Add(fruit);
 
         float fallDelay = Random.Range(fruitFallMinDelay, fruitFallMaxDelay);
-        fruit.GetComponent<FruitDropState>()
-         ?.SetDropAfterSeconds(fallDelay);
+        fruit.GetComponent<FruitDropState>()?.SetDropAfterSeconds(fallDelay);
+
         StartCoroutine(FruitFallRoutine(netObj.NetworkObjectId, fallDelay));
     }
 
