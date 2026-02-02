@@ -1,34 +1,97 @@
+ï»¿using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
-public class NetworkSpawner : NetworkBehaviour
+public class NetworkSpawner : NetworkBehaviour, IStageEnable
 {
-    [SerializeField] private GameObject objectToSpawn; // ©ì¤J­è¤~°µ¦nªº Prefab
+    [SerializeField] private GameObject objectToSpawn; // prefab å¿…é ˆæœ‰ NetworkObject
+
+    private bool _stageEnabled = false;
+
+    // â­ è¨˜éŒ„ã€Œæ¯å€‹ client å°æ‡‰ spawn çš„ç‰©ä»¶ã€
+    private readonly Dictionary<ulong, NetworkObject> _spawnedObjects
+        = new Dictionary<ulong, NetworkObject>();
 
     public override void OnNetworkSpawn()
     {
-        // ¥u¦³ Server (Host) ­t³dºÊÅ¥ª±®a³s¤J
-        if (IsServer)
-        {
+        if (!IsServer) return;
+
+        if (NetworkManager.Singleton != null)
             NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        if (!IsServer) return;
+
+        if (NetworkManager.Singleton != null)
+            NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
+
+        ForceDespawnAll();
+    }
+
+    // =========================
+    // â­ è¢« ToolStateStageActivator å‘¼å«
+    // =========================
+    public void SetStageEnabled(bool enabled)
+    {
+        if (!IsServer) return;
+
+        if (_stageEnabled == enabled) return;
+        _stageEnabled = enabled;
+
+        Debug.Log($"[NetworkSpawner] StageEnabled = {_stageEnabled}");
+
+        if (_stageEnabled)
+        {
+            // â­ è£œ spawn çµ¦å·²åœ¨ç·šçš„ client
+            foreach (var client in NetworkManager.Singleton.ConnectedClientsList)
+            {
+                TrySpawnForClient(client.ClientId);
+            }
+        }
+        else
+        {
+            // â­ é—œ stage æ™‚ï¼Œæ¸…æ‰æ‰€æœ‰ spawn
+            ForceDespawnAll();
         }
     }
 
     private void OnClientConnected(ulong clientId)
     {
-        // ·í¦³ª±®a¡]¥]¬A Host ¦Û¤v¡^³s½u®É
-        GameObject spawnedObj = Instantiate(objectToSpawn);
+        if (!_stageEnabled) return;
 
-        // ¥Í¦¨¨Ã§â¾Ö¦³Åv (Ownership) ¥æµ¹¸Ó clientId
-        var networkObj = spawnedObj.GetComponent<NetworkObject>();
-        networkObj.SpawnWithOwnership(clientId);
+        TrySpawnForClient(clientId);
     }
 
-    public override void OnNetworkDespawn()
+    private void TrySpawnForClient(ulong clientId)
     {
-        if (IsServer && NetworkManager.Singleton != null)
+        if (_spawnedObjects.ContainsKey(clientId)) return;
+
+        var obj = Instantiate(objectToSpawn);
+        var netObj = obj.GetComponent<NetworkObject>();
+
+        if (netObj == null)
         {
-            NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
+            Debug.LogError("[NetworkSpawner] objectToSpawn missing NetworkObject");
+            Destroy(obj);
+            return;
         }
+
+        netObj.SpawnWithOwnership(clientId);
+        _spawnedObjects[clientId] = netObj;
+
+        Debug.Log($"[NetworkSpawner] Spawned for client {clientId}");
+    }
+
+    private void ForceDespawnAll()
+    {
+        foreach (var kv in _spawnedObjects)
+        {
+            if (kv.Value != null && kv.Value.IsSpawned)
+                kv.Value.Despawn(true);
+        }
+
+        _spawnedObjects.Clear();
     }
 }

@@ -46,8 +46,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3851546439
-  InScenePlacedSourceGlobalObjectIdHash: 0
+  GlobalObjectIdHash: 2311091752
+  InScenePlacedSourceGlobalObjectIdHash: 3811506641
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -90,5 +90,5 @@ MonoBehaviour:
   provider: {fileID: 8908530942887131560}
   enterDistance: 0.2
   exitDistance: 0.25
-  objectAPrefab: {fileID: 7112713052022850816, guid: 4caa54ab57346364d91877183f7c84b9,
+  objectAPrefab: {fileID: 95895607613498348, guid: 9e29d7c86361d854fb10f667f24e87b9,
     type: 3}

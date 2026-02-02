@@ -68,7 +68,6 @@ public class FruitSpawnController : NetworkBehaviour
         NetworkObject netObj = fruit.GetComponent<NetworkObject>();
         FruitData data = fruit.GetComponent<FruitData>();
         netObj.Spawn();
-        Debug.Log($"{tree.selectedColorIndex}");
         data.colorIndex.Value = tree.selectedColorIndex;
 
         spawnedFruits.Add(fruit);
