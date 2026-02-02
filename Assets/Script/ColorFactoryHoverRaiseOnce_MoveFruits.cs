@@ -1,137 +1,86 @@
 ﻿using Unity.Netcode;
 using UnityEngine;
-using System.Collections.Generic;
+using System.Collections;
 
-public class ColorFactoryRaiseToMiddlePointOnce_Smooth_PhysicsSafe : NetworkBehaviour
+public class RaiseFactoryWhenRequirementMet : NetworkBehaviour
 {
     [Header("Requirement")]
     [SerializeField] private BarShowWhenEnoughMatchingFruits requirementChecker;
 
-    [Header("Refs")]
+    [Header("Target")]
     [SerializeField] private Transform factoryRoot;
-    [SerializeField] private FruitSqueezeInContainer_Tag fruitDetect;
 
-    [Header("MiddlePoint Tag")]
-    [SerializeField] private string middlePointTag = "MiddlePoint";
+    [Header("Move")]
+    [Tooltip("Move up distance in cm.")]
+    [SerializeField] private float moveUpCm = 50f;
 
-    [Header("Smooth Move")]
-    [SerializeField] private float moveLerpSpeed = 5f;
+    [Tooltip("Wait seconds after requirement met.")]
+    [SerializeField] private float delaySeconds = 2f;
 
-    private NetworkVariable<bool> hasRaised =
+    [Tooltip("Smooth speed (bigger = faster).")]
+    [SerializeField] private float lerpSpeed = 3f;
+
+    private NetworkVariable<bool> hasStarted =
         new NetworkVariable<bool>(
             false,
             NetworkVariableReadPermission.Everyone,
             NetworkVariableWritePermission.Server
         );
 
-    private float targetY;
-    private float deltaY;
     private bool moving = false;
-
-    // 記錄這次要一起抬的水果
-    private List<Rigidbody> movingFruits = new List<Rigidbody>();
+    private Vector3 startPos;
+    private Vector3 targetPos;
+    private float t = 0f;
+    private Coroutine co;
 
     private void Reset()
     {
         factoryRoot = transform.root;
-        fruitDetect = GetComponentInParent<FruitSqueezeInContainer_Tag>();
-    }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (!IsServer) return;
-        if (hasRaised.Value) return;
-        if (!other.CompareTag(middlePointTag)) return;
-        // ⭐ 新增：必須先達到水果 requirement 才能抬升
-        if (requirementChecker != null && !requirementChecker.IsRequirementMet())
-        {
-            Debug.Log("[RaisePhysicsSafe] Requirement not met, skip raising.");
-            return;
-        }
-
-        hasRaised.Value = true;
-
-        targetY = other.transform.position.y;
-        deltaY = targetY - factoryRoot.position.y;
-
-        PrepareFruitsForMove();
-
-        moving = true;
-
-        Debug.Log($"[RaisePhysicsSafe] Start moving to Y={targetY:F3}");
-    }
-
-    private void PrepareFruitsForMove()
-    {
-        movingFruits.Clear();
-
-        if (fruitDetect == null) return;
-
-        var fruits = fruitDetect.GetFruitsSnapshot();
-
-        foreach (var f in fruits)
-        {
-            var rb = f.GetComponent<Rigidbody>();
-            if (rb != null)
-            {
-                // 抬升期間暫時停止物理
-                rb.isKinematic = true;
-                movingFruits.Add(rb);
-            }
-        }
-    }
-
-    private void RestoreFruitPhysics()
-    {
-        foreach (var rb in movingFruits)
-        {
-            if (rb != null)
-            {
-                rb.isKinematic = false;
-            }
-        }
-
-        movingFruits.Clear();
+        requirementChecker = GetComponentInParent<BarShowWhenEnoughMatchingFruits>();
     }
 
     private void Update()
     {
         if (!IsServer) return;
+
+        // 已經開始過（或做完）就不再觸發
+        if (hasStarted.Value) return;
+
+        // 還沒達標就不做事
+        if (requirementChecker != null && !requirementChecker.IsRequirementMet())
+            return;
+
+        // 達標 -> 開始一次流程
+        hasStarted.Value = true;
+        co = StartCoroutine(BeginAfterDelay());
+    }
+
+    private IEnumerator BeginAfterDelay()
+    {
+        yield return new WaitForSeconds(delaySeconds);
+
+        startPos = factoryRoot.position;
+        targetPos = startPos + Vector3.up * (moveUpCm * 0.01f);
+
+        moving = true;
+        t = 0f;
+    }
+
+    private void LateUpdate()
+    {
+        if (!IsServer) return;
         if (!moving) return;
 
-        // ---- 1) 平滑移動 ColorFactory ----
-        Vector3 p = factoryRoot.position;
-        float newY = Mathf.Lerp(p.y, targetY, Time.deltaTime * moveLerpSpeed);
+        // 用指數式的 Lerp，體感順順、也不需要算 duration
+        t = 1f - Mathf.Exp(-lerpSpeed * Time.deltaTime);
 
-        p.y = newY;
-        factoryRoot.position = p;
+        factoryRoot.position = Vector3.Lerp(factoryRoot.position, targetPos, t);
 
-        // ---- 2) 平滑移動水果 ----
-        foreach (var rb in movingFruits)
+        // 到位就停止
+        if ((factoryRoot.position - targetPos).sqrMagnitude < 1e-6f)
         {
-            if (rb == null) continue;
-
-            Vector3 fp = rb.position;
-            float fruitTargetY = fp.y + deltaY;
-
-            fp.y = Mathf.Lerp(fp.y, fruitTargetY, Time.deltaTime * moveLerpSpeed);
-
-            rb.MovePosition(fp);
-        }
-
-        // ---- 3) 接近目標就結束 ----
-        if (Mathf.Abs(factoryRoot.position.y - targetY) < 0.001f)
-        {
-            Vector3 final = factoryRoot.position;
-            final.y = targetY;
-            factoryRoot.position = final;
-
-            // 抬升完成，恢復物理
-            RestoreFruitPhysics();
-
+            factoryRoot.position = targetPos;
             moving = false;
-
-            Debug.Log("[RaisePhysicsSafe] Move finished & physics restored");
         }
     }
 }
