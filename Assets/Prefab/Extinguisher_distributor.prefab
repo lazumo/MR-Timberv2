@@ -45,8 +45,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 0
-  InScenePlacedSourceGlobalObjectIdHash: 0
+  GlobalObjectIdHash: 894544627
+  InScenePlacedSourceGlobalObjectIdHash: 2696576251
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -66,5 +66,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0d345b6de0dca2e47a879b0f2a2c0500, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  serverExtinguisher: {fileID: 0}
-  clientExtinguisher: {fileID: 0}
+  objectToSpawn: {fileID: 5269841147065058172, guid: 53b8c9d2695d68e41accfb2aeaf5049a,
+    type: 3}

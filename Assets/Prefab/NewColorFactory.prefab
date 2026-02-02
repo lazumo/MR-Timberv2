@@ -320,6 +320,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   visual: {fileID: 3308849157903602386}
+  colorFactory: {fileID: 1872065602339807301}
   fruitTag: Fruit
   minSqueeze: 0.35
   maxSqueeze: 1

@@ -15,7 +15,8 @@ public class ToolStateResolver : NetworkBehaviour
     {
         if (!IsOwner && !IsServer) return;
         if (toolController == null) return;
-
+        if (toolController.CurrentState >= 3)
+            return;
         int targetState = ResolveState();
 
         if (toolController.CurrentState != targetState)
