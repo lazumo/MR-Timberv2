@@ -344,7 +344,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   factoryData: {fileID: 413048523854809569}
   visual: {fileID: 3308849157903602386}
-  requiredCount: 3
+  requiredCount: 1
 --- !u!1 &1812927020550948126
 GameObject:
   m_ObjectHideFlags: 0
@@ -380,6 +380,7 @@ Transform:
   - {fileID: 2431653704872442900}
   - {fileID: 4822295509538527228}
   - {fileID: 2010305870816822617}
+  - {fileID: 8666445524649091376}
   m_Father: {fileID: 9079080234601551839}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1871736877327789562
@@ -1345,6 +1346,77 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &5656432326664585822
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8666445524649091376}
+  - component: {fileID: 3143672412368958817}
+  - component: {fileID: 5463147357934515786}
+  m_Layer: 0
+  m_Name: hoverDetect
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8666445524649091376
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5656432326664585822}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3657059325821344543}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &3143672412368958817
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5656432326664585822}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 4.873116, z: 0.5867069}
+  m_Center: {x: 0, y: 1.936558, z: 0}
+--- !u!114 &5463147357934515786
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5656432326664585822}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c0d0bf6e3a82ba14ab5a3ff776014cb6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  requirementChecker: {fileID: 6522433059020539350}
+  factoryRoot: {fileID: 9079080234601551839}
+  fruitDetect: {fileID: 573029012424538661}
+  middlePointTag: MiddlePoint
+  moveLerpSpeed: 5
 --- !u!1 &6356815453514907119
 GameObject:
   m_ObjectHideFlags: 0

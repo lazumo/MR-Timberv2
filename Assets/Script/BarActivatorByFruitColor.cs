@@ -121,4 +121,9 @@ public class BarShowWhenEnoughMatchingFruits : NetworkBehaviour
 
         shouldShowBars.Value = (match >= requiredCount);
     }
+    public bool IsRequirementMet()
+    {
+        return shouldShowBars.Value;
+    }
+
 }
