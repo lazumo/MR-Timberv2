@@ -81,6 +81,7 @@ GameObject:
   - component: {fileID: 1050134050073023565}
   - component: {fileID: 2466671671972184565}
   - component: {fileID: 8623700983161867751}
+  - component: {fileID: 2136208735390643453}
   m_Layer: 6
   m_Name: house
   m_TagString: Untagged
@@ -167,7 +168,6 @@ MonoBehaviour:
     activeObjects:
     - {fileID: 8028127287622975103}
     - {fileID: 7156189671750295336}
-    - {fileID: 3112806515478382732}
     - {fileID: 4241059764838594335}
   colorPaintSets:
   - color: 0
@@ -212,6 +212,21 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1
   forwardOffset: 0.3
+--- !u!114 &2136208735390643453
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4980801623367337527}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f07a9859f7e52124c86b785df4be1b34, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  firePrefab: {fileID: 6364912731328466336, guid: 5baa3c5bf878ed043ae491e1e6fdae8b,
+    type: 3}
+  fireSocket: {fileID: 4861794311269110437}
 --- !u!1 &6644588647783553174
 GameObject:
   m_ObjectHideFlags: 0
@@ -1945,12 +1960,6 @@ PrefabInstance:
 --- !u!4 &3112806515478382731 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8829451551789304537, guid: 244b1cc8940bd0844a05812855fbe45d,
-    type: 3}
-  m_PrefabInstance: {fileID: 5889136489734865490}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &3112806515478382732 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8829451551789304542, guid: 244b1cc8940bd0844a05812855fbe45d,
     type: 3}
   m_PrefabInstance: {fileID: 5889136489734865490}
   m_PrefabAsset: {fileID: 0}
