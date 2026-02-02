@@ -12,8 +12,9 @@ public class FruitSqueezeInContainer_Tag : NetworkBehaviour
     [SerializeField] private string fruitTag = "Fruit";
 
     [Header("Squeeze Axis (bars move on local Z)")]
-    [SerializeField] private float minSqueeze = 0.35f;
+    [SerializeField] private float minSqueeze = 0.25f;
     [SerializeField] private float maxSqueeze = 1.0f;
+    [SerializeField] private float threshold = 0.8f;
     [SerializeField] private float lerpSpeed = 15f;
 
     [Header("Optional volume compensate")]
@@ -46,6 +47,7 @@ public class FruitSqueezeInContainer_Tag : NetworkBehaviour
 
     private void TryBindBars()
     {
+        Debug.Log($"TryBindBars @frame {Time.frameCount}, gap0 set to {gap0}");
         var newBarB = visual.CurrentBarB;
         var newBarC = visual.CurrentBarC;
 
@@ -76,7 +78,7 @@ public class FruitSqueezeInContainer_Tag : NetworkBehaviour
             $"t={t:F3} | squeeze={squeeze:F3} (min={minSqueeze:F2})"
         );
         // ===== 榨到極限：直接刪掉所有 fruit =====
-        if (!hasDestroyed && squeeze <= minSqueeze + 0.001f)
+        if (!hasDestroyed && squeeze <= threshold + 0.001f)
         {
             DestroyAllFruits();
             hasDestroyed = true;
