@@ -1,19 +1,49 @@
-public static class SceneController
+using Unity.Netcode;
+using UnityEngine;
+
+public class SceneController : NetworkBehaviour
 {
-    public static int CurrentLevel = 1;
+    public static SceneController Instance { get; private set; }
 
-    public static int GetCurrentStage()
+    // ⭐ Server 權威的 Stage
+    public NetworkVariable<int> CurrentLevel =
+        new NetworkVariable<int>(
+            1,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Server
+        );
+
+    private void Awake()
     {
-        return CurrentLevel;
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
     }
 
-    public static void NextLevel()
+    // =========================
+    // Server-only API
+    // =========================
+    [ServerRpc(RequireOwnership = false)]
+    public void NextLevelServerRpc()
     {
-        CurrentLevel++;
+        CurrentLevel.Value++;
+        Debug.Log($"[SceneController][Server] Level = {CurrentLevel.Value}");
     }
 
-    public static void ResetLevel()
+    [ServerRpc(RequireOwnership = false)]
+    public void ResetLevelServerRpc()
     {
-        CurrentLevel = 1;
+        CurrentLevel.Value = 1;
+    }
+
+    // =========================
+    // Read-only helper
+    // =========================
+    public int GetCurrentStage()
+    {
+        return CurrentLevel.Value;
     }
 }

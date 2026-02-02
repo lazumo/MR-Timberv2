@@ -17,7 +17,7 @@ public class ThumbstickStateSwitcher : NetworkBehaviour
         // ⭐ Thumbstick Press（Quest / PC 對應）
         if (Input.GetKeyDown(KeyCode.JoystickButton9)) // Thumbstick Press
         {
-            SceneController.NextLevel();
+            SceneController.Instance.NextLevelServerRpc();
             int next = 3;
 
             toolController.SetStateServerRpc(next);
