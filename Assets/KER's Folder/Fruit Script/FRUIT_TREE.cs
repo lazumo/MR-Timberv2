@@ -233,7 +233,6 @@ public class FRUIT_TREE : NetworkBehaviour
                 fruit.AddComponent<FruitShadowProjector>();
 
             indicator.Initialize(
-                shadowPlanePrefab,
                 fruitColor
             );
         }

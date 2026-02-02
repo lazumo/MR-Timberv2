@@ -27,17 +27,6 @@ public class ToolController : NetworkBehaviour
     private int lastState = -1;
 
     // =========================
-    // Hand Tracking
-    // =========================
-
-    [Header("Midpoint Provider")]
-    public MetaMidpointFollower midpointProvider;
-
-    [Header("Tool Follow Settings")]
-    public bool followHands = true;
-    public float followSmooth = 12f;
-
-    // =========================
     // Network Lifecycle
     // =========================
 
@@ -164,26 +153,5 @@ public class ToolController : NetworkBehaviour
 
         foreach (var c in tool.GetComponentsInChildren<Collider>(true))
             c.enabled = visible;
-    }
-
-    // =========================
-    // Follow hands
-    // =========================
-
-    void Update()
-    {
-        if (!followHands) return;
-        if (!midpointProvider) return;
-        if (lastState < 0 || lastState >= toolObjects.Length) return;
-
-        GameObject currentTool = toolObjects[lastState];
-
-        Vector3 target = midpointProvider.Midpoint;
-
-        float t = 1f - Mathf.Exp(-followSmooth * Time.deltaTime);
-        currentTool.transform.position =
-            Vector3.Lerp(currentTool.transform.position, target, t);
-
-        currentTool.transform.rotation = midpointProvider.MidRotation;
     }
 }

@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using Meta.XR.MRUtilityKit;
 
-public class FruitShadowProjector : MonoBehaviour
+public class FruitShadowProjector0 : MonoBehaviour
 {
     [Header("Raycast Settings")]
     public float rayStartOffset = 0.5f; // 加大偏移

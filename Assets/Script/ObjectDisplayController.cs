@@ -22,7 +22,7 @@ public class ObjectDisplayController : MonoBehaviour
     [SerializeField] private Texture[] availableTextures;   // 0:紅, 1:藍, 2:綠 等貼圖
 
     // 根據 Enum 切換狀態
-    public void ApplyState(HouseState newState)
+    public void ApplyState(HouseState newState, int colorIndex)
     {
         // 找出目前狀態對應的配置
         StateConfig config = stateMappings.Find(s => s.state == newState);
@@ -39,10 +39,27 @@ public class ObjectDisplayController : MonoBehaviour
         // 啟動目前狀態指定的物件
         if (config != null)
         {
-            foreach (var obj in config.activeObjects)
+            if (config.state == HouseState.Colored) 
             {
-                if (obj != null) obj.SetActive(true);
+                for (int i = 0; i < ColorTable.Count; i++)
+                {
+                    if (i == colorIndex && config.activeObjects[i] != null)
+                    {
+                        config.activeObjects[i].SetActive(true);
+                    }
+                }
+                for (int i = ColorTable.Count; i < config.activeObjects.Length; i++)
+                {
+                    if (config.activeObjects[i] != null) config.activeObjects[i].SetActive(true);
+                }
             }
+            else
+            {
+                foreach (var obj in config.activeObjects)
+                {
+                    if (obj != null) obj.SetActive(true);
+                }
+            } 
         }
     }
 
