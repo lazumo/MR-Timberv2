@@ -18,6 +18,12 @@ public class BarShowWhenEnoughMatchingFruits : NetworkBehaviour
             NetworkVariableReadPermission.Everyone,
             NetworkVariableWritePermission.Server
         );
+    private NetworkVariable<int> consumedMatch =
+    new NetworkVariable<int>(
+        0,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server
+    );
 
     // Server：記錄 trigger 內有哪些水果（用 NetworkObjectId 比 Transform 穩）
     private readonly HashSet<ulong> inside = new();
@@ -119,6 +125,18 @@ public class BarShowWhenEnoughMatchingFruits : NetworkBehaviour
                 match++;
         }
 
-        shouldShowBars.Value = (match >= requiredCount);
+        shouldShowBars.Value = (match + consumedMatch.Value >= requiredCount);
+    }
+    public void NotifyFruitConsumed(int fruitColorIndex)
+    {
+        if (!IsServer) return;
+        if (factoryData == null) return;
+
+        int targetColor = factoryData.color.Value;
+        if (fruitColorIndex == targetColor)
+        {
+            consumedMatch.Value += 1;
+            RecountAndUpdate();
+        }
     }
 }
