@@ -99,13 +99,15 @@ public class HouseSpawnerNetworked : NetworkBehaviour
                 {
                     // 1. Spawn the physical object
                     GameObject houseObj = Instantiate(housePrefab, pos, rot);
+                    var netObj = houseObj.GetComponent<NetworkObject>();
+                    netObj.Spawn(); // ⭐ 先 Spawn
+
                     var houseSync = houseObj.GetComponent<ObjectNetworkSync>();
                     if (houseSync != null)
                     {
-                        int randomColor = Random.Range(0, 3);
-                        houseSync.InitializeColorIndex(randomColor);
+                        int randomColor = Random.Range(0, ColorTable.Count);
+                        houseSync.InitializeColorIndex(randomColor); // ⭐ Spawn 後才設
                     }
-                    houseObj.GetComponent<NetworkObject>().Spawn();
 
                     // 2. Create the Data Entry (ID + Position)
                     HouseData data = new HouseData

@@ -1,79 +1,147 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using System;
 using System.Collections.Generic;
 
-// ©w¸q©Ğ¤lª¬ºA
-public enum HouseState { Unbuilt, Built, Colored, Firing, Saved, Destroyed }
+// =======================
+// Enums / Data
+// =======================
+
+public enum HouseState { Unbuilt, Built, Coloring, Colored, Firing, Saved, Destroyed }
+public enum HouseColor { Red, Green, Blue }
+
+public enum PaintStage { None, One, Two, Full }
+
+[Serializable]
+public class ColorPaintSet
+{
+    public HouseColor color;
+    public GameObject paint1; // 1/3
+    public GameObject paint2; // 2/3
+    public GameObject paint3; // 3/3
+}
 
 [Serializable]
 public class StateConfig
 {
     public HouseState state;
-    public GameObject[] activeObjects; // ¸Óª¬ºA¤U­nÅã¥Üªºª«¥ó²M³æ
+    public GameObject[] activeObjects; // éä¸Šè‰²ç‹€æ…‹ç”¨
 }
+
+// =======================
+// Controller
+// =======================
 
 public class ObjectDisplayController : MonoBehaviour
 {
-    [Header("State Settings")]
+    [Header("State Objects (Non-coloring)")]
     [SerializeField] private List<StateConfig> stateMappings;
 
-    [Header("Color Settings")]
-    [SerializeField] private Renderer[] colorableRenderers; // ­nÅÜ¦âªº Renderer
-    [SerializeField] private Texture[] availableTextures;   // 0:¬õ, 1:ÂÅ, 2:ºñ µ¥¶K¹Ï
+    [Header("Color Paint Sets")]
+    [SerializeField] private List<ColorPaintSet> colorPaintSets;
 
-    // ®Ú¾Ú Enum ¤Á´«ª¬ºA
-    public void ApplyState(HouseState newState, int colorIndex)
+    // å¿«å–
+    private Dictionary<HouseState, StateConfig> _stateMap;
+    private Dictionary<HouseColor, ColorPaintSet> _paintMap;
+
+    private void Awake()
     {
-        // §ä¥X¥Ø«eª¬ºA¹ïÀ³ªº°t¸m
-        StateConfig config = stateMappings.Find(s => s.state == newState);
+        _stateMap = new Dictionary<HouseState, StateConfig>();
+        foreach (var s in stateMappings)
+        {
+            if (!_stateMap.ContainsKey(s.state))
+                _stateMap.Add(s.state, s);
+        }
 
-        // ¥ıÁôÂÃ©Ò¦³¦b stateMappings ¤¤¥X²{¹Lªºª«¥ó¡]©Î°®¯ÜÁôÂÃ©Ò¦³¬ÛÃö¤lª«¥ó¡^
+        _paintMap = new Dictionary<HouseColor, ColorPaintSet>();
+        foreach (var set in colorPaintSets)
+        {
+            if (!_paintMap.ContainsKey(set.color))
+                _paintMap.Add(set.color, set);
+        }
+    }
+
+    // =======================
+    // Public APIï¼ˆå”¯ä¸€å…¥å£ï¼‰
+    // =======================
+
+    public void ApplyVisual(
+        HouseState state,
+        int colorIndex,
+        PaintStage stage
+    )
+    {
+        HideAllStateObjects();
+        HideAllPaintObjects();
+
+        // 1ï¸âƒ£ é¡¯ç¤ºã€Œéä¸Šè‰²ã€ç‹€æ…‹ç‰©ä»¶
+        if (_stateMap.TryGetValue(state, out var stateConfig))
+        {
+            foreach (var obj in stateConfig.activeObjects)
+            {
+                if (obj != null)
+                    obj.SetActive(true);
+            }
+        }
+
+        // 2ï¸âƒ£ ä¸Šè‰²åªåœ¨ Coloring / Colored
+        if (state != HouseState.Coloring && state != HouseState.Colored)
+            return;
+
+        HouseColor color = GetHouseColorFromIndex(colorIndex);
+
+        if (!_paintMap.TryGetValue(color, out var paintSet))
+            return;
+
+        ApplyPaintStage(paintSet, stage);
+    }
+
+    // =======================
+    // Internal helpers
+    // =======================
+
+    private void ApplyPaintStage(ColorPaintSet set, PaintStage stage)
+    {
+        switch (stage)
+        {
+            case PaintStage.One:
+                set.paint1?.SetActive(true);
+                break;
+
+            case PaintStage.Two:
+                set.paint2?.SetActive(true);
+                break;
+
+            case PaintStage.Full:
+                set.paint3?.SetActive(true);
+                break;
+        }
+    }
+
+    private void HideAllStateObjects()
+    {
         foreach (var mapping in stateMappings)
         {
             foreach (var obj in mapping.activeObjects)
             {
-                if (obj != null) obj.SetActive(false);
+                if (obj != null)
+                    obj.SetActive(false);
             }
-        }
-
-        // ±Ò°Ê¥Ø«eª¬ºA«ü©wªºª«¥ó
-        if (config != null)
-        {
-            if (config.state == HouseState.Colored) 
-            {
-                for (int i = 0; i < ColorTable.Count; i++)
-                {
-                    if (i == colorIndex && config.activeObjects[i] != null)
-                    {
-                        config.activeObjects[i].SetActive(true);
-                    }
-                }
-                for (int i = ColorTable.Count; i < config.activeObjects.Length; i++)
-                {
-                    if (config.activeObjects[i] != null) config.activeObjects[i].SetActive(true);
-                }
-            }
-            else
-            {
-                foreach (var obj in config.activeObjects)
-                {
-                    if (obj != null) obj.SetActive(true);
-                }
-            } 
         }
     }
 
-    // ®M¥ÎÃC¦âÅŞ¿è
-    public void ApplyColor(int colorIndex)
+    private void HideAllPaintObjects()
     {
-        if (colorableRenderers == null || availableTextures == null || availableTextures.Length == 0) return;
-
-        int safeIndex = colorIndex % availableTextures.Length;
-        Texture targetTexture = availableTextures[safeIndex];
-
-        foreach (var renderer in colorableRenderers)
+        foreach (var set in colorPaintSets)
         {
-            if (renderer != null) renderer.material.mainTexture = targetTexture;
+            set.paint1?.SetActive(false);
+            set.paint2?.SetActive(false);
+            set.paint3?.SetActive(false);
         }
+    }
+
+    private HouseColor GetHouseColorFromIndex(int index)
+    {
+        int max = Enum.GetValues(typeof(HouseColor)).Length;
+        return (HouseColor)(index % max);
     }
 }

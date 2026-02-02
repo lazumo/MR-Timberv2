@@ -69,7 +69,7 @@ public class ToolController : NetworkBehaviour
     {
         if (!IsValidStateForStage(newState))
         {
-            Debug.LogWarning($"[ToolController] Invalid state {newState} for stage {SceneController.CurrentLevel}");
+            Debug.LogWarning($"[ToolController] Invalid state {newState} for stage {SceneController.Instance.GetCurrentStage()}");
             return;
         }
 
@@ -82,7 +82,7 @@ public class ToolController : NetworkBehaviour
     private bool IsValidStateForStage(int state)
     {
         // TUNED: Allow switching stages, but always permit 0
-        int stage = SceneController.CurrentLevel;
+        int stage = SceneController.Instance.GetCurrentStage();
 
         if (stage == 1)
         {

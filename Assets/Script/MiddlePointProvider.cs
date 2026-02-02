@@ -1,8 +1,9 @@
 using Unity.Netcode;
 using UnityEngine;
 
-public class MiddlePointProvider : NetworkBehaviour
+public class MiddlePointProvider : NetworkBehaviour, IStageEnable
 {
+    private bool stageEnabled = false;
     public NetworkVariable<Vector3> MidPosition =
         new NetworkVariable<Vector3>(Vector3.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
@@ -23,7 +24,7 @@ public class MiddlePointProvider : NetworkBehaviour
     private void Update()
     {
         if (!IsServer) return;
-
+        if (!stageEnabled) return;
         // 找兩個 HandFollower（場上通常就兩個）
         ResolveHands();
         if (HostHand == null || ClientHand == null) return;
@@ -62,4 +63,20 @@ public class MiddlePointProvider : NetworkBehaviour
         if (HostHand != null && ClientHand != null)
             Debug.Log($"[MiddlePointProvider] HostHand={HostHand.OwnerClientId}, ClientHand={ClientHand.OwnerClientId}");
     }
+
+    public void SetStageEnabled(bool enabled)
+    {
+        if (!IsServer) return;
+
+        stageEnabled = enabled;
+
+        if (!stageEnabled)
+        {
+            HostHand = null;
+            ClientHand = null;
+        }
+
+        Debug.Log($"[MiddlePointProvider] stageEnabled={enabled}");
+    }
+
 }
