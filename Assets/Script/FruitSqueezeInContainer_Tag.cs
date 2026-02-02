@@ -198,7 +198,6 @@ public class FruitSqueezeInContainer_Tag : NetworkBehaviour
 
         var houseSync = colorFactory.OwnerHouseSync;
         if (houseSync == null) return;
-        houseSync.SetState(HouseState.Coloring);
         houseSync.AdvancePaintStage();
     }
 }
