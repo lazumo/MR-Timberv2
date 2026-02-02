@@ -5,7 +5,7 @@ public class JuicerBarNetView : NetworkBehaviour
 {
     [Header("Refs")]
     [SerializeField] private ColorFactoryNetDriver driver;
-    [SerializeField] private ColorFactoryVisual visual;   // ⭐ 這個就是重點
+    [SerializeField] private ColorFactoryVisual visual;
 
     [Header("Mapping: ΔD -> offset")]
     [SerializeField] private float offsetScale = 1.0f;
@@ -22,13 +22,11 @@ public class JuicerBarNetView : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        TryBindBars();
+        // 1. 訂閱 Visual 變化 (不管現在有沒有 Ready，都要訂閱，以防後續換顏色)
+        visual.OnVisualReady += TryBindBars;
 
-        if (!barB || !barC)
-        {
-            // ⭐ 等 visual ready
-            visual.OnVisualReady += TryBindBars;
-        }
+        // 2. 嘗試立即綁定一次 (如果 Visual 已經好了)
+        TryBindBars();
 
         active = driver.IsActive.Value;
         targetOffset = ComputeOffset(driver.HandDistance.Value);
@@ -37,22 +35,40 @@ public class JuicerBarNetView : NetworkBehaviour
         driver.HandDistance.OnValueChanged += (_, v) => targetOffset = ComputeOffset(v);
     }
 
+    public override void OnNetworkDespawn()
+    {
+        // 記得在物件消失時取消訂閱，避免 Memory Leak
+        if (visual != null)
+            visual.OnVisualReady -= TryBindBars;
+    }
+
     private void TryBindBars()
     {
-        barB = visual.CurrentBarB;
-        barC = visual.CurrentBarC;
+        // 拿到當前最新的 Bar
+        var newBarB = visual.CurrentBarB;
+        var newBarC = visual.CurrentBarC;
 
-        if (!barB || !barC) return;
+        if (!newBarB || !newBarC) return;
 
+        // 更新引用
+        barB = newBarB;
+        barC = newBarC;
+
+        // 重置基準點 (因為不同顏色的模型，初始位置可能微幅不同，或是為了確保正確)
         B0 = barB.localPosition;
         C0 = barC.localPosition;
 
-        visual.OnVisualReady -= TryBindBars; // ⭐ 解註冊
-    }
+        Debug.Log($"[JuicerBarNetView] Re-binded bars to: {barB.parent.name}");
 
+        // ⭐ 重點修正：這裡絕對不能解除訂閱 (visual.OnVisualReady -= TryBindBars)
+        // 因為動態 Spawn 後，顏色可能會馬上改變，我們需要再次觸發這個函式。
+    }
 
     private void Update()
     {
+        // 安全檢查：如果還沒綁定好，就跳過
+        if (barB == null || barC == null) return;
+
         float off = active ? targetOffset : 0f;
 
         Vector3 bTarget = B0 + new Vector3(0f, 0f, +off);

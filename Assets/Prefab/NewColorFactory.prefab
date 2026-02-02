@@ -967,16 +967,16 @@ MonoBehaviour:
   variants:
   - color: 0
     root: {fileID: 7188280122974690809}
-    barB: {fileID: 1380463896564578893}
-    barC: {fileID: 3634061497774310089}
+    barB: {fileID: 3634061497774310089}
+    barC: {fileID: 1380463896564578893}
   - color: 1
     root: {fileID: 5169657565666995893}
-    barB: {fileID: 3987887013363583233}
-    barC: {fileID: 1590176560769839493}
+    barB: {fileID: 1590176560769839493}
+    barC: {fileID: 3987887013363583233}
   - color: 2
     root: {fileID: 103230183231405629}
-    barB: {fileID: 8180574835249305993}
-    barC: {fileID: 5819106244147831053}
+    barB: {fileID: 5819106244147831053}
+    barC: {fileID: 8180574835249305993}
 --- !u!114 &1872065602339807301
 MonoBehaviour:
   m_ObjectHideFlags: 0

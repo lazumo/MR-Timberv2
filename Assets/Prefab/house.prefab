@@ -171,7 +171,7 @@ MonoBehaviour:
     - {fileID: 4241059764838594335}
   colorPaintSets:
   - color: 0
-    paint1: {fileID: 0}
+    paint1: {fileID: 3904686152735239077}
     paint2: {fileID: 2072460343258281571}
     paint3: {fileID: 1560904297920351838}
   - color: 1
@@ -2503,6 +2503,12 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: ff5540a40c022904ab8e4a96cdf1f0c4, type: 3}
+--- !u!1 &3904686152735239077 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6413696566777513162, guid: ff5540a40c022904ab8e4a96cdf1f0c4,
+    type: 3}
+  m_PrefabInstance: {fileID: 8012533026619731823}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &4430394086009860383 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5929507497967279728, guid: ff5540a40c022904ab8e4a96cdf1f0c4,
