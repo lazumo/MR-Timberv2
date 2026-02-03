@@ -10,7 +10,14 @@ public class ColorVariantBinding
     public GameObject root;
     public Transform barB;
     public Transform barC;
+
+    // ⭐ 新增：handlers
+    public Transform barHandlerB;
+    public Transform barHandlerC;
 }
+
+
+
 public class ColorFactoryVisual : NetworkBehaviour
 {
     public ColorVariantBinding[] variants;
@@ -19,6 +26,10 @@ public class ColorFactoryVisual : NetworkBehaviour
 
     public Transform CurrentBarB { get; private set; }
     public Transform CurrentBarC { get; private set; }
+
+    // ⭐ 已經有這兩個，但現在要真正賦值
+    public Transform CurrentBarHandlerB { get; private set; }
+    public Transform CurrentBarHandlerC { get; private set; }
 
     public event Action OnVisualReady;
 
@@ -29,10 +40,8 @@ public class ColorFactoryVisual : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        // ⭐ 關鍵：訂閱 color 變化
         data.color.OnValueChanged += OnColorChanged;
 
-        // ⭐ 立即用「目前值」跑一次（server / late join 都安全）
         ApplyColor(data.color.Value);
     }
 
@@ -49,15 +58,23 @@ public class ColorFactoryVisual : NetworkBehaviour
             return;
         }
 
-        // 🔒 關掉全部（保險，避免多個 active）
+        // 關掉全部
         for (int i = 0; i < variants.Length; i++)
             variants[i].root.SetActive(false);
 
-        // ⭐ 開正確的那個
-        variants[color].root.SetActive(true);
+        // 開正確的 variant
+        var v = variants[color];
+        v.root.SetActive(true);
 
-        CurrentBarB = variants[color].barB;
-        CurrentBarC = variants[color].barC;
+        // ⭐ 設定 bar
+        CurrentBarB = v.barB;
+        CurrentBarC = v.barC;
+
+        // ⭐ 新增：設定 handler
+        CurrentBarHandlerB = v.barHandlerB;
+        CurrentBarHandlerC = v.barHandlerC;
+
+        Debug.Log($"[ColorFactoryVisual] Applied color {color} -> {v.root.name}");
 
         OnVisualReady?.Invoke();
     }

@@ -11,21 +11,20 @@ public class BarShowWhenEnoughMatchingFruits : NetworkBehaviour
     [Header("Rule")]
     [SerializeField] private int requiredCount = 3;
 
-    // ✅ 同步：是否應該顯示 bar（所有 client 一致）
     private NetworkVariable<bool> shouldShowBars =
         new NetworkVariable<bool>(
             false,
             NetworkVariableReadPermission.Everyone,
             NetworkVariableWritePermission.Server
         );
-    private NetworkVariable<int> consumedMatch =
-    new NetworkVariable<int>(
-        0,
-        NetworkVariableReadPermission.Everyone,
-        NetworkVariableWritePermission.Server
-    );
 
-    // Server：記錄 trigger 內有哪些水果（用 NetworkObjectId 比 Transform 穩）
+    private NetworkVariable<int> consumedMatch =
+        new NetworkVariable<int>(
+            0,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Server
+        );
+
     private readonly HashSet<ulong> inside = new();
 
     private void OnEnable()
@@ -46,7 +45,6 @@ public class BarShowWhenEnoughMatchingFruits : NetworkBehaviour
 
         shouldShowBars.OnValueChanged += OnShouldShowBarsChanged;
 
-        // 初始套用一次（late join / 剛 spawn）
         ApplyBarsVisual(shouldShowBars.Value);
     }
 
@@ -61,7 +59,6 @@ public class BarShowWhenEnoughMatchingFruits : NetworkBehaviour
         ApplyBarsVisual(next);
     }
 
-    // OnVisualReady 會叫到這裡：確保 bar 換 variant 也能套用正確顯示狀態
     private void ApplyBarsVisualFromState()
     {
         ApplyBarsVisual(shouldShowBars.Value);
@@ -74,9 +71,16 @@ public class BarShowWhenEnoughMatchingFruits : NetworkBehaviour
         var b = visual.CurrentBarB;
         var c = visual.CurrentBarC;
 
-        // 有可能 root 尚未 active 或剛切換，做 null 保護
+        // ✅ 你新增的 handler
+        var b_handler = visual.CurrentBarHandlerB;
+        var c_handler = visual.CurrentBarHandlerC; // ✅ 修正：C handler
+
         if (b) b.gameObject.SetActive(show);
         if (c) c.gameObject.SetActive(show);
+
+        // ✅ handler 也一起顯示/隱藏
+        if (b_handler) b_handler.gameObject.SetActive(show);
+        if (c_handler) c_handler.gameObject.SetActive(show);
     }
 
     private void OnTriggerEnter(Collider other)
@@ -127,6 +131,7 @@ public class BarShowWhenEnoughMatchingFruits : NetworkBehaviour
 
         shouldShowBars.Value = (match + consumedMatch.Value >= requiredCount);
     }
+
     public void NotifyFruitConsumed(int fruitColorIndex)
     {
         if (!IsServer) return;
@@ -139,9 +144,9 @@ public class BarShowWhenEnoughMatchingFruits : NetworkBehaviour
             RecountAndUpdate();
         }
     }
+
     public bool IsRequirementMet()
     {
         return shouldShowBars.Value;
     }
-
 }
