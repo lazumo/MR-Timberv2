@@ -376,8 +376,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 0.6641187, y: 0.97591025, z: 0.71693325}
+  m_Center: {x: 0.0019305735, y: -0.012044892, z: -0.000000099673315}
 --- !u!114 &573029012424538661
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1316,7 +1316,7 @@ MonoBehaviour:
   requirementChecker: {fileID: 6522433059020539350}
   factoryRoot: {fileID: 9079080234601551839}
   moveUpCm: 50
-  delaySeconds: 2
+  delaySeconds: 1
   lerpSpeed: 1.5
 --- !u!114 &388580838661595607
 MonoBehaviour:
@@ -1336,7 +1336,7 @@ MonoBehaviour:
   - {fileID: 7724484823467438344, guid: f7c2084781fa9e149b8df4aceca88e81, type: 3}
   - {fileID: 7724484823467438344, guid: 8ff2ad09c399e8d4289e2e004a02e972, type: 3}
   - {fileID: 7724484823467438344, guid: 73a283886a6d0db40a58e29ed069a9bd, type: 3}
-  factoryData: {fileID: 0}
+  factoryData: {fileID: 413048523854809569}
 --- !u!1 &5169657565666995893
 GameObject:
   m_ObjectHideFlags: 0
@@ -1714,7 +1714,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &7532892714608101187
 Transform:
   m_ObjectHideFlags: 0

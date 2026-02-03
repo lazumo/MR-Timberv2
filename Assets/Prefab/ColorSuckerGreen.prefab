@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7663265034996252555}
   - component: {fileID: 7724484823467438344}
+  - component: {fileID: 7117214809344384600}
   m_Layer: 0
   m_Name: ColorSuckerGreen
   m_TagString: Untagged
@@ -57,6 +58,20 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+--- !u!114 &7117214809344384600
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 76851127638279716}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4020d3d418b8ae845981907d50d615d8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  includeInactive: 1
+  forceActivateGameObjects: 1
 --- !u!1001 &229354876111458754
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -203,6 +218,16 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2661421793550942611, guid: 30d36f19a8e10da46b4f43bfc1732fe5,
+        type: 3}
+      propertyPath: m_MaxParticleSize
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3416024289047456121, guid: 30d36f19a8e10da46b4f43bfc1732fe5,
+        type: 3}
+      propertyPath: cullingMode
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 9085306931258085270, guid: 30d36f19a8e10da46b4f43bfc1732fe5,
         type: 3}
@@ -386,6 +411,16 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Green_ Released_Juice
+      objectReference: {fileID: 0}
+    - target: {fileID: 5989689649253177006, guid: 343bddbae6eb5554e9a1599957624222,
+        type: 3}
+      propertyPath: m_MaxParticleSize
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8508617650113726115, guid: 343bddbae6eb5554e9a1599957624222,
+        type: 3}
+      propertyPath: cullingMode
+      value: 3
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
