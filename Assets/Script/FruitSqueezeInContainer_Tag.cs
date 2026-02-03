@@ -20,14 +20,17 @@ public class FruitSqueezeInContainer_Tag : NetworkBehaviour
     [Header("Optional volume compensate")]
     [SerializeField] private bool volumeCompensate = true;
     [SerializeField] private float compensateStrength = 0.5f;
-
+    [SerializeField] private int squeezesPerFruit = 3;
     // ⭐ bars 不再 inspector 指定
     private Transform barB;
     private Transform barC;
 
-    private readonly HashSet<Transform> fruits = new();
+    private readonly Queue<Transform> fruitQueue = new();
+    private readonly HashSet<Transform> fruitSet = new(); // 防重
     private readonly Dictionary<Transform, Vector3> initialScale = new();
 
+    private int squeezeCount = 0;
+    private bool isFullySqueezed = false;
     private float gap0;
     private bool barsReady;
     private bool hasDestroyed = false;
@@ -68,21 +71,28 @@ public class FruitSqueezeInContainer_Tag : NetworkBehaviour
     private void Update()
     {
         if (!barsReady) return;
-        if (fruits.Count == 0) return;
+        if (fruitSet.Count == 0) return;
 
         float gap = GetGap();
         float t = gap / gap0;
         float squeeze = Mathf.Clamp(t, minSqueeze, maxSqueeze);
-        // ===== 榨到極限：直接刪掉所有 fruit =====
-        if (!hasDestroyed && squeeze <= threshold + 0.001f)
+        if (!isFullySqueezed && squeeze <= threshold)
         {
-            DestroyAllFruits();
-            hasDestroyed = true;
-            return; // 這一幀不用再算 scale
+            isFullySqueezed = true;
+            squeezeCount++;
+
+            Debug.Log($"[FruitSqueeze] Squeeze count = {squeezeCount}");
+
+            if (squeezeCount >= squeezesPerFruit)
+            {
+                squeezeCount = 0;
+                DestroyOneFruit();
+            }
         }
-        else if (squeeze > minSqueeze + 0.01f) // 給一點 hysteresis
+        else if (isFullySqueezed && squeeze > threshold + 0.01f)
         {
-            hasDestroyed = false;
+            // 放開一點才允許下一次擠
+            isFullySqueezed = false;
         }
         // ===== 1. 建立 squeeze space（world space）=====
         Vector3 z = (barB.position - barC.position).normalized; // 擠壓方向
@@ -118,7 +128,7 @@ public class FruitSqueezeInContainer_Tag : NetworkBehaviour
         // world-space equivalent scale matrix
         Matrix4x4 M = B * S * B.inverse;
 
-        foreach (var fruit in fruits)
+        foreach (var fruit in fruitSet)
         {
             if (!fruit) continue;
             if (!initialScale.TryGetValue(fruit, out var s0)) continue;
@@ -156,8 +166,14 @@ public class FruitSqueezeInContainer_Tag : NetworkBehaviour
         if (!other.CompareTag(fruitTag)) return;
 
         Transform fruit = other.transform;
-        if (fruits.Add(fruit))
+
+        if (fruitSet.Add(fruit))
+        {
+            fruitQueue.Enqueue(fruit);
             initialScale[fruit] = fruit.localScale;
+
+            Debug.Log($"[FruitSqueeze] Fruit enqueued: {fruit.name}");
+        }
     }
 
     private void OnTriggerExit(Collider other)
@@ -166,29 +182,57 @@ public class FruitSqueezeInContainer_Tag : NetworkBehaviour
         if (!other.CompareTag(fruitTag)) return;
 
         Transform fruit = other.transform;
-        fruits.Remove(fruit);
+        if (!fruitSet.Remove(fruit)) return;
+
         initialScale.Remove(fruit);
+
+        // 重建 queue（移除指定 fruit）
+        var newQueue = new Queue<Transform>();
+        while (fruitQueue.Count > 0)
+        {
+            var f = fruitQueue.Dequeue();
+            if (f != fruit)
+                newQueue.Enqueue(f);
+        }
+        while (newQueue.Count > 0)
+            fruitQueue.Enqueue(newQueue.Dequeue());
+
+        Debug.Log($"[FruitSqueeze] Fruit dequeued (exit): {fruit.name}");
     }
-    private void DestroyAllFruits()
+
+    private void DestroyOneFruit()
     {
         if (!IsServer) return;
-        foreach (var fruit in fruits)
+        if (fruitQueue.Count == 0) return;
+
+        Transform fruit = fruitQueue.Dequeue();
+        fruitSet.Remove(fruit);
+        initialScale.Remove(fruit);
+
+        if (!fruit) return;
+
+        // 播 VFX
+        var vfx = fruit.GetComponent<FruitDestroyVFX>();
+        if (vfx != null)
+            vfx.PlayDestroyVFX();
+        var fruitData = fruit.GetComponent<FruitData>();
+        if (fruitData != null)
         {
-            if (!fruit) continue;
-
-            var netObj = fruit.GetComponent<NetworkObject>();
-            if (netObj != null && netObj.IsSpawned)
-            {
-                netObj.Despawn(true); // ✅ server authoritative
-            }
-            AdvanceHousePaintStage();
+            // 找 BarShowWhenEnoughMatchingFruits（同一個 container 上通常就找得到）
+            var barRule = GetComponent<BarShowWhenEnoughMatchingFruits>();
+            if (barRule != null)
+                barRule.NotifyFruitConsumed(fruitData.colorIndex.Value);
         }
+        // Despawn
+        var netObj = fruit.GetComponent<NetworkObject>();
+        if (netObj != null && netObj.IsSpawned)
+            netObj.Despawn(true);
 
-        fruits.Clear();
-        initialScale.Clear();
+        AdvanceHousePaintStage();
 
-        Debug.Log("[FruitSqueeze] All fruits destroyed (fully squeezed).");
+        Debug.Log($"[FruitSqueeze] Fruit destroyed (FIFO): {fruit.name}");
     }
+
     private void AdvanceHousePaintStage()
     {
         if (!IsServer) return;
@@ -198,16 +242,4 @@ public class FruitSqueezeInContainer_Tag : NetworkBehaviour
         if (houseSync == null) return;
         houseSync.AdvancePaintStage();
     }
-    public List<Transform> GetFruitsSnapshot()
-    {
-        // 回傳一份快照，避免外部 foreach 時 fruits 被修改
-        var list = new List<Transform>(fruits.Count);
-        foreach (var f in fruits)
-        {
-            if (f) list.Add(f);
-        }
-        return list;
-    }
-
-
 }

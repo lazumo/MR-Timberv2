@@ -21,6 +21,7 @@ GameObject:
   - component: {fileID: -4612141979757980225}
   - component: {fileID: 91702700451082713}
   - component: {fileID: 98190781925280831}
+  - component: {fileID: 8386451950613061415}
   m_Layer: 9
   m_Name: Fruit
   m_TagString: Fruit
@@ -58,7 +59,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1991797117
+  GlobalObjectIdHash: 3531512998
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -296,6 +297,22 @@ MonoBehaviour:
   - {fileID: 91559446628130142}
   - {fileID: 7732014073059167862}
   - {fileID: 6725966899945529728}
+--- !u!114 &8386451950613061415
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3437219668375729335}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: faf9cfb0e20f68a49a89498e4b09f118, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  destroyVfxList:
+  - {fileID: 8207120141953185362, guid: a50412f29b92bdc4888f3666dee1d2f0, type: 3}
+  - {fileID: 6562446266208103412, guid: 8eb992f41770e384cb6473b53315c94b, type: 3}
+  - {fileID: 2964767800185838405, guid: 794d574d45161344c97d9fda9b2fb3d7, type: 3}
 --- !u!1001 &1002041219529789105
 PrefabInstance:
   m_ObjectHideFlags: 0
