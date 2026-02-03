@@ -39,15 +39,20 @@ public class HullDisappear : MonoBehaviour
                 Destroy(vfx, 2f);
         }
 
+        Vector3 spawnPos = transform.position;
+
+        Renderer rend = GetComponentInChildren<Renderer>();
+        if (rend != null)
+        {
+            Bounds b = rend.bounds; // world-space bounds
+            spawnPos.y = b.center.y;
+        }
+
         if (NetworkManager.Singleton.IsServer)
         {
-            ResourceManager rm = ResourceManager.Instance;
-            if (rm == null) rm = FindObjectOfType<ResourceManager>();
-
-            if (rm != null)
-            {
-                rm.SpawnResource(transform.position + Vector3.up * 0.1f);
-            }
+            var gen = WoodResourceGenerator.Instance;
+            if (gen != null)
+                gen.SpawnWoodDrop(spawnPos);
         }
 
         // Destroy Hull
