@@ -77,7 +77,7 @@ public class HouseSpawnerNetworked : NetworkBehaviour
         _nextQueryID = 0;
 
         // Setup Filters (MRUK v81+)
-        MRUK.SurfaceType allowedSurfaces = MRUK.SurfaceType.FACING_UP | MRUK.SurfaceType.VERTICAL | MRUK.SurfaceType.FACING_DOWN;
+        MRUK.SurfaceType allowedSurfaces = MRUK.SurfaceType.VERTICAL | MRUK.SurfaceType.FACING_DOWN;
         MRUKAnchor.SceneLabels allowedLabels = MRUKAnchor.SceneLabels.FLOOR | MRUKAnchor.SceneLabels.WALL_FACE | MRUKAnchor.SceneLabels.CEILING;
         LabelFilter filter = new LabelFilter(allowedLabels);
 
