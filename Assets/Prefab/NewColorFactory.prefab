@@ -15,7 +15,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &731113533574177927
 Transform:
   m_ObjectHideFlags: 0
@@ -376,8 +376,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 0.6641187, y: 0.97591025, z: 0.71693325}
+  m_Center: {x: 0.0019305735, y: -0.012044892, z: -0.000000099673315}
 --- !u!114 &573029012424538661
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -516,6 +516,7 @@ MeshRenderer:
   m_RendererPriority: 0
   m_Materials:
   - {fileID: -6271897200390792742, guid: c1bbfda214e6b484ca4a856950843f47, type: 3}
+  - {fileID: 2100000, guid: bf2c28b804d43f440be207e45e34dc59, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -986,6 +987,7 @@ MeshRenderer:
   m_RendererPriority: 0
   m_Materials:
   - {fileID: -6271897200390792742, guid: c1bbfda214e6b484ca4a856950843f47, type: 3}
+  - {fileID: 2100000, guid: c58638914af70574194eeed7b8bb8adf, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1108,6 +1110,7 @@ GameObject:
   - component: {fileID: 3308849157903602386}
   - component: {fileID: 1872065602339807301}
   - component: {fileID: 2590232978854806685}
+  - component: {fileID: 388580838661595607}
   m_Layer: 0
   m_Name: NewColorFactory
   m_TagString: Untagged
@@ -1314,8 +1317,27 @@ MonoBehaviour:
   requirementChecker: {fileID: 6522433059020539350}
   factoryRoot: {fileID: 9079080234601551839}
   moveUpCm: 50
-  delaySeconds: 2
+  delaySeconds: 1
   lerpSpeed: 1.5
+--- !u!114 &388580838661595607
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5084186442014815490}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f8527be594621946b2341bae90ffa54, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  factory: {fileID: 1872065602339807301}
+  requirement: {fileID: 6522433059020539350}
+  cPrefabs:
+  - {fileID: 7724484823467438344, guid: f7c2084781fa9e149b8df4aceca88e81, type: 3}
+  - {fileID: 7724484823467438344, guid: 8ff2ad09c399e8d4289e2e004a02e972, type: 3}
+  - {fileID: 7724484823467438344, guid: 73a283886a6d0db40a58e29ed069a9bd, type: 3}
+  factoryData: {fileID: 413048523854809569}
 --- !u!1 &5169657565666995893
 GameObject:
   m_ObjectHideFlags: 0
@@ -1331,7 +1353,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &5545479832970572815
 Transform:
   m_ObjectHideFlags: 0
@@ -1995,6 +2017,7 @@ MeshRenderer:
   m_RendererPriority: 0
   m_Materials:
   - {fileID: -6271897200390792742, guid: c1bbfda214e6b484ca4a856950843f47, type: 3}
+  - {fileID: 2100000, guid: e101b7d4a42350f4c9adedaad970ff0a, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -2168,6 +2191,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Useless
       objectReference: {fileID: 0}
+    - target: {fileID: 5566632635545087280, guid: 832daddff8e7f134287e6a220a7be51a,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2247,6 +2275,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Useless
       objectReference: {fileID: 0}
+    - target: {fileID: 5566632635545087280, guid: 832daddff8e7f134287e6a220a7be51a,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2325,6 +2358,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Useless
+      objectReference: {fileID: 0}
+    - target: {fileID: 5566632635545087280, guid: 832daddff8e7f134287e6a220a7be51a,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
