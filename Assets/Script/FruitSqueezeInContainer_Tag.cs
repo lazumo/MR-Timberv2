@@ -33,7 +33,6 @@ public class FruitSqueezeInContainer_Tag : NetworkBehaviour
     private bool isFullySqueezed = false;
     private float gap0;
     private bool barsReady;
-    private bool hasDestroyed = false;
     private void OnEnable()
     {
         if (visual != null)
@@ -242,16 +241,4 @@ public class FruitSqueezeInContainer_Tag : NetworkBehaviour
         if (houseSync == null) return;
         houseSync.AdvancePaintStage();
     }
-    public List<Transform> GetFruitsSnapshot()
-    {
-        // 回傳一份快照，避免外部 foreach 時 fruits 被修改
-        var list = new List<Transform>(fruits.Count);
-        foreach (var f in fruits)
-        {
-            if (f) list.Add(f);
-        }
-        return list;
-    }
-
-
 }

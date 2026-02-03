@@ -1762,6 +1762,16 @@ PrefabInstance:
       propertyPath: InScenePlacedSourceGlobalObjectIdHash
       value: 3192009168
       objectReference: {fileID: 0}
+    - target: {fileID: 7164615428790912599, guid: 862e4b767a0283742a2b9e41d51781ad,
+        type: 3}
+      propertyPath: collisionCheckSize.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7164615428790912599, guid: 862e4b767a0283742a2b9e41d51781ad,
+        type: 3}
+      propertyPath: collisionCheckSize.z
+      value: 0.5
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
