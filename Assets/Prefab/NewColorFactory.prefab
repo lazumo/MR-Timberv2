@@ -1332,7 +1332,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   factory: {fileID: 1872065602339807301}
   requirement: {fileID: 6522433059020539350}
-  cPrefab: {fileID: 7724484823467438344, guid: 73a283886a6d0db40a58e29ed069a9bd, type: 3}
+  cPrefabs:
+  - {fileID: 7724484823467438344, guid: f7c2084781fa9e149b8df4aceca88e81, type: 3}
+  - {fileID: 7724484823467438344, guid: 8ff2ad09c399e8d4289e2e004a02e972, type: 3}
+  - {fileID: 7724484823467438344, guid: 73a283886a6d0db40a58e29ed069a9bd, type: 3}
+  factoryData: {fileID: 0}
 --- !u!1 &5169657565666995893
 GameObject:
   m_ObjectHideFlags: 0
