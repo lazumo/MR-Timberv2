@@ -29,7 +29,7 @@ public class HouseColorFactoryPlacer : NetworkBehaviour
         Vector3 spawnPos;
         Quaternion spawnRot;
 
-        if (IsHouseOnWall())
+        if (IsHouseOnWallOrCeiling())
         {
             if (!TryCalculatePose(out spawnPos, out spawnRot))
                 return null;
@@ -96,9 +96,13 @@ public class HouseColorFactoryPlacer : NetworkBehaviour
         return false;
     }
 
-    bool IsHouseOnWall()
+    bool IsHouseOnWallOrCeiling()
     {
         float dot = Vector3.Dot(transform.up, Vector3.up);
+
+        // 地板 ≈ +1
+        // 牆 ≈ 0
+        // 天花板 ≈ -1
         return dot < 0.7f;
     }
 

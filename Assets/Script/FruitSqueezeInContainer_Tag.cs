@@ -33,7 +33,6 @@ public class FruitSqueezeInContainer_Tag : NetworkBehaviour
     private bool isFullySqueezed = false;
     private float gap0;
     private bool barsReady;
-    private bool hasDestroyed = false;
     private void OnEnable()
     {
         if (visual != null)
