@@ -102,6 +102,11 @@ public class FruitTree : NetworkBehaviour
         if (fruitSpawnController != null)
             fruitSpawnController.ForceDropAllFruits();
 
+        if (IsServer && TreeSpawnerNetworked.Instance != null)
+        {
+            TreeSpawnerNetworked.Instance.NotifyTreeDestroyed(TreeSpawnerNetworked.TreeType.Fruit);
+            StartCoroutine(DelayedSpawnTree(8f));
+        }
         // 小延遲，確保掉落狀態同步（可選但推薦）
         yield return new WaitForSeconds(0.1f);
         if (IsSpawned)
@@ -113,4 +118,15 @@ public class FruitTree : NetworkBehaviour
         if (audioSource && sfxGrow)
             audioSource.PlayOneShot(sfxGrow);
     }
+    private IEnumerator DelayedSpawnTree(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        if (TreeSpawnerNetworked.Instance != null)
+        {
+            TreeSpawnerNetworked.Instance.SpawnTree(TreeSpawnerNetworked.TreeType.Fruit);
+            Debug.Log("[FruitTree] Delayed Fruit Tree generation.");
+        }
+    }
+
 }
