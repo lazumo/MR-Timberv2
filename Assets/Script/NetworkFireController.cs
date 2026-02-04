@@ -66,7 +66,6 @@ public class NetworkFireController : NetworkBehaviour
             0f,
             maxFireIntensity
         );
-        Debug.Log($"{v}");
         fireIntensity.Value = v;
 
         if (v <= 0f)

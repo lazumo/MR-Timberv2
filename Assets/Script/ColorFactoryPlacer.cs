@@ -3,15 +3,23 @@ using UnityEngine;
 
 public class HouseColorFactoryPlacer : NetworkBehaviour
 {
-    [Header("Single Factory Prefab")]
-    public GameObject colorFactoryPrefab;   // ⭐ 改成單一 prefab
+    [Header("Prefab")]
+    [SerializeField] private GameObject colorFactoryPrefab;
 
     [Header("Layers")]
-    public LayerMask groundLayer;
+    [SerializeField] private LayerMask groundLayer;
 
     [Header("Offsets")]
-    public float forwardOffset = 0.3f;
+    [SerializeField] private float forwardOffset = 0.3f;   // ceiling: forward, wall: up
+    [SerializeField] private float raycastDistance = 10f;
 
+    [Header("Floor Side Spawn")]
+    [SerializeField] private float floorSideDistance = 1f;
+    [SerializeField] private float floorUpOffset = 0.05f;
+
+    // =========================
+    // Public API
+    // =========================
     public NetworkObject SpawnColorFactory(int colorIndex)
     {
         if (!IsServer)
@@ -26,24 +34,13 @@ public class HouseColorFactoryPlacer : NetworkBehaviour
             return null;
         }
 
-        Vector3 spawnPos;
-        Quaternion spawnRot;
-
-        if (IsHouseOnWallOrCeiling())
-        {
-            if (!TryCalculatePose(out spawnPos, out spawnRot))
-                return null;
-        }
-        else
-        {
-            CalculateSidePose(out spawnPos, out spawnRot);
-        }
+        if (!TryGetSpawnPose(out Vector3 spawnPos, out Quaternion spawnRot))
+            return null;
 
         // ===== Instantiate =====
         GameObject obj = Instantiate(colorFactoryPrefab, spawnPos, spawnRot);
-        NetworkObject netObj = obj.GetComponent<NetworkObject>();
 
-        if (netObj == null)
+        if (!obj.TryGetComponent(out NetworkObject netObj))
         {
             Debug.LogError("[HouseColorFactoryPlacer] prefab missing NetworkObject!");
             Destroy(obj);
@@ -53,68 +50,111 @@ public class HouseColorFactoryPlacer : NetworkBehaviour
         // ===== Spawn =====
         netObj.Spawn(true);
 
-        // ===== 初始化顏色（NetworkVariable）=====
-        var data = netObj.GetComponent<ColorFactoryData>();
-        if (data != null)
-        {
+        // ===== Init color =====
+        if (netObj.TryGetComponent(out ColorFactoryData data))
             data.ServerInit(colorIndex);
-        }
 
-        // ===== 保留你原本的 ownerHouse =====
-        var factory = netObj.GetComponent<ColorFactory>();
-        if (factory != null)
-        {
+        // ===== ownerHouse =====
+        if (netObj.TryGetComponent(out ColorFactory factory))
             factory.ownerHouse = this.gameObject;
-        }
 
-        Debug.Log($"[HouseColorFactoryPlacer] ColorFactory spawned colorIndex={colorIndex} id={netObj.NetworkObjectId}");
+        Debug.Log($"[HouseColorFactoryPlacer] Spawned ColorFactory colorIndex={colorIndex} id={netObj.NetworkObjectId}");
         return netObj;
     }
 
-    // ===== 以下維持你原本的 =====
+    // =========================
+    // Spawn Pose Selection
+    // =========================
+    private enum HouseSurface
+    {
+        Floor,
+        Wall,
+        Ceiling
+    }
 
-    bool TryCalculatePose(out Vector3 pos, out Quaternion rot)
+    private bool TryGetSpawnPose(out Vector3 pos, out Quaternion rot)
+    {
+        var surface = GetHouseSurface();
+
+        switch (surface)
+        {
+            case HouseSurface.Ceiling:
+                return TryGetRaycastPose(GetCeilingRayOrigin(), out pos, out rot);
+
+            case HouseSurface.Wall:
+                return TryGetRaycastPose(GetWallRayOrigin(), out pos, out rot);
+
+            case HouseSurface.Floor:
+            default:
+                GetFloorSidePose(out pos, out rot);
+                return true;
+        }
+    }
+
+    private HouseSurface GetHouseSurface()
+    {
+        float dot = Vector3.Dot(transform.up, Vector3.up);
+
+        // floor ≈ +1, wall ≈ 0, ceiling ≈ -1
+        if (dot < -0.7f) return HouseSurface.Ceiling;
+        if (dot < 0.7f) return HouseSurface.Wall;
+        return HouseSurface.Floor;
+    }
+
+    // =========================
+    // Ray Origins
+    // =========================
+    private Vector3 GetCeilingRayOrigin()
+    {
+        // Ceiling: z( forward ) offset, then raycast down
+        return transform.position + transform.forward * forwardOffset + transform.up * forwardOffset;
+    }
+
+    private Vector3 GetWallRayOrigin()
+    {
+        // Wall: y( up ) offset, then raycast down
+        return transform.position + transform.up * forwardOffset * 1.5f;
+    }
+
+    // =========================
+    // Raycast Pose
+    // =========================
+    private bool TryGetRaycastPose(Vector3 rayOrigin, out Vector3 pos, out Quaternion rot)
     {
         pos = Vector3.zero;
         rot = Quaternion.identity;
 
-        Vector3 rayOrigin = transform.position + transform.up * forwardOffset;
+        // optional debug
+        Debug.DrawRay(rayOrigin, Vector3.down * 2f, Color.red, 1f);
 
-        if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, 10f, groundLayer))
+        if (!Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, raycastDistance, groundLayer))
         {
-            Vector3 up = hit.normal;
-
-            Vector3 forward = Vector3.ProjectOnPlane(transform.forward, up).normalized;
-            if (forward.sqrMagnitude < 0.001f)
-                forward = Vector3.ProjectOnPlane(transform.right, up).normalized;
-
-            rot = Quaternion.LookRotation(forward, up);
-            pos = hit.point;
-            return true;
+            Debug.LogWarning($"[HouseColorFactoryPlacer] Raycast failed from {rayOrigin}");
+            return false;
         }
 
-        return false;
+        Vector3 up = hit.normal;
+
+        // keep forward aligned with house direction but projected on surface
+        Vector3 forward = Vector3.ProjectOnPlane(transform.forward, up).normalized;
+        if (forward.sqrMagnitude < 0.001f)
+            forward = Vector3.ProjectOnPlane(transform.right, up).normalized;
+
+        rot = Quaternion.LookRotation(forward, up);
+        pos = hit.point;
+        return true;
     }
 
-    bool IsHouseOnWallOrCeiling()
+    // =========================
+    // Floor Pose
+    // =========================
+    private void GetFloorSidePose(out Vector3 pos, out Quaternion rot)
     {
-        float dot = Vector3.Dot(transform.up, Vector3.up);
-
-        // 地板 ≈ +1
-        // 牆 ≈ 0
-        // 天花板 ≈ -1
-        return dot < 0.7f;
-    }
-
-    void CalculateSidePose(out Vector3 pos, out Quaternion rot)
-    {
-        float sideDistance = 1f;
         Vector3 sideDir = transform.right;
 
-        pos = transform.position + sideDir * sideDistance;
-        pos += Vector3.up * 0.05f;
+        pos = transform.position + sideDir * floorSideDistance;
+        pos += Vector3.up * floorUpOffset;
 
-        Vector3 forward = -sideDir.normalized;
-        rot = Quaternion.LookRotation(forward, Vector3.up);
+        rot = Quaternion.LookRotation(-sideDir.normalized, Vector3.up);
     }
 }

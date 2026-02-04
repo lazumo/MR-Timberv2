@@ -102,7 +102,7 @@ public class FruitTree : NetworkBehaviour
         if (fruitSpawnController != null)
             fruitSpawnController.ForceDropAllFruits();
 
-        if (IsServer && TreeSpawnerNetworked.Instance != null)
+        if (IsServer && TreeSpawnerNetworked.Instance != null && SceneController.Instance.GetCurrentStage() == 1)
         {
             TreeSpawnerNetworked.Instance.NotifyTreeDestroyed(TreeSpawnerNetworked.TreeType.Fruit);
             StartCoroutine(DelayedSpawnTree(8f));

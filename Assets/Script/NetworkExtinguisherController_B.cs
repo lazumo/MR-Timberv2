@@ -8,10 +8,11 @@ public class NetworkExtinguisherController_B : NetworkBehaviour
     public ParticleSystem sprayVFX;
 
     [Header("Settings")]
-    public float range = 3f;
+    public float range = 10f;
     public float extinguishRate = 10f;
     public float triggerThreshold = 0.25f;
 
+    [SerializeField] LayerMask fireLayer;
     // Server 同步噴射狀態，讓所有人看到 VFX
     public NetworkVariable<bool> isSpraying =
         new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
@@ -95,9 +96,10 @@ public class NetworkExtinguisherController_B : NetworkBehaviour
     {
         if (nozzlePoint == null) return;
 
-        Ray ray = new Ray(nozzlePoint.position, nozzlePoint.forward);
-        if (Physics.Raycast(ray, out RaycastHit hit, range, ~0, QueryTriggerInteraction.Collide))
+        Ray ray = new Ray(nozzlePoint.position, nozzlePoint.right);
+        if (Physics.Raycast(ray, out RaycastHit hit, range, fireLayer, QueryTriggerInteraction.Collide))
         {
+            Debug.Log($"[Raycast] Hit {hit.collider.name} at distance {hit.distance}");
             var fire = hit.collider.GetComponentInParent<NetworkFireController>();
             if (fire != null)
                 fire.ApplyExtinguishServer(extinguishRate * Time.deltaTime);

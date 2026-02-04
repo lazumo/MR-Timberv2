@@ -22,6 +22,7 @@ GameObject:
   - component: {fileID: 91702700451082713}
   - component: {fileID: 98190781925280831}
   - component: {fileID: 8386451950613061415}
+  - component: {fileID: 8668277278385416246}
   m_Layer: 9
   m_Name: Fruit
   m_TagString: Fruit
@@ -39,8 +40,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 3.670288, y: 2.0745916, z: 3.49}
-  m_LocalScale: {x: 0.2, y: 0.2, z: 0.2}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 0.17, y: 0.17, z: 0.17}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 724684233341765604}
   - {fileID: 6919342645323175116}
@@ -313,6 +314,19 @@ MonoBehaviour:
   - {fileID: 8207120141953185362, guid: a50412f29b92bdc4888f3666dee1d2f0, type: 3}
   - {fileID: 6562446266208103412, guid: 8eb992f41770e384cb6473b53315c94b, type: 3}
   - {fileID: 2964767800185838405, guid: 794d574d45161344c97d9fda9b2fb3d7, type: 3}
+--- !u!114 &8668277278385416246
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3437219668375729335}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51dc3e7cc0ddccc409f38306a948338f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  lifetime: 240
 --- !u!1001 &1002041219529789105
 PrefabInstance:
   m_ObjectHideFlags: 0
