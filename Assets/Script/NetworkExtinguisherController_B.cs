@@ -96,7 +96,7 @@ public class NetworkExtinguisherController_B : NetworkBehaviour
     {
         if (nozzlePoint == null) return;
 
-        Ray ray = new Ray(nozzlePoint.position, nozzlePoint.forward);
+        Ray ray = new Ray(nozzlePoint.position, nozzlePoint.right);
         if (Physics.Raycast(ray, out RaycastHit hit, range, fireLayer, QueryTriggerInteraction.Collide))
         {
             Debug.Log($"[Raycast] Hit {hit.collider.name} at distance {hit.distance}");
