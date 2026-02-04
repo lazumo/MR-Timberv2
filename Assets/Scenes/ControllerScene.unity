@@ -2560,7 +2560,7 @@ PrefabInstance:
         type: 3}
       propertyPath: crossSectionMaterial
       value: 
-      objectReference: {fileID: 2100000, guid: f43a7dc4f39c5654a8211b83259e32a9, type: 2}
+      objectReference: {fileID: 2100000, guid: ec09fca7dfb74f54cadb264beac96a0b, type: 2}
     - target: {fileID: 7130736442241970851, guid: 0cda14b9e8db2d54986c45f62b140ae3,
         type: 3}
       propertyPath: GlobalObjectIdHash
