@@ -172,9 +172,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   nozzlePoint: {fileID: 1430970190524861718}
   sprayVFX: {fileID: 4869157844706584249}
-  range: 3
+  range: 2
   extinguishRate: 10
   triggerThreshold: 0.25
+  fireLayer:
+    serializedVersion: 2
+    m_Bits: 1024
   isSpraying:
     m_InternalValue: 0
 --- !u!114 &3597143408202544751
