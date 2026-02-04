@@ -65,6 +65,16 @@ PrefabInstance:
       propertyPath: InitialModule.gravityModifier.scalar
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3474877631336494897, guid: a5022cb472be248ae9ed49d6f0207fb8,
+        type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+    - target: {fileID: 3474877631336494897, guid: a5022cb472be248ae9ed49d6f0207fb8,
+        type: 3}
+      propertyPath: m_RenderMode
+      value: 4
+      objectReference: {fileID: 0}
     - target: {fileID: 3867849295301404749, guid: a5022cb472be248ae9ed49d6f0207fb8,
         type: 3}
       propertyPath: m_Name
