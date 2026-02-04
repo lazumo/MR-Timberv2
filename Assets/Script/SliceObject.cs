@@ -135,7 +135,7 @@ public class SliceObject : NetworkBehaviour
 
         GameObject target = netObj.gameObject;
 
-        var hull = target.Slice(point, normal, crossSectionMaterial);
+        var hull = target.Slice(point, normal, crossSectionMaterial, 1);
         if (hull == null) return;
 
         Transform parent = target.transform.parent;
