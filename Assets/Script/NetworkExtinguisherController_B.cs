@@ -8,7 +8,7 @@ public class NetworkExtinguisherController_B : NetworkBehaviour
     public ParticleSystem sprayVFX;
 
     [Header("Settings")]
-    public float range = 3f;
+    public float range = 10f;
     public float extinguishRate = 10f;
     public float triggerThreshold = 0.25f;
 

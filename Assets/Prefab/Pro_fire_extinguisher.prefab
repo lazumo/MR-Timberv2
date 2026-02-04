@@ -271,7 +271,8 @@ PrefabInstance:
       value: Pro_fire_extinguisher
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 4498923502915589047, guid: fe295832034e64e1994d1f7ac73a75e4, type: 3}
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 5802109215746224099, guid: fe295832034e64e1994d1f7ac73a75e4,
         type: 3}
@@ -338,8 +339,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   nozzlePoint: {fileID: 6938125193882961104}
   sprayVFX: {fileID: 2863965736441552450}
-  range: 3
-  extinguishRate: 10
+  range: 10
+  extinguishRate: 20
   triggerThreshold: 0.25
   isSpraying:
     m_InternalValue: 0
