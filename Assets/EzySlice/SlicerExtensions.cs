@@ -36,6 +36,60 @@ namespace EzySlice {
         public static SlicedHull Slice(this GameObject obj, Plane pl, TextureRegion textureRegion, Material crossSectionMaterial = null) {
             return Slicer.Slice(obj, pl, textureRegion, crossSectionMaterial);
         }
+        public static SlicedHull Slice(
+            this GameObject obj,
+            Vector3 position,
+            Vector3 direction,
+            Material crossSectionMaterial,
+            int crossSectionSubmeshIndex   // ⭐ 新參數
+        )
+        {
+            // === 1️⃣ 建立 cutting plane（世界 → local）===
+            Plane cuttingPlane = new Plane();
+
+            Matrix4x4 mat = obj.transform.worldToLocalMatrix;
+            Matrix4x4 transpose = mat.transpose;
+            Matrix4x4 inv = transpose.inverse;
+
+            Vector3 refUp = inv.MultiplyVector(direction).normalized;
+            Vector3 refPt = obj.transform.InverseTransformPoint(position);
+
+            cuttingPlane.Compute(refPt, refUp);
+
+            // === 2️⃣ 找 cross section material 對應的 submesh index ===
+            int crossIndex = -1;
+
+            if (crossSectionMaterial != null &&
+                obj.TryGetComponent<MeshRenderer>(out var renderer))
+            {
+
+                var mats = renderer.sharedMaterials;
+                for (int i = 0; i < mats.Length; i++)
+                {
+                    if (mats[i] == crossSectionMaterial)
+                    {
+                        crossIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            // 如果沒找到，就 append 在最後（EzySlice 原行為）
+            if (crossIndex < 0 &&
+                obj.TryGetComponent<MeshFilter>(out var filter))
+            {
+                crossIndex = filter.sharedMesh.subMeshCount;
+            }
+
+            // === 3️⃣ ⭐ 呼叫你改過的核心 Slicer ===
+            return Slicer.Slice(
+                obj.GetComponent<MeshFilter>().sharedMesh,
+                cuttingPlane,
+                new TextureRegion(0, 0, 1, 1),
+                crossIndex,
+                crossSectionSubmeshIndex
+            );
+        }
 
         /**
          * These functions (and overrides) will return the final indtaniated GameObjects types

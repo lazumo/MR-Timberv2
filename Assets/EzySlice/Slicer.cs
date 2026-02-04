@@ -15,7 +15,7 @@ namespace EzySlice {
         internal class SlicedSubmesh {
             public readonly List<Triangle> upperHull = new List<Triangle>();
             public readonly List<Triangle> lowerHull = new List<Triangle>();
-
+            
             /**
              * Check if the submesh has had any UV's added.
              * NOTE -> This should be supported properly
@@ -250,6 +250,105 @@ namespace EzySlice {
             }
 
             // no slicing occured, just return null to signify
+            return null;
+        }
+        public static SlicedHull Slice(
+            Mesh sharedMesh,
+            Plane pl,
+            TextureRegion region,
+            int crossIndex,
+            int crossSectionSubmeshIndex   // ⭐ 指定哪個 submesh 產生切面
+        )
+        {
+            if (sharedMesh == null)
+            {
+                return null;
+            }
+
+            Vector3[] verts = sharedMesh.vertices;
+            Vector2[] uv = sharedMesh.uv;
+            Vector3[] norm = sharedMesh.normals;
+            Vector4[] tan = sharedMesh.tangents;
+
+            int submeshCount = sharedMesh.subMeshCount;
+
+            SlicedSubmesh[] slices = new SlicedSubmesh[submeshCount];
+            List<Vector3> crossHull = new List<Vector3>();
+
+            IntersectionResult result = new IntersectionResult();
+
+            bool genUV = verts.Length == uv.Length;
+            bool genNorm = verts.Length == norm.Length;
+            bool genTan = verts.Length == tan.Length;
+
+            for (int submesh = 0; submesh < submeshCount; submesh++)
+            {
+
+                int[] indices = sharedMesh.GetTriangles(submesh);
+                int indicesCount = indices.Length;
+
+                SlicedSubmesh mesh = new SlicedSubmesh();
+
+                bool allowCrossSection =
+                    (crossSectionSubmeshIndex < 0) ||   // -1 = 原本行為
+                    (submesh == crossSectionSubmeshIndex);
+
+                for (int index = 0; index < indicesCount; index += 3)
+                {
+                    int i0 = indices[index + 0];
+                    int i1 = indices[index + 1];
+                    int i2 = indices[index + 2];
+
+                    Triangle newTri = new Triangle(
+                        verts[i0], verts[i1], verts[i2]
+                    );
+
+                    if (genUV) newTri.SetUV(uv[i0], uv[i1], uv[i2]);
+                    if (genNorm) newTri.SetNormal(norm[i0], norm[i1], norm[i2]);
+                    if (genTan) newTri.SetTangent(tan[i0], tan[i1], tan[i2]);
+
+                    if (newTri.Split(pl, result))
+                    {
+
+                        for (int i = 0; i < result.upperHullCount; i++)
+                            mesh.upperHull.Add(result.upperHull[i]);
+
+                        for (int i = 0; i < result.lowerHullCount; i++)
+                            mesh.lowerHull.Add(result.lowerHull[i]);
+
+                        // ⭐⭐ 關鍵：只在指定 submesh 收集切面
+                        if (allowCrossSection)
+                        {
+                            for (int i = 0; i < result.intersectionPointCount; i++)
+                                crossHull.Add(result.intersectionPoints[i]);
+                        }
+
+                    }
+                    else
+                    {
+                        SideOfPlane side = pl.SideOf(verts[i0]);
+                        if (side == SideOfPlane.UP || side == SideOfPlane.ON)
+                            mesh.upperHull.Add(newTri);
+                        else
+                            mesh.lowerHull.Add(newTri);
+                    }
+                }
+
+                slices[submesh] = mesh;
+            }
+
+            for (int i = 0; i < slices.Length; i++)
+            {
+                if (slices[i] != null && slices[i].isValid)
+                {
+                    return CreateFrom(
+                        slices,
+                        CreateFrom(crossHull, pl.normal, region),
+                        crossIndex
+                    );
+                }
+            }
+
             return null;
         }
 
