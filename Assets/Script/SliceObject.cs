@@ -111,7 +111,7 @@ public class SliceObject : NetworkBehaviour
         {
             TreeSpawnerNetworked.Instance.NotifyTreeDestroyed(TreeSpawnerNetworked.TreeType.Wood);
             Debug.Log("[SliceObject] Notified Spawner of Wood Tree death.");
-            StartCoroutine(DelayedSpawnTree(5f));
+            StartCoroutine(DelayedSpawnTree(8f));
         }
         // 3. Perform Visual Slice on all clients (MOVED INSIDE CHECK)
         PerformSliceClientRpc(objId, point, normal);

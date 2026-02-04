@@ -24,12 +24,33 @@ public class ResourceManager : NetworkBehaviour
             return;
         }
 
-        GameObject resObj = Instantiate(resourcePrefab, spawnPos, Quaternion.identity);
+        HouseSpawnerNetworked.HouseData house = default;
+        bool hasHouse = false;
+
+        if (HouseSpawnerNetworked.Instance != null)
+        {
+            hasHouse = HouseSpawnerNetworked.Instance.TryGetNextHouse(out house);
+        }
+
+        // ===== rotation =====
+        Quaternion rotation = Quaternion.identity;
+
+        if (hasHouse)
+        {
+            Vector3 dir = house.Position - spawnPos;
+            if (dir.sqrMagnitude > 0.0001f)
+            {
+                rotation = Quaternion.LookRotation(dir.normalized, Vector3.up);
+            }
+        }
+
+        // ===== spawn =====
+        GameObject resObj = Instantiate(resourcePrefab, spawnPos, rotation);
         NetworkObject netObj = resObj.GetComponent<NetworkObject>();
         netObj.Spawn(true);
 
-        if (HouseSpawnerNetworked.Instance != null &&
-            HouseSpawnerNetworked.Instance.TryGetNextHouse(out var house))
+        // ===== assign job =====
+        if (hasHouse)
         {
             NetworkResourceController rc = resObj.GetComponent<NetworkResourceController>();
             if (rc != null)
