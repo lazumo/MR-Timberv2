@@ -12,6 +12,7 @@ public class NetworkExtinguisherController : NetworkBehaviour
     public float extinguishRate = 10f;
     public float triggerThreshold = 0.25f;
 
+    [SerializeField] LayerMask fireLayer;
     // Server 同步噴射狀態，讓兩端都能看到 VFX
     public NetworkVariable<bool> isSpraying =
         new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
@@ -73,7 +74,7 @@ public class NetworkExtinguisherController : NetworkBehaviour
         if (nozzlePoint == null) return;
 
         Ray ray = new Ray(nozzlePoint.position, -nozzlePoint.right);
-        if (Physics.Raycast(ray, out RaycastHit hit, range, ~0, QueryTriggerInteraction.Collide))
+        if (Physics.Raycast(ray, out RaycastHit hit, range, fireLayer, QueryTriggerInteraction.Collide))
         {
             var fire = hit.collider.GetComponent<NetworkFireController>();
             if (fire != null)

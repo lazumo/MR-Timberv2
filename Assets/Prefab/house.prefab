@@ -211,7 +211,10 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 1
-  forwardOffset: 0.3
+  forwardOffset: 1
+  raycastDistance: 10
+  floorSideDistance: 1
+  floorUpOffset: 0.05
 --- !u!114 &2136208735390643453
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -520,6 +523,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Layer
       value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 6986804322641037930, guid: 50cc1b9ad47c6a646930a166d2bf7388,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7763586934883913936, guid: 50cc1b9ad47c6a646930a166d2bf7388,
         type: 3}

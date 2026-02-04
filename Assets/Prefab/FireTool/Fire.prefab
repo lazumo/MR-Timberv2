@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 1861815710038523721}
   - component: {fileID: 3785992413366431009}
   - component: {fileID: 6018999089935025862}
-  m_Layer: 6
+  m_Layer: 10
   m_Name: Light
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4859,7 +4859,7 @@ GameObject:
   - component: {fileID: 796790792601480848}
   - component: {fileID: 4197882296354140583}
   - component: {fileID: 8560528194022772718}
-  m_Layer: 6
+  m_Layer: 10
   m_Name: Flames Secondary
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -9702,7 +9702,7 @@ GameObject:
   - component: {fileID: 6364912731328466336}
   - component: {fileID: 4140976190992912397}
   - component: {fileID: -9069431879252681966}
-  m_Layer: 6
+  m_Layer: 10
   m_Name: Fire
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -14717,8 +14717,8 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.5
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Radius: 0.9
+  m_Center: {x: 0, y: 0.45, z: 0}
 --- !u!1 &6519323172324376771
 GameObject:
   m_ObjectHideFlags: 0
@@ -14730,7 +14730,7 @@ GameObject:
   - component: {fileID: 8706947171078480985}
   - component: {fileID: 729522278283446589}
   - component: {fileID: 5621837239975193050}
-  m_Layer: 6
+  m_Layer: 10
   m_Name: Flames Big
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -19569,7 +19569,7 @@ GameObject:
   - component: {fileID: 1529932476663829631}
   - component: {fileID: 1504025001271575628}
   - component: {fileID: 5811761477566116418}
-  m_Layer: 6
+  m_Layer: 10
   m_Name: Heat Distortion
   m_TagString: Untagged
   m_Icon: {fileID: 0}
