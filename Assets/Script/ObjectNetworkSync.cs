@@ -35,13 +35,21 @@ public class ObjectNetworkSync : NetworkBehaviour
             NetworkVariableWritePermission.Server
         );
 
-    // House → ColorFactory reference
     private NetworkVariable<NetworkObjectReference> colorFactoryRef =
         new NetworkVariable<NetworkObjectReference>(
             default,
             NetworkVariableReadPermission.Everyone,
             NetworkVariableWritePermission.Server
         );
+
+    // =============================
+    // ✅ Public read access + event
+    // =============================
+
+    public HouseState CurrentState => currentHouseState.Value;
+    public PaintStage CurrentPaintStage => paintStage.Value;
+
+    public event Action<HouseState> OnHouseStateChanged;
 
     // =============================
     // Unity
@@ -56,18 +64,12 @@ public class ObjectNetworkSync : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        // 🔑 所有顯示都只走這裡
         currentHouseState.OnValueChanged += (_, _) => RefreshVisual();
         colorIndex.OnValueChanged += (_, _) => RefreshVisual();
         paintStage.OnValueChanged += (_, _) => RefreshVisual();
 
-        // 初始化顯示
         RefreshVisual();
     }
-
-    // =============================
-    // Visual
-    // =============================
 
     private void RefreshVisual()
     {
@@ -78,13 +80,10 @@ public class ObjectNetworkSync : NetworkBehaviour
         );
     }
 
-    // =============================
-    // State handling (Server only)
-    // =============================
-
     private void OnHouseStateEntered(HouseState newState)
     {
         _fireController?.OnHouseStateChanged(newState);
+
         switch (newState)
         {
             case HouseState.Built:
@@ -92,22 +91,16 @@ public class ObjectNetworkSync : NetworkBehaviour
                 break;
 
             case HouseState.Coloring:
-                // 進入上色流程時，至少是 1/3
                 if (paintStage.Value == PaintStage.None)
                     paintStage.Value = PaintStage.One;
                 break;
 
             case HouseState.Colored:
-                // ⭐ 保證 Colored 一定是 3/3
                 paintStage.Value = PaintStage.Full;
                 DespawnFactoryIfExists();
                 break;
         }
     }
-
-    // =============================
-    // Factory
-    // =============================
 
     private void TrySpawnAndBindFactory()
     {
@@ -136,7 +129,7 @@ public class ObjectNetworkSync : NetworkBehaviour
     }
 
     // =============================
-    // Public API (Server only)
+    // ✅ Public API (Server only)
     // =============================
 
     public void SetState(HouseState newState)
@@ -151,6 +144,11 @@ public class ObjectNetworkSync : NetworkBehaviour
             return;
 
         currentHouseState.Value = newState;
+
+        // ✅ 關鍵修正：先通知外部（此時 factory 還活著）
+        OnHouseStateChanged?.Invoke(newState);
+
+        // ✅ 再做進入狀態行為（這裡可能會 despawn factory）
         OnHouseStateEntered(newState);
     }
 
@@ -174,40 +172,25 @@ public class ObjectNetworkSync : NetworkBehaviour
             SetState(HouseState.Coloring);
             return;
         }
-            
 
         if (paintStage.Value < PaintStage.Full)
-        {
             paintStage.Value++;
-        }
 
-        // 自動完成
         if (paintStage.Value == PaintStage.Full)
-        {
             SetState(HouseState.Colored);
-        }
     }
-
-    // =============================
-    // Debug / Test
-    // =============================
 
     private void Update()
     {
         if (!IsServer) return;
 
-        // 右手扳機：上色進度 +1
         if (OVRInput.GetDown(OVRInput.Button.PrimaryHandTrigger))
-        {
             AdvancePaintStage();
-        }
 
-        // 左手扳機：強制切換 HouseState（debug only）
         if (OVRInput.GetDown(OVRInput.Button.PrimaryIndexTrigger, OVRInput.Controller.LTouch))
-        {
             DebugCycleState();
-        }
     }
+
     private void DebugCycleState()
     {
         Array states = Enum.GetValues(typeof(HouseState));
@@ -216,7 +199,6 @@ public class ObjectNetworkSync : NetworkBehaviour
         HouseState nextState = (HouseState)states.GetValue(nextIndex);
 
         Debug.Log($"[DEBUG] Force switch state: {currentHouseState.Value} → {nextState}");
-
         SetState(nextState);
     }
 }

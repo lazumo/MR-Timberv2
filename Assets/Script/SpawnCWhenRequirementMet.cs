@@ -1,4 +1,4 @@
-using Unity.Netcode;
+﻿using Unity.Netcode;
 using UnityEngine;
 
 public class SpawnCWhenRequirementMet : NetworkBehaviour
@@ -15,6 +15,9 @@ public class SpawnCWhenRequirementMet : NetworkBehaviour
 
     private NetworkObject spawnedC;
 
+    private ObjectNetworkSync houseNet;
+    private bool subscribed;
+
     private void Reset()
     {
         factory = GetComponent<ColorFactory>();
@@ -22,105 +25,124 @@ public class SpawnCWhenRequirementMet : NetworkBehaviour
         factoryData = GetComponent<ColorFactoryData>();
     }
 
+    public override void OnNetworkSpawn()
+    {
+        base.OnNetworkSpawn();
+        if (IsServer) TryBindHouse();
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        // ✅ 保底：就算 factory 要被 despawn，也先把 C despawn 掉
+        if (IsServer)
+            DespawnC();
+
+        UnbindHouse();
+        base.OnNetworkDespawn();
+    }
+
+    private void TryBindHouse()
+    {
+        if (factory == null) return;
+        if (factory.ownerHouse == null) return;
+
+        var net = factory.ownerHouse.GetComponent<ObjectNetworkSync>();
+        if (net == null) return;
+
+        if (houseNet == net && subscribed) return;
+
+        UnbindHouse();
+        houseNet = net;
+
+        houseNet.OnHouseStateChanged += OnHouseStateChanged;
+        subscribed = true;
+
+        // 立刻檢查：如果已經 Colored，直接清掉
+        if (houseNet.CurrentState == HouseState.Colored)
+            DespawnC();
+    }
+
+    private void UnbindHouse()
+    {
+        if (houseNet != null && subscribed)
+        {
+            houseNet.OnHouseStateChanged -= OnHouseStateChanged;
+            subscribed = false;
+        }
+        houseNet = null;
+    }
+
+    private void OnHouseStateChanged(HouseState s)
+    {
+        if (!IsServer) return;
+
+        if (s == HouseState.Colored)
+            DespawnC();
+    }
+
+    private void DespawnC()
+    {
+        if (spawnedC != null && spawnedC.IsSpawned)
+        {
+            Debug.Log("[SpawnC] Despawn C");
+            spawnedC.Despawn(true);
+        }
+        spawnedC = null;
+    }
+
     private void Update()
     {
-        if (!IsServer)
-        {
-            Debug.Log($"[SpawnC] Not server -> skip (owner: {gameObject.name})");
+        if (!IsServer) return;
+
+        // ownerHouse 可能晚一點才有，補綁定
+        if (houseNet == null)
+            TryBindHouse();
+
+        // house 已 Colored：不要 spawn
+        if (houseNet != null && houseNet.CurrentState == HouseState.Colored)
             return;
-        }
 
         if (spawnedC != null)
-        {
-            Debug.Log($"[SpawnC] Already spawned -> skip");
             return;
-        }
 
-        if (factory == null)
-        {
-            Debug.LogError("[SpawnC] factory is null!");
+        if (factory == null || requirement == null || factoryData == null)
             return;
-        }
-
-        if (requirement == null)
-        {
-            Debug.LogError("[SpawnC] requirement is null!");
-            return;
-        }
-
-        if (factoryData == null)
-        {
-            Debug.LogError("[SpawnC] factoryData is null!");
-            return;
-        }
 
         if (cPrefabs == null || cPrefabs.Length == 0)
-        {
-            Debug.LogError("[SpawnC] cPrefabs not assigned or empty!");
             return;
-        }
 
         if (!requirement.IsRequirementMet())
-        {
-            Debug.Log($"[SpawnC] Requirement not met yet");
             return;
-        }
 
         var b = factory.ownerHouse;
         if (b == null)
-        {
-            Debug.LogError("[SpawnC] ownerHouse (B) is null!");
             return;
-        }
 
-        int idx = factoryData.color.Value;
-        Debug.Log($"[SpawnC] Raw index from factoryData: {idx}");
-
-        idx = Mathf.Clamp(idx, 0, cPrefabs.Length - 1);
-        Debug.Log($"[SpawnC] Clamped index: {idx}");
-
+        int idx = Mathf.Clamp(factoryData.color.Value, 0, cPrefabs.Length - 1);
         var chosenPrefab = cPrefabs[idx];
-
         if (chosenPrefab == null)
-        {
-            Debug.LogError($"[SpawnC] Prefab at index {idx} is null!");
             return;
-        }
-
-        Debug.Log($"[SpawnC] Chosen prefab name: {chosenPrefab.name}");
 
         Vector3 aPos = transform.position;
         Vector3 bPos = b.transform.position;
 
-        Debug.Log($"[SpawnC] A pos: {aPos}, B pos: {bPos}");
-
         Vector3 spawnPos = new Vector3(aPos.x, bPos.y, aPos.z);
-        Debug.Log($"[SpawnC] Calculated spawnPos: {spawnPos}");
 
-        Vector3 dir = bPos - spawnPos;
-        dir = -dir;
+        Vector3 dir = -(bPos - spawnPos);
         dir.y = 0f;
-
         if (dir.sqrMagnitude < 1e-6f)
-        {
-            Debug.LogWarning("[SpawnC] Direction too small, skip rotation");
             return;
-        }
 
         Vector3 right = -dir.normalized;
         Vector3 up = Vector3.up;
         Vector3 forward = Vector3.Cross(up, right).normalized;
-
-        if (forward.sqrMagnitude < 1e-6f)
-            forward = Vector3.forward;
+        if (forward.sqrMagnitude < 1e-6f) forward = Vector3.forward;
 
         Quaternion rot = Quaternion.LookRotation(forward, up);
-
-        Debug.Log($"[SpawnC] Spawning object now...");
 
         spawnedC = Instantiate(chosenPrefab, spawnPos, rot);
         spawnedC.Spawn(true);
 
-        Debug.Log($"[SpawnC] Spawned successfully: {spawnedC.name}");
+        Debug.Log($"[SpawnC] Spawned C: {spawnedC.name}");
     }
 }
