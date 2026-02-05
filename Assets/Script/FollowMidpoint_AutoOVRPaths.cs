@@ -1,11 +1,11 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using Unity.Netcode;
 
 public class CrossDeviceSawFollower_ServerAuthoritative : NetworkBehaviour
 {
     [Header("Assign in scene/prefab (per device)")]
-    public Transform serverLeftControllerAnchor;   // Server ºİ­n¦³¡]¥ª¤â¡^
-    public Transform clientRightControllerAnchor;  // Client ºİ­n¦³¡]¥k¤â¡^
+    public Transform serverLeftControllerAnchor;   // Server ç«¯å·¦æ‰‹
+    public Transform clientRightControllerAnchor;  // Client ç«¯å³æ‰‹ï¼ˆé Server çš„é‚£å°ï¼‰
 
     private Transform toolsRoot;
 
@@ -16,26 +16,80 @@ public class CrossDeviceSawFollower_ServerAuthoritative : NetworkBehaviour
             NetworkVariableWritePermission.Server
         );
 
+    // åªè¿½è¹¤é€™å€‹ client çš„å³æ‰‹ï¼ˆé¿å…ç¬¬ä¸‰äººè¦†è“‹ï¼‰
+    private ulong trackedClientId = ulong.MaxValue;
+
     public override void OnNetworkSpawn()
     {
         toolsRoot = transform.parent;
+
+        if (IsServer)
+        {
+            PickTrackedClientIfNeeded();
+
+            // æ–·ç·š/é‡é€£æ™‚ä¿æŒç©©å®š
+            NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
+            NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
+        }
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        if (IsServer && NetworkManager.Singleton != null)
+        {
+            NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
+            NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;
+        }
+    }
+
+    private void OnClientConnected(ulong clientId)
+    {
+        // å¦‚æœé‚„æ²’é¸åˆ°ç©å®¶ï¼Œå°±é¸ä¸€å€‹
+        PickTrackedClientIfNeeded();
+    }
+
+    private void OnClientDisconnected(ulong clientId)
+    {
+        if (clientId == trackedClientId)
+        {
+            trackedClientId = ulong.MaxValue;
+            PickTrackedClientIfNeeded();
+        }
+    }
+
+    private void PickTrackedClientIfNeeded()
+    {
+        if (trackedClientId != ulong.MaxValue) return;
+
+        var nm = NetworkManager.Singleton;
+        if (nm == null) return;
+
+        ulong serverId = NetworkManager.ServerClientId;
+
+
+        foreach (var id in nm.ConnectedClientsIds)
+        {
+            if (id != serverId)
+            {
+                trackedClientId = id; // åªè¿½è¹¤ç¬¬ä¸€å€‹éServer client
+                break;
+            }
+        }
     }
 
     void Update()
     {
-        // Client ¥u­t³d°e¥k¤â¦ì¸m¡]«D Server ªº¨º¥x¡^
+        // ä»»ä½•é Server çš„ client éƒ½å¯èƒ½è·‘åˆ°é€™æ®µï¼ˆå« Observerï¼‰
+        // æ²’é—œä¿‚ï¼ŒServer ç«¯æœƒç”¨ SenderClientId éæ¿¾æ‰ä¸è©²é€²ä¾†çš„
         if (IsClient && !IsServer && clientRightControllerAnchor != null)
         {
             SubmitClientRightHandPosServerRpc(clientRightControllerAnchor.position);
         }
-
-        // Server ¤]¥i¥HÃB¥~«OÀI¡G¦pªG serverLeft ¨S³]¨ì´N¤£°µ
-        // ¡]¤£¦b³o¸Ì°Ê saw¡Asaw ¦b LateUpdate ¤~°Ê¡^
     }
 
     void LateUpdate()
     {
-        // ¿÷¤l¥uÅı Server °Ê
+        // é‹¸å­åªè®“ Server å‹•
         if (!IsServer) return;
         if (toolsRoot == null || serverLeftControllerAnchor == null) return;
 
@@ -44,15 +98,18 @@ public class CrossDeviceSawFollower_ServerAuthoritative : NetworkBehaviour
 
         Vector3 midpoint = (leftPos + rightPos) * 0.5f;
 
-        // rotation ¥H server ¥ª¤â rotation ¬°·Ç
+        // rotation ä»¥ server å·¦æ‰‹ rotation ç‚ºæº–
         Quaternion rot = serverLeftControllerAnchor.rotation;
 
         toolsRoot.SetPositionAndRotation(midpoint, rot);
     }
 
     [ServerRpc(RequireOwnership = false)]
-    void SubmitClientRightHandPosServerRpc(Vector3 pos)
+    void SubmitClientRightHandPosServerRpc(Vector3 pos, ServerRpcParams rpcParams = default)
     {
+        // âœ… é—œéµï¼šåªæ”¶è¢«è¿½è¹¤çš„é‚£å€‹ client
+        if (rpcParams.Receive.SenderClientId != trackedClientId) return;
+
         clientRightPos.Value = pos;
     }
 }
