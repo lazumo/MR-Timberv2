@@ -6,6 +6,7 @@ public class SpawnCWhenActive : NetworkBehaviour
     [Header("Refs")]
     [SerializeField] private ColorFactory factory;
     [SerializeField] private ColorFactoryData factoryData;
+    [SerializeField] private BarShowWhenEnoughMatchingFruits requirement;
     [SerializeField] private ColorFactoryNetDriver netDriver;
 
     [Header("C Prefabs (must have NetworkObject)")]
@@ -21,6 +22,7 @@ public class SpawnCWhenActive : NetworkBehaviour
     {
         factory = GetComponent<ColorFactory>();
         factoryData = GetComponent<ColorFactoryData>();
+        requirement = GetComponent<BarShowWhenEnoughMatchingFruits>();
         netDriver = GetComponent<ColorFactoryNetDriver>();
     }
 
@@ -47,7 +49,7 @@ public class SpawnCWhenActive : NetworkBehaviour
             TryBindHouse();
 
         // safety
-        if (factory == null || factoryData == null || netDriver == null)
+        if (factory == null || factoryData == null)
             return;
 
         // house finished → force despawn
@@ -57,8 +59,7 @@ public class SpawnCWhenActive : NetworkBehaviour
             return;
         }
 
-        // 🔑 核心規則：只看 IsActive
-        if (!netDriver.IsActive.Value)
+        if (requirement == null || !requirement.IsRequirementMet())
         {
             DespawnC();
             return;
@@ -107,7 +108,19 @@ public class SpawnCWhenActive : NetworkBehaviour
         Quaternion rot = Quaternion.LookRotation(forward, Vector3.up);
 
         spawnedC = Instantiate(prefab, spawnPos, rot);
-        spawnedC.Spawn(true);
+        var effects = spawnedC.GetComponent<ElfPlayEffects>();
+        var netObj = spawnedC.GetComponent<NetworkObject>();
+
+        // 1. 先 Spawn (必須先 Spawn 才能改 NetworkVariable)
+        netObj.Spawn(true);
+
+        // 2. 設定要綁定哪個 Driver
+        if (effects != null && netDriver != null) // netDriver 是你原本持有的那個
+        {
+            // ⭐ 把你的 netDriver 轉成 NetworkObject 塞進去
+            // 這一行執行後，所有 Client 都會收到通知，並執行上面的 OnTargetChanged -> BindDriver
+            effects.TargetDriverRef.Value = netDriver.GetComponent<NetworkObject>();
+        }
 
         Debug.Log("[SpawnC] Spawned C");
     }

@@ -24,35 +24,35 @@ public class AutoDestroyNetworkObject : NetworkBehaviour
 
     private void PerformDespawn()
     {
-        // ⭐ 根據 FruitData.colorIndex 選 VFX
-        GameObject vfxPrefab = ResolveDestroyVFX();
+        int colorIndex = ResolveColorIndex();
 
-        if (vfxPrefab != null)
-        {
-            Instantiate(vfxPrefab, transform.position, Quaternion.identity);
-        }
+        // ⭐ 所有 Client 播放 VFX
+        PlayDestroyVFXClientRpc(colorIndex, transform.position);
 
-        // ⭐ Network Despawn（Server only）
+        // ⭐ Server Despawn
         if (NetworkObject != null && NetworkObject.IsSpawned)
-        {
             NetworkObject.Despawn(true);
-        }
     }
 
-
-    private GameObject ResolveDestroyVFX()
+    private int ResolveColorIndex()
     {
         var fruitData = GetComponent<FruitData>();
-        if (fruitData == null) return null;
+        if (fruitData == null) return 0;
+        return fruitData.colorIndex.Value;
+    }
 
-        int index = fruitData.colorIndex.Value;
-
+    [ClientRpc]
+    private void PlayDestroyVFXClientRpc(int colorIndex, Vector3 pos)
+    {
         if (destroyVFXByColor == null || destroyVFXByColor.Length == 0)
-            return null;
+            return;
 
-        if (index < 0 || index >= destroyVFXByColor.Length)
-            index = 0;
+        if (colorIndex < 0 || colorIndex >= destroyVFXByColor.Length)
+            colorIndex = 0;
 
-        return destroyVFXByColor[index];
+        var prefab = destroyVFXByColor[colorIndex];
+        if (prefab == null) return;
+
+        Instantiate(prefab, pos, Quaternion.identity);
     }
 }

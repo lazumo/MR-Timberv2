@@ -2485,7 +2485,7 @@ PrefabInstance:
     - target: {fileID: 6873156181121848096, guid: 183d70e2332751744824b132356e8481,
         type: 3}
       propertyPath: posOffset
-      value: 0.3
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 6873156181121848096, guid: 183d70e2332751744824b132356e8481,
         type: 3}
