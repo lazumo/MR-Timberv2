@@ -28,13 +28,16 @@ public class HouseSpawnerNetworked : NetworkBehaviour
     [Header("Settings")]
     public GameObject housePrefab;
     public int numberOfHouses = 5;
-
+    [SerializeField] private float minWallHeight = 1.0f;  // 離地 50 cm
+    [SerializeField] private float maxWallHeight = 2.5f;  // 離地 180 cm
     [Header("Placement Rules")]
     public LayerMask obstacleLayerMask;
-
+    [Header("Spawn Boundary")]
+    [SerializeField] private Transform spawnBoundary;
     // TUNED: Set to 0.5f. (0.5 + 0.5 = 1.0 meter total size). 
     // 0.1f is often too small to stop overlaps.
     public Vector3 collisionCheckSize = new Vector3(0.5f, 0.5f, 0.5f);
+    static readonly float[] NormalAxisRotations = { 0f, 90f, 180f, 270f };
 
     // --- 2. The Networked List ---
     private NetworkList<HouseData> _spawnedHouseData;
@@ -76,10 +79,21 @@ public class HouseSpawnerNetworked : NetworkBehaviour
         int attempts = 0;
         _nextQueryID = 0;
 
-        // Setup Filters (MRUK v81+)
-        MRUK.SurfaceType allowedSurfaces = MRUK.SurfaceType.VERTICAL | MRUK.SurfaceType.FACING_DOWN;
+        // 1. 設定允許生成的表面 (原本的邏輯)
+        MRUK.SurfaceType allowedSurfaces = MRUK.SurfaceType.VERTICAL;
         MRUKAnchor.SceneLabels allowedLabels = MRUKAnchor.SceneLabels.FLOOR | MRUKAnchor.SceneLabels.WALL_FACE | MRUKAnchor.SceneLabels.CEILING;
         LabelFilter filter = new LabelFilter(allowedLabels);
+
+        // 2. ⭐ 新增：找出所有我不想要生成的 "Other" Anchor
+        // 這裡我們把所有標記為 OTHER 的物件找出來當作「禁區」
+        List<MRUKAnchor> forbiddenAnchors = new List<MRUKAnchor>();
+        foreach (var anchor in room.Anchors)
+        {
+            if (anchor.Label == MRUKAnchor.SceneLabels.OTHER)
+            {
+                forbiddenAnchors.Add(anchor);
+            }
+        }
 
         while (successfulSpawns < numberOfHouses && attempts < 100)
         {
@@ -87,29 +101,29 @@ public class HouseSpawnerNetworked : NetworkBehaviour
 
             if (room.GenerateRandomPositionOnSurface(allowedSurfaces, 0.1f, filter, out Vector3 pos, out Vector3 normal))
             {
-                // --- ROTATION LOGIC ---
-                // Goal: Top of house (Y-Axis) faces inward (Normal).
-                // Floor: Top faces Up. Wall: Top faces In.
+                if (pos.y < minWallHeight || pos.y > maxWallHeight)
+                    continue;
+                if (spawnBoundary != null && pos.x < spawnBoundary.position.x)
+                    continue;
+                // --- 以下是原本的旋轉與生成邏輯 (保持不變) ---
                 Quaternion rot = Quaternion.FromToRotation(Vector3.up, normal);
-
-                // Add random spin around the "Normal" axis (the pole sticking out of the wall)
-                rot *= Quaternion.Euler(0, Random.Range(0, 360), 0);
+                int rotIndex = Random.Range(0, NormalAxisRotations.Length);
+                float angle = NormalAxisRotations[rotIndex];
+                rot = Quaternion.AngleAxis(angle, normal) * rot;
 
                 if (IsSpaceEmpty(pos, rot))
                 {
-                    // 1. Spawn the physical object
                     GameObject houseObj = Instantiate(housePrefab, pos, rot);
                     var netObj = houseObj.GetComponent<NetworkObject>();
-                    netObj.Spawn(); // ⭐ 先 Spawn
+                    netObj.Spawn();
 
                     var houseSync = houseObj.GetComponent<ObjectNetworkSync>();
                     if (houseSync != null)
                     {
                         int randomColor = Random.Range(0, ColorTable.Count);
-                        houseSync.InitializeColorIndex(randomColor); // ⭐ Spawn 後才設
+                        houseSync.InitializeColorIndex(randomColor);
                     }
 
-                    // 2. Create the Data Entry (ID + Position)
                     HouseData data = new HouseData
                     {
                         Id = successfulSpawns,
@@ -117,8 +131,6 @@ public class HouseSpawnerNetworked : NetworkBehaviour
                     };
                     _houseObjectMap[data.Id] = houseObj;
                     successfulSpawns++;
-
-                    // 3. Add to NetworkList (Syncs to everyone)
                     _spawnedHouseData.Add(data);
                 }
             }

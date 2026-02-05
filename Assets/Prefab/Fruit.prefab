@@ -92,7 +92,7 @@ MonoBehaviour:
   shadowAlpha: 0.5
   surfaceMask:
     serializedVersion: 2
-    m_Bits: 1
+    m_Bits: 2049
 --- !u!33 &6396109692862557374
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -237,6 +237,8 @@ MonoBehaviour:
   firstBounceForce: 2.5
   secondBounceForce: 1.2
   maxBounces: 2
+  destroyDelay: 2
+  boxLayerName: Box
 --- !u!114 &1764209322767018558
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -326,7 +328,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 51dc3e7cc0ddccc409f38306a948338f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  lifetime: 240
+  destroyVFXByColor:
+  - {fileID: 8207120141953185362, guid: a50412f29b92bdc4888f3666dee1d2f0, type: 3}
+  - {fileID: 6562446266208103412, guid: 8eb992f41770e384cb6473b53315c94b, type: 3}
+  - {fileID: 2964767800185838405, guid: 794d574d45161344c97d9fda9b2fb3d7, type: 3}
+  vfxLifetime: 2
 --- !u!1001 &1002041219529789105
 PrefabInstance:
   m_ObjectHideFlags: 0
