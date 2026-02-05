@@ -1699,7 +1699,7 @@ GameObject:
   - component: {fileID: 388580838661595607}
   m_Layer: 0
   m_Name: NewColorFactory
-  m_TagString: Untagged
+  m_TagString: FactoryZone
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1925,6 +1925,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   factory: {fileID: 1872065602339807301}
   factoryData: {fileID: 413048523854809569}
+  requirement: {fileID: 6522433059020539350}
   netDriver: {fileID: 7175907965347539326}
   cPrefabs:
   - {fileID: 7724484823467438344, guid: f7c2084781fa9e149b8df4aceca88e81, type: 3}
