@@ -33,6 +33,7 @@ TagManager:
   - Ground
   - FactoryZone
   - MiddlePoint
+  - Building
   layers:
   - Default
   - TransparentFX
@@ -45,7 +46,7 @@ TagManager:
   - Tree
   - Fruit
   - Fire
-  - 
+  - Building
   - 
   - 
   - 

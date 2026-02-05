@@ -2,15 +2,15 @@ using UnityEngine;
 
 public class ColorElementTrigger : MonoBehaviour
 {
-    [Header("ª«¥ó¤Þ¥Î")]
+    [Header("ï¿½ï¿½ï¿½ï¿½Þ¥ï¿½")]
     [SerializeField] private Transform lid1; // Box3_lid
     [SerializeField] private Transform lid2; // Box3_lid (1)
     [SerializeField] private GameObject colorElement;
 
-    [Header("³]©w°Ñ¼Æ")]
-    [Tooltip("Ä²µo¶ZÂ÷ (0.1 ¥Nªí 10 ¤½¤À)")]
+    [Header("ï¿½]ï¿½wï¿½Ñ¼ï¿½")]
+    [Tooltip("Ä²ï¿½oï¿½Zï¿½ï¿½ (0.1 ï¿½Nï¿½ï¿½ 10 ï¿½ï¿½ï¿½ï¿½)")]
     public float triggerDistance = 0.1f;
-    [Tooltip("¼Q¥Xªº¤O¹D¤j¤p")]
+    [Tooltip("ï¿½Qï¿½Xï¿½ï¿½ï¿½Oï¿½Dï¿½jï¿½p")]
     public float popForce = 2.0f;
 
     private bool hasTriggered = false;
@@ -20,22 +20,22 @@ public class ColorElementTrigger : MonoBehaviour
     {
         if (colorElement != null)
         {
-            // ªì©lª¬ºA³]¬°Ãö³¬
+            // ï¿½ï¿½lï¿½ï¿½ï¿½Aï¿½]ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             colorElement.SetActive(false);
-            // ¹w¥ý¨ú±o Rigidbody
+            // ï¿½wï¿½ï¿½ï¿½ï¿½ï¿½o Rigidbody
             elementRb = colorElement.GetComponent<Rigidbody>();
         }
     }
 
     void Update()
     {
-        // ¦pªG¤w¸gÄ²µo¹L¡A©ÎªÌ¤Þ¥Î¿ò¥¢¡A´N¤£¦A­pºâ
+        // ï¿½pï¿½Gï¿½wï¿½gÄ²ï¿½oï¿½Lï¿½Aï¿½ÎªÌ¤Þ¥Î¿ò¥¢¡Aï¿½Nï¿½ï¿½ï¿½Aï¿½pï¿½ï¿½
         if (hasTriggered || lid1 == null || lid2 == null || colorElement == null) return;
 
-        // 1. ­pºâ¨â¤ù»\¤l¦b¥@¬ÉªÅ¶¡ªº¶ZÂ÷
+        // 1. ï¿½pï¿½ï¿½ï¿½ï¿½ï¿½\ï¿½lï¿½bï¿½@ï¿½ÉªÅ¶ï¿½ï¿½ï¿½ï¿½Zï¿½ï¿½
         float currentDistance = Vector3.Distance(lid1.position, lid2.position);
 
-        // 2. ·í¶ZÂ÷¤p©ó 10 ¤½¤À (0.1m) ®ÉÄ²µo
+        // 2. ï¿½ï¿½ï¿½Zï¿½ï¿½ï¿½pï¿½ï¿½ 10 ï¿½ï¿½ï¿½ï¿½ (0.1m) ï¿½ï¿½Ä²ï¿½o
         if (currentDistance < triggerDistance)
         {
             TriggerPop();
@@ -46,27 +46,27 @@ public class ColorElementTrigger : MonoBehaviour
     {
         hasTriggered = true;
 
-        // ±Ò°Êª«¥ó
+        // ï¿½Ò°Êªï¿½ï¿½ï¿½
         colorElement.SetActive(true);
 
-        // 3. ¬I¥[ª«²z¤O
+        // 3. ï¿½Iï¿½[ï¿½ï¿½ï¿½zï¿½O
         if (elementRb != null)
         {
-            // Åý¥¦¦V¤W¤è¼Q¥X¡A¨Ã±a¤@ÂIÂIÀH¾÷¨¤«×¬Ý°_¨Ó¤ñ¸û¦ÛµM
+            // ï¿½ï¿½ï¿½ï¿½ï¿½Vï¿½Wï¿½ï¿½Qï¿½Xï¿½Aï¿½Ã±aï¿½@ï¿½Iï¿½Iï¿½Hï¿½ï¿½ï¿½ï¿½ï¿½×¬Ý°_ï¿½Ó¤ï¿½ï¿½ï¿½ÛµM
             Vector3 forceDirection = transform.up + new Vector3(Random.Range(-0.2f, 0.2f), 0, Random.Range(-0.2f, 0.2f));
 
-            // ¨Ï¥Î Impulse ¼Ò¦¡¾A¦X³oºØÀþ¶¡¼Q¥Xªº®ÄªG
+            // ï¿½Ï¥ï¿½ Impulse ï¿½Ò¦ï¿½ï¿½Aï¿½Xï¿½oï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Qï¿½Xï¿½ï¿½ï¿½ÄªG
             elementRb.AddForce(forceDirection.normalized * popForce, ForceMode.Impulse);
 
-            Debug.Log("»\¤l¤w¦XÃl¡AcolorElement ¼Q¥X¡I");
+            Debug.Log("ï¿½\\ï¿½lï¿½wï¿½Xï¿½lï¿½AcolorElement ï¿½Qï¿½Xï¿½I");
         }
         else
         {
-            Debug.LogWarning("colorElement ¨­¤W¨S¦³ Rigidbody¡AµLªk¼Q¥X¡I");
+            Debug.LogWarning("colorElement ï¿½ï¿½ï¿½Wï¿½Sï¿½ï¿½ Rigidbodyï¿½Aï¿½Lï¿½kï¿½Qï¿½Xï¿½I");
         }
     }
 
-    // ´£¨Ñ¤@­Ó­«³]¤èªk¡A¦pªG¤§«á­n­«·sª±¤@¦¸
+    // ï¿½ï¿½ï¿½Ñ¤@ï¿½Ó­ï¿½ï¿½]ï¿½ï¿½kï¿½Aï¿½pï¿½Gï¿½ï¿½ï¿½ï¿½nï¿½ï¿½ï¿½sï¿½ï¿½ï¿½@ï¿½ï¿½
     public void ResetTrigger()
     {
         hasTriggered = false;
