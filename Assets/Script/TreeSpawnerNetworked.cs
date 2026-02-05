@@ -21,14 +21,16 @@ public class TreeSpawnerNetworked : NetworkBehaviour
     public int targetFruitTrees = 3;
     public float fruitStartDelay = 4.0f;
     public float fruitSpawnInterval = 8.0f;
-
+    
     [Header("Safety Area")]
     // X/Z = 0.5f (1m width). Y will be overwritten by column check.
     public Vector3 safetyCheckSize = new Vector3(0.5f, 0.5f, 0.5f);
     public LayerMask collisionLayerMask;
+    public float posOffset = 1.5f;
 
     private int _currentWoodCount = 0;
     private int _currentFruitCount = 0;
+    private int _nextFruitColorIndex = 0;
 
     private void Awake()
     {
@@ -155,13 +157,25 @@ public class TreeSpawnerNetworked : NetworkBehaviour
     private void PerformSpawn(TreeType type, Vector3 pos, Quaternion rot)
     {
         GameObject prefab = (type == TreeType.Wood) ? woodTreePrefab : fruitTreePrefab;
+        if (type == TreeType.Fruit)
+        {
+            pos.y += posOffset;
+        }
+        else
+        {
+            pos.y -= posOffset * 0.1f;
+        }
         GameObject newObj = Instantiate(prefab, pos, rot);
         if (type == TreeType.Fruit)
         {
             FruitTree tree = newObj.GetComponent<FruitTree>();
             if (tree != null)
             {
-                tree.selectedColorIndex = Random.Range(0, ColorTable.Count);
+                tree.selectedColorIndex = _nextFruitColorIndex;
+
+                // 往下一個顏色（loop）
+                _nextFruitColorIndex =
+                    (_nextFruitColorIndex + 1) % ColorTable.Count;
             }
         }
         newObj.GetComponent<NetworkObject>().Spawn();

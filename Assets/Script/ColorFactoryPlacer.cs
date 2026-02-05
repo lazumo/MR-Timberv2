@@ -142,6 +142,7 @@ public class HouseColorFactoryPlacer : NetworkBehaviour
 
         rot = Quaternion.LookRotation(forward, up);
         pos = hit.point;
+        pos.y += 0.1f;
         return true;
     }
 
