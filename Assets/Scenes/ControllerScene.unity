@@ -2732,6 +2732,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3892853041658467194, guid: 0cda14b9e8db2d54986c45f62b140ae3,
         type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3892853041658467194, guid: 0cda14b9e8db2d54986c45f62b140ae3,
+        type: 3}
       propertyPath: leftControllerAnchor
       value: 
       objectReference: {fileID: 2040683073}
@@ -2740,11 +2745,16 @@ PrefabInstance:
       propertyPath: rightControllerAnchor
       value: 
       objectReference: {fileID: 1517013156}
-    - target: {fileID: 4079519191885239712, guid: 0cda14b9e8db2d54986c45f62b140ae3,
+    - target: {fileID: 3933877102255542356, guid: 0cda14b9e8db2d54986c45f62b140ae3,
         type: 3}
-      propertyPath: m_Layer
-      value: 11
-      objectReference: {fileID: 0}
+      propertyPath: serverLeftControllerAnchor
+      value: 
+      objectReference: {fileID: 2040683073}
+    - target: {fileID: 3933877102255542356, guid: 0cda14b9e8db2d54986c45f62b140ae3,
+        type: 3}
+      propertyPath: clientRightControllerAnchor
+      value: 
+      objectReference: {fileID: 1517013156}
     - target: {fileID: 4140080874728492551, guid: 0cda14b9e8db2d54986c45f62b140ae3,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -2829,11 +2839,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_IsTrigger
       value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7992861706302940567, guid: 0cda14b9e8db2d54986c45f62b140ae3,
-        type: 3}
-      propertyPath: m_Layer
-      value: 11
       objectReference: {fileID: 0}
     - target: {fileID: 8109644966077811493, guid: 0cda14b9e8db2d54986c45f62b140ae3,
         type: 3}
