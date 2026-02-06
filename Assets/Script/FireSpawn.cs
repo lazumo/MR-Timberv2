@@ -112,11 +112,11 @@ public class FireSpawnerIgnitionPointsNetworked : NetworkBehaviour
             {
                 Debug.Log("[FireSpawner] No more fires in scene. Fade passthrough back.");
 
-                if (PassthroughDarkener.Instance != null)
-                    PassthroughDarkener.Instance.Apply(false);
+                FadePassthroughBackClientRpc();
 
                 yield break;
             }
+
 
 
             // 還有額度就補一個
@@ -219,4 +219,12 @@ public class FireSpawnerIgnitionPointsNetworked : NetworkBehaviour
 
         no.Spawn(true);
     }
+
+    [ClientRpc]
+    void FadePassthroughBackClientRpc()
+    {
+        if (PassthroughDarkener.Instance != null)
+            PassthroughDarkener.Instance.Apply(false);
+    }
+
 }
