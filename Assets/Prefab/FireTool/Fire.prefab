@@ -14736,7 +14736,10 @@ MonoBehaviour:
   houseLayerMask:
     serializedVersion: 2
     m_Bits: 64
-  spawnInterval: 3
+  surfaceLayerMask:
+    serializedVersion: 2
+    m_Bits: 1
+  spawnInterval: 4
   step: 0.5
   jitter: 0.08
   offsetFromSurface: 0.02

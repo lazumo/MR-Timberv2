@@ -6,6 +6,7 @@ public class FireGrowServerOnly : NetworkBehaviour
     [Header("Network Prefab (self)")]
     [SerializeField] private NetworkObject firePrefab;
     [SerializeField] private LayerMask houseLayerMask;
+    [SerializeField] private LayerMask surfaceLayerMask;
     [Header("Growth")]
     [SerializeField] private float spawnInterval = 0.35f;
     [SerializeField] private float step = 0.22f;
@@ -79,14 +80,14 @@ public class FireGrowServerOnly : NetworkBehaviour
             }
             else
             {
-                dir *= 1.05f;
+                dir *= 1.01f;
             }
             Vector3 candidate = transform.position
                                 + dir * step
                                 + tangent * Random.Range(-jitter, jitter)
                                 + bitangent * Random.Range(-jitter, jitter);
             if (Physics.Raycast(candidate + outwardN * 0.3f, -outwardN,
-                    out RaycastHit hit, 1.0f))
+                out RaycastHit hit, 1.0f, surfaceLayerMask))
             {
                 Vector3 n = hit.normal.normalized;
                 Vector3 pos = hit.point + n * offsetFromSurface;
