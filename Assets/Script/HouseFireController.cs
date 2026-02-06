@@ -8,12 +8,25 @@ public class HouseFireController : NetworkBehaviour
 
     private NetworkObject _currentFire;
 
+    public bool IsBurning { get; private set; }
+
     public void OnHouseStateChanged(HouseState state)
     {
         if (!IsServer) return;
-
+        if (state == HouseState.Destroyed)
+        {
+            ClearFire(); // 保險：確保火被清掉
+            return;
+        }
         if (state == HouseState.Firing)
+        {
             SpawnFireIfNeeded();
+        }
+        else
+        {
+            // 一旦離開 Firing，就確保火被清掉
+            ClearFire();
+        }
     }
 
     private void SpawnFireIfNeeded()
@@ -30,14 +43,22 @@ public class HouseFireController : NetworkBehaviour
 
         fire.Spawn();
         _currentFire = fire;
+        var fireCtrl = fire.GetComponent<NetworkFireController>();
+        if (fireCtrl != null)
+        {
+            fireCtrl.BindHouse(this);
+        }
+        IsBurning = true;
 
         Debug.Log("[Fire] Spawned");
     }
+
     public void ClearFire()
     {
         if (!IsServer) return;
         DespawnFireIfExists();
     }
+
     private void DespawnFireIfExists()
     {
         if (_currentFire == null) return;
@@ -45,6 +66,21 @@ public class HouseFireController : NetworkBehaviour
         _currentFire.Despawn(true);
         _currentFire = null;
 
+        IsBurning = false;
+
         Debug.Log("[Fire] Despawned");
+    }
+    public void Ignite()
+    {
+        if (!IsServer) return;
+
+        var house = GetComponent<ObjectNetworkSync>();
+        if (house == null) return;
+
+        // 已經在 Firing，就不用再請求
+        if (house.CurrentState == HouseState.Firing || house.CurrentState == HouseState.Destroyed)
+            return;
+
+        house.SetState(HouseState.Firing);
     }
 }

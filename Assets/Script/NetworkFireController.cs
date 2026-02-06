@@ -36,7 +36,12 @@ public class NetworkFireController : NetworkBehaviour
     // =============================
     // Network
     // =============================
+    private HouseFireController _ownerHouse;
 
+    public void BindHouse(HouseFireController house)
+    {
+        _ownerHouse = house;
+    }
     public override void OnNetworkSpawn()
     {
         fireIntensity.OnValueChanged += OnFireIntensityChanged;
@@ -133,6 +138,10 @@ public class NetworkFireController : NetworkBehaviour
 
     private void ExtinguishCompletelyServer()
     {
+        if (_ownerHouse != null)
+        {
+            _ownerHouse.ClearFire(); // 這裡會把 IsBurning = false
+        }
         // Stop VFX
         foreach (var ps in fireVFXs)
         {
