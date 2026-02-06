@@ -20,7 +20,7 @@ public class FireGrowServerOnly : NetworkBehaviour
 
     [Header("Limits")]
     [SerializeField] private int maxTotalFires = 180;
-
+    private Vector3 currentSurfaceNormal = Vector3.up;
     static int totalFires;
     public static int TotalFires => totalFires;
 
@@ -35,7 +35,10 @@ public class FireGrowServerOnly : NetworkBehaviour
     {
         if (IsServer) totalFires = Mathf.Max(0, totalFires - 1);
     }
-
+    public void InitializeNormal(Vector3 normal)
+    {
+        currentSurfaceNormal = normal.normalized;
+    }
     void Update()
     {
         if (!IsServer) return;
@@ -50,40 +53,66 @@ public class FireGrowServerOnly : NetworkBehaviour
 
     void TrySpawnChild()
     {
-        Vector3 outwardN = -transform.forward.normalized;
-
-        Vector3 tangent = Vector3.Cross(outwardN, Vector3.up);
-        if (tangent.sqrMagnitude < 1e-4f)
+        Vector3 outwardN = currentSurfaceNormal;
+        bool upward = false;
+        Vector3 tangent;
+        float d = Vector3.Dot(outwardN, Vector3.up);
+        if (Mathf.Abs(d) > 0.7f)
+        {
             tangent = Vector3.Cross(outwardN, Vector3.right);
+            upward = true;
+        }
+        else
+        {
+            tangent = Vector3.Cross(outwardN, Vector3.up);
+        }
         tangent.Normalize();
         Vector3 bitangent = Vector3.Cross(outwardN, tangent).normalized;
-
+        
         for (int a = 0; a < attempts; a++)
         {
             Vector3 dir = (tangent * Random.Range(-1f, 1f) +
                            bitangent * Random.Range(-1f, 1f)).normalized;
-
+            if (upward)
+            {
+                dir *= 1.15f;
+            }
+            else
+            {
+                dir *= 1.05f;
+            }
             Vector3 candidate = transform.position
                                 + dir * step
                                 + tangent * Random.Range(-jitter, jitter)
                                 + bitangent * Random.Range(-jitter, jitter);
-
-            if (Physics.Raycast(candidate + outwardN * 0.15f, -outwardN,
-                    out RaycastHit hit, 0.6f))
+            if (Physics.Raycast(candidate + outwardN * 0.3f, -outwardN,
+                    out RaycastHit hit, 1.0f))
             {
                 Vector3 n = hit.normal.normalized;
                 Vector3 pos = hit.point + n * offsetFromSurface;
+                Debug.DrawLine(pos, pos + n * 0.2f, Color.red, 2f);
                 if (TryIgniteHouseAt(pos))
                 {
                     return;
                 }
+                
                 if (avoidFireOverlap && IsNearOtherFire(pos))
                     continue;
-
+                if (upward)
+                {
+                    Debug.Log("upward");
+                }
                 Quaternion rot = Quaternion.AngleAxis(Random.Range(0f, 360f), Vector3.up);
 
-                var child = Instantiate(firePrefab, pos, rot);
-                child.Spawn(true);
+                var childNetObj = Instantiate(firePrefab, pos, rot);
+
+                // 關鍵傳遞：告訴子火它現在貼在什麼樣的法線上
+                if (childNetObj.TryGetComponent<FireGrowServerOnly>(out var childScript))
+                {
+                    childScript.InitializeNormal(n);
+                }
+
+                childNetObj.Spawn(true);
                 return;
             }
         }

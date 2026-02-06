@@ -142,27 +142,18 @@ public class FireSpawnerIgnitionPointsNetworked : NetworkBehaviour
             PickSurface(out MRUK.SurfaceType surfaceType, out MRUKAnchor.SceneLabels label);
             LabelFilter filter = new LabelFilter(label);
 
-            if (room.GenerateRandomPositionOnSurface(surfaceType, edgeClearance, filter,
-                    out Vector3 pos, out Vector3 normal))
+            if (room.GenerateRandomPositionOnSurface(surfaceType, edgeClearance, filter, out Vector3 pos, out Vector3 normal))
             {
                 Vector3 n = normal.normalized;
                 Vector3 finalPos = pos + n * offsetFromSurface;
 
-                if (enableSpaceCheck && !IsSpaceEmpty(finalPos))
-                    continue;
+                if (enableSpaceCheck && !IsSpaceEmpty(finalPos)) return false;
 
-                Quaternion rot;
-                if (fireForwardIntoSurface)
-                {
-                    rot = Quaternion.LookRotation(-n, Vector3.up);
-                    rot *= Quaternion.AngleAxis(Random.Range(0f, 360f), n);
-                }
-                else
-                {
-                    rot = Quaternion.AngleAxis(Random.Range(0f, 360f), Vector3.up);
-                }
+                // 照你的要求：火的 Y 軸永遠是世界的 UP
+                Quaternion rot = Quaternion.AngleAxis(Random.Range(0f, 360f), Vector3.up);
 
-                PerformSpawn(finalPos, rot);
+                // 傳遞 pos, rot 以及偵測到的 normal
+                PerformSpawn(finalPos, rot, n);
                 return true;
             }
         }
@@ -200,18 +191,24 @@ public class FireSpawnerIgnitionPointsNetworked : NetworkBehaviour
         return hits.Length == 0;
     }
 
-    private void PerformSpawn(Vector3 pos, Quaternion rot)
+    private void PerformSpawn(Vector3 pos, Quaternion rot, Vector3 normal)
     {
         GameObject obj = Instantiate(firePrefab, pos, rot);
 
         var no = obj.GetComponent<NetworkObject>();
-        if (!no)
+        if (no != null)
         {
-            Debug.LogError("[FireSpawner] firePrefab missing NetworkObject!");
-            Destroy(obj);
-            return;
-        }
+            // 在 Spawn 之前設定法線
+            if (obj.TryGetComponent<FireGrowServerOnly>(out var growScript))
+            {
+                growScript.InitializeNormal(normal);
+            }
 
-        no.Spawn(true);
+            no.Spawn(true);
+        }
+        else
+        {
+            Destroy(obj);
+        }
     }
 }
