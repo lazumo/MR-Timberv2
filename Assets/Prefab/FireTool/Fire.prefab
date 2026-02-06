@@ -9702,6 +9702,7 @@ GameObject:
   - component: {fileID: 6364912731328466336}
   - component: {fileID: 4140976190992912397}
   - component: {fileID: -9069431879252681966}
+  - component: {fileID: 5022524440178629325}
   m_Layer: 10
   m_Name: Fire
   m_TagString: Untagged
@@ -14719,6 +14720,30 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 1.2
   m_Center: {x: 0, y: 0.45, z: 0}
+--- !u!114 &5022524440178629325
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5889764452291871225}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b07b37e9bfa32f644a210f07a0bad5b8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  firePrefab: {fileID: 6364912731328466336}
+  spawnInterval: 3
+  step: 0.5
+  jitter: 0.08
+  offsetFromSurface: 0.02
+  attempts: 6
+  avoidFireOverlap: 1
+  fireMinDistance: 0.2
+  fireLayerMask:
+    serializedVersion: 2
+    m_Bits: 1024
+  maxTotalFires: 200
 --- !u!1 &6519323172324376771
 GameObject:
   m_ObjectHideFlags: 0

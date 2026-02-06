@@ -3,15 +3,18 @@ using Unity.Netcode;
 using Meta.XR.MRUtilityKit;
 using System.Collections;
 
-public class FireSpawnerEverywhereNetworked : NetworkBehaviour
+public class FireSpawnerIgnitionPointsNetworked : NetworkBehaviour
 {
     [Header("Prefab (must have NetworkObject)")]
     public GameObject firePrefab;
 
-    [Header("Spawn Settings")]
-    public int targetFireCount = 30;
+    [Header("Global Fire Control")]
+    public int targetTotalFires = 180;   // 全場火焰上限
+    public float checkInterval = 20f;   // 每 N 秒檢查一次
+
+    [Header("Initial Ignition")]
+    public int initialIgnitionCount = 4; // 一開始先點幾個火
     public float startDelay = 1.0f;
-    public float spawnInterval = 0.2f;
 
     [Header("Surface Settings")]
     public float edgeClearance = 0.1f;
@@ -22,28 +25,36 @@ public class FireSpawnerEverywhereNetworked : NetworkBehaviour
     [Range(0, 1)] public float weightWall = 0.3f;
     [Range(0, 1)] public float weightCeil = 0.1f;
 
+    [Header("Rotation / Prefab Axis")]
+    public bool fireForwardIntoSurface = true;
+
     [Header("Optional: Collision Check")]
     public bool enableSpaceCheck = false;
     public Vector3 safetyCheckSize = new Vector3(0.3f, 0.3f, 0.3f);
     public LayerMask collisionLayerMask;
 
-    private int _currentFireCount = 0;
     private bool _started = false;
 
     public override void OnNetworkSpawn()
     {
         if (!IsServer) return;
 
-        if (MRUK.Instance && MRUK.Instance.GetCurrentRoom() != null) HookStageListener();
-        else if (MRUK.Instance) MRUK.Instance.RegisterSceneLoadedCallback(HookStageListener);
-        else StartCoroutine(WaitMrukThenHook());
+        if (MRUK.Instance && MRUK.Instance.GetCurrentRoom() != null)
+            HookStageListener();
+        else if (MRUK.Instance)
+            MRUK.Instance.RegisterSceneLoadedCallback(HookStageListener);
+        else
+            StartCoroutine(WaitMrukThenHook());
     }
 
     private IEnumerator WaitMrukThenHook()
     {
         while (MRUK.Instance == null) yield return null;
-        if (MRUK.Instance.GetCurrentRoom() != null) HookStageListener();
-        else MRUK.Instance.RegisterSceneLoadedCallback(HookStageListener);
+
+        if (MRUK.Instance.GetCurrentRoom() != null)
+            HookStageListener();
+        else
+            MRUK.Instance.RegisterSceneLoadedCallback(HookStageListener);
     }
 
     private void HookStageListener()
@@ -77,57 +88,79 @@ public class FireSpawnerEverywhereNetworked : NetworkBehaviour
     private void StartSpawningRoutine()
     {
         _started = true;
-        StartCoroutine(ManageFireLifecycle());
+        StartCoroutine(FireManagementLoop());
     }
 
-    private IEnumerator ManageFireLifecycle()
+    // =================== 你要的新邏輯核心 ===================
+    private IEnumerator FireManagementLoop()
     {
         yield return new WaitForSeconds(startDelay);
 
+        // 先生成初始 4 個起火點
+        for (int i = 0; i < initialIgnitionCount; i++)
+        {
+            SpawnOneIgnition();
+            yield return new WaitForSeconds(0.15f);
+        }
+
         while (IsServer)
         {
-            if (_currentFireCount < targetFireCount)
+            int current = FireGrowServerOnly.TotalFires;   // 從繁殖腳本取得目前火數
+
+            // 如果全場已經沒有火了 → 停止
+            if (current <= 0)
             {
-                bool success = SpawnOneFireEverywhere();
-                yield return new WaitForSeconds(success ? spawnInterval : 0.4f);
+                Debug.Log("[FireSpawner] No more fires in scene. Stop spawning.");
+                yield break;
             }
-            else yield return new WaitForSeconds(1.0f);
+
+            // 還有額度就補一個
+            if (current < targetTotalFires)
+            {
+                bool success = SpawnOneIgnition();
+                if (success)
+                {
+                    Debug.Log($"[FireSpawner] Replenish fire. Now: {current + 1}/{targetTotalFires}");
+                }
+            }
+
+            yield return new WaitForSeconds(checkInterval);
         }
     }
+    // =======================================================
 
-    private bool SpawnOneFireEverywhere()
+    private bool SpawnOneIgnition()
     {
         MRUKRoom room = MRUK.Instance.GetCurrentRoom();
         if (room == null) return false;
 
         int attempts = 0;
-        while (attempts < 60)
+        while (attempts < 80)
         {
             attempts++;
 
-            // 1) 隨機選要生成在哪種表面
             PickSurface(out MRUK.SurfaceType surfaceType, out MRUKAnchor.SceneLabels label);
-
-            // 2) 用 label filter 限制到該類表面
             LabelFilter filter = new LabelFilter(label);
 
-            // 3) MRUK 在表面給你 pos + normal
             if (room.GenerateRandomPositionOnSurface(surfaceType, edgeClearance, filter,
                     out Vector3 pos, out Vector3 normal))
             {
                 Vector3 n = normal.normalized;
-
-                // 4) 讓 Y 軸對齊表面法線
-                Quaternion rot = Quaternion.FromToRotation(Vector3.up, n);
-
-                // 5) 繞著法線再隨機轉一圈（看起來更自然）
-                rot *= Quaternion.AngleAxis(Random.Range(0f, 360f), n);
-
-                // 6) 往法線外推避免穿模
                 Vector3 finalPos = pos + n * offsetFromSurface;
 
                 if (enableSpaceCheck && !IsSpaceEmpty(finalPos))
                     continue;
+
+                Quaternion rot;
+                if (fireForwardIntoSurface)
+                {
+                    rot = Quaternion.LookRotation(-n, Vector3.up);
+                    rot *= Quaternion.AngleAxis(Random.Range(0f, 360f), n);
+                }
+                else
+                {
+                    rot = Quaternion.AngleAxis(Random.Range(0f, 360f), Vector3.up);
+                }
 
                 PerformSpawn(finalPos, rot);
                 return true;
@@ -153,8 +186,6 @@ public class FireSpawnerEverywhereNetworked : NetworkBehaviour
         if (r < weightWall)
         {
             surfaceType = MRUK.SurfaceType.VERTICAL;
-            // 你專案的 label 名稱可能是 WALL_FACE / WALL / WALL_ART
-            // 先用最常見的 WALL_FACE；如果編譯報錯，把它改成你 MRUK 有的那個
             label = MRUKAnchor.SceneLabels.WALL_FACE;
             return;
         }
@@ -172,7 +203,15 @@ public class FireSpawnerEverywhereNetworked : NetworkBehaviour
     private void PerformSpawn(Vector3 pos, Quaternion rot)
     {
         GameObject obj = Instantiate(firePrefab, pos, rot);
-        obj.GetComponent<NetworkObject>().Spawn();
-        _currentFireCount++;
+
+        var no = obj.GetComponent<NetworkObject>();
+        if (!no)
+        {
+            Debug.LogError("[FireSpawner] firePrefab missing NetworkObject!");
+            Destroy(obj);
+            return;
+        }
+
+        no.Spawn(true);
     }
 }
