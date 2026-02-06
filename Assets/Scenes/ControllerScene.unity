@@ -811,6 +811,12 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 566214343867960818, guid: 90e269ac5594af344923d15bc587197a,
+        type: 3}
+      propertyPath: pipePrefab
+      value: 
+      objectReference: {fileID: 95895607613498348, guid: 9e29d7c86361d854fb10f667f24e87b9,
+        type: 3}
     - target: {fileID: 1019291136322803172, guid: 90e269ac5594af344923d15bc587197a,
         type: 3}
       propertyPath: GlobalObjectIdHash
