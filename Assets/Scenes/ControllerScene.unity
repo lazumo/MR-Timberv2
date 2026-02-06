@@ -1966,6 +1966,26 @@ PrefabInstance:
       propertyPath: m_Name
       value: fireSpawner
       objectReference: {fileID: 0}
+    - target: {fileID: 979112344690285143, guid: a702265522a83254d9e4bd5a46794e07,
+        type: 3}
+      propertyPath: weightWall
+      value: 0.486
+      objectReference: {fileID: 0}
+    - target: {fileID: 979112344690285143, guid: a702265522a83254d9e4bd5a46794e07,
+        type: 3}
+      propertyPath: weightFloor
+      value: 0.234
+      objectReference: {fileID: 0}
+    - target: {fileID: 979112344690285143, guid: a702265522a83254d9e4bd5a46794e07,
+        type: 3}
+      propertyPath: spawnInterval
+      value: 0.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 979112344690285143, guid: a702265522a83254d9e4bd5a46794e07,
+        type: 3}
+      propertyPath: fireForwardIntoSurface
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5153577922691224923, guid: a702265522a83254d9e4bd5a46794e07,
         type: 3}
       propertyPath: m_LocalPosition.x
