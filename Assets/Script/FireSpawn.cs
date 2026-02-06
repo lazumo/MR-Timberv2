@@ -110,9 +110,14 @@ public class FireSpawnerIgnitionPointsNetworked : NetworkBehaviour
             // 如果全場已經沒有火了 → 停止
             if (current <= 0)
             {
-                Debug.Log("[FireSpawner] No more fires in scene. Stop spawning.");
+                Debug.Log("[FireSpawner] No more fires in scene. Fade passthrough back.");
+
+                if (PassthroughDarkener.Instance != null)
+                    PassthroughDarkener.Instance.Apply(false);
+
                 yield break;
             }
+
 
             // 還有額度就補一個
             if (current < targetTotalFires)

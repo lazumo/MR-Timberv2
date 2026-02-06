@@ -1,27 +1,49 @@
-using UnityEngine;
-using Meta.XR.MRUtilityKit; // ¤£¤@©w»İ­n¡A¯dµÛ¤]¦æ
+ï»¿using UnityEngine;
+using System.Collections;
 
 public class PassthroughDarkener : MonoBehaviour
 {
-    [Header("Drag the object that has OVRPassthroughLayer")]
+    public static PassthroughDarkener Instance { get; private set; }
+
     public OVRPassthroughLayer passthroughLayer;
 
-    [Header("Stage 2 (Fire scene) look")]
+    [Header("Transition Settings")]
+    public float transitionSeconds = 1.5f;
+
+    [Header("Fire Scene Look")]
     public float stage2Brightness = -0.45f;
     public float stage2Contrast = 1.25f;
     public float stage2Saturation = 0.85f;
 
-    [Header("Default look")]
-    public float defaultBrightness = 0.0f;
-    public float defaultContrast = 1.0f;
-    public float defaultSaturation = 1.0f;
+    [Header("Default Look")]
+    public float defaultBrightness = 0f;
+    public float defaultContrast = 1f;
+    public float defaultSaturation = 1f;
+
+    // âœ… è¨˜éŒ„ã€Œç›®å‰å€¼ã€
+    float curB, curC, curS;
+
+    Coroutine fadeRoutine;
+
+    private void Awake()
+    {
+        Instance = this;
+    }
 
     private void Start()
     {
+        // âœ… åˆå§‹åŒ–ç›®å‰å€¼ = default
+        curB = defaultBrightness;
+        curC = defaultContrast;
+        curS = defaultSaturation;
+
         if (SceneController.Instance != null)
             SceneController.Instance.CurrentLevel.OnValueChanged += OnStageChanged;
 
-        Apply(SceneController.Instance != null && SceneController.Instance.GetCurrentStage() == 2);
+        bool isStage2 = SceneController.Instance != null &&
+                        SceneController.Instance.GetCurrentStage() == 2;
+
+        Apply(isStage2, true);
     }
 
     private void OnDestroy()
@@ -35,16 +57,50 @@ public class PassthroughDarkener : MonoBehaviour
         Apply(cur == 2);
     }
 
-    private void Apply(bool fireScene)
+    public void Apply(bool fireScene, bool instant = false)
     {
         if (passthroughLayer == null) return;
 
-        // ³o­Ó API/Äæ¦ì¦b¤£¦Pª©¥»¦W¦r¥i¯à²¤¤£¦P¡F
-        // ­Y§A¥Îªº¬O Color Adjustment/Controls ¼Ò¦¡¡A·|¦³®ÄªG¡C
-        float b = fireScene ? stage2Brightness : defaultBrightness;
-        float c = fireScene ? stage2Contrast : defaultContrast;
-        float s = fireScene ? stage2Saturation : defaultSaturation;
+        float targetB = fireScene ? stage2Brightness : defaultBrightness;
+        float targetC = fireScene ? stage2Contrast : defaultContrast;
+        float targetS = fireScene ? stage2Saturation : defaultSaturation;
 
-        passthroughLayer.SetBrightnessContrastSaturation(b, c, s);
+        if (instant)
+        {
+            SetNow(targetB, targetC, targetS);
+            return;
+        }
+
+        if (fadeRoutine != null)
+            StopCoroutine(fadeRoutine);
+
+        fadeRoutine = StartCoroutine(FadeTo(targetB, targetC, targetS));
+    }
+
+    void SetNow(float b, float c, float s)
+    {
+        curB = b; curC = c; curS = s;
+        passthroughLayer.SetBrightnessContrastSaturation(curB, curC, curS);
+    }
+
+    IEnumerator FadeTo(float tb, float tc, float ts)
+    {
+        float sb = curB, sc = curC, ss = curS; // âœ… èµ·é» = ç›®å‰å€¼
+        float t = 0f;
+
+        while (t < 1f)
+        {
+            t += Time.deltaTime / Mathf.Max(0.0001f, transitionSeconds);
+
+            curB = Mathf.Lerp(sb, tb, t);
+            curC = Mathf.Lerp(sc, tc, t);
+            curS = Mathf.Lerp(ss, ts, t);
+
+            passthroughLayer.SetBrightnessContrastSaturation(curB, curC, curS);
+            yield return null;
+        }
+
+        SetNow(tb, tc, ts);
+        fadeRoutine = null;
     }
 }
