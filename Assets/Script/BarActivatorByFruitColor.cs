@@ -26,7 +26,7 @@ public class BarShowWhenEnoughMatchingFruits : NetworkBehaviour
         );
 
     private readonly HashSet<ulong> inside = new();
-
+    public IReadOnlyCollection<ulong> InsideFruitIds => inside;
     private void OnEnable()
     {
         if (visual != null)

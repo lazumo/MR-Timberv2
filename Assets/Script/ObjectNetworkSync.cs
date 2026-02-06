@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using Unity.Netcode;
 using System;
-
+using System.Collections;
 [RequireComponent(typeof(ObjectDisplayController))]
 [RequireComponent(typeof(HouseColorFactoryPlacer))]
 public class ObjectNetworkSync : NetworkBehaviour
@@ -9,7 +9,7 @@ public class ObjectNetworkSync : NetworkBehaviour
     private ObjectDisplayController _logicController;
     private HouseColorFactoryPlacer _factoryPlacer;
     private HouseFireController _fireController;
-
+    private Coroutine _despawnCoroutine;
     // =============================
     // Network Variables
     // =============================
@@ -114,15 +114,43 @@ public class ObjectNetworkSync : NetworkBehaviour
             Debug.Log($"[House] Bound ColorFactory id={factory.NetworkObjectId}");
         }
     }
+    private IEnumerator DespawnFactoryWithScale(
+        NetworkObject factory,
+        float duration = 2.0f
+    )
+    {
+        Transform t = factory.transform;
 
+        Vector3 startScale = t.localScale;
+        float time = 0f;
+
+        while (time < duration)
+        {
+            time += Time.deltaTime;
+            float alpha = time / duration;
+            t.localScale = Vector3.Lerp(startScale, Vector3.zero, alpha);
+            yield return null;
+        }
+
+        t.localScale = Vector3.zero;
+
+        // ✅ 最後由 Server despawn
+        factory.Despawn(true);
+        Debug.Log($"[House] Despawned ColorFactory id={factory.NetworkObjectId}");
+    }
     private void DespawnFactoryIfExists()
     {
         if (!IsServer) return;
 
         if (colorFactoryRef.Value.TryGet(out NetworkObject factory))
         {
-            factory.Despawn(true);
-            Debug.Log($"[House] Despawned ColorFactory id={factory.NetworkObjectId}");
+            // 防止重複啟動 coroutine
+            if (_despawnCoroutine != null)
+                StopCoroutine(_despawnCoroutine);
+
+            _despawnCoroutine = StartCoroutine(
+                DespawnFactoryWithScale(factory)
+            );
         }
 
         colorFactoryRef.Value = default;

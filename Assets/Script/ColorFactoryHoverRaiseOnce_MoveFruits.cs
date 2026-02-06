@@ -1,6 +1,7 @@
-﻿using Unity.Netcode;
+﻿using System.Collections;
+using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
-using System.Collections;
 
 public class RaiseFactoryWhenRequirementMet : NetworkBehaviour
 {
@@ -19,7 +20,9 @@ public class RaiseFactoryWhenRequirementMet : NetworkBehaviour
 
     [Tooltip("Smooth speed (bigger = faster).")]
     [SerializeField] private float lerpSpeed = 3f;
-
+    [Header("Physics Fix")]
+    [Tooltip("向上推的瞬間力道，大約 0.5f ~ 2.0f 視水果重量而定")]
+    [SerializeField] private float jumpForce = 1.0f;
     private NetworkVariable<bool> hasStarted =
         new NetworkVariable<bool>(
             false,
@@ -62,8 +65,29 @@ public class RaiseFactoryWhenRequirementMet : NetworkBehaviour
         startPos = factoryRoot.position;
         targetPos = startPos + Vector3.up * (moveUpCm * 0.01f);
 
+        // 準備移動
         moving = true;
         t = 0f;
+
+        // ⭐ 物理防穿模處理
+        var nm = NetworkManager.Singleton;
+
+        // 為了安全，還是建立一個清單快照，雖然不改 Parent 不會觸發 Exit，但這是好習慣
+        var fruitsToPush = new List<ulong>(requirementChecker.InsideFruitIds);
+
+        foreach (var id in fruitsToPush)
+        {
+            if (!nm.SpawnManager.SpawnedObjects.TryGetValue(id, out var netObj))
+                continue;
+
+            var rb = netObj.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                // 1. 喚醒它！避免因為物理休眠導致被地板穿過去
+                rb.WakeUp();
+                rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+            }
+        }
     }
 
     private void LateUpdate()

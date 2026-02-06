@@ -563,7 +563,7 @@ MonoBehaviour:
   fruitTag: Fruit
   minSqueeze: 0.35
   maxSqueeze: 1
-  threshold: 0.8
+  threshold: 0.4
   lerpSpeed: 15
   volumeCompensate: 1
   compensateStrength: 0.5
@@ -1827,6 +1827,8 @@ MonoBehaviour:
     m_InternalValue: 0
   HandDistanceBase:
     m_InternalValue: 0
+  TrackedClientId:
+    m_InternalValue: 18446744073709551615
 --- !u!136 &3553471574298293159
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -1846,10 +1848,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.15
-  m_Height: 0.5
+  m_Radius: 0.19767761
+  m_Height: 0.98852605
   m_Direction: 1
-  m_Center: {x: 0, y: 0.93, z: 0}
+  m_Center: {x: -0.047677606, y: 0.6129983, z: 0}
 --- !u!114 &3308849157903602386
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1911,6 +1913,7 @@ MonoBehaviour:
   moveUpCm: 50
   delaySeconds: 1
   lerpSpeed: 1.5
+  jumpForce: 1
 --- !u!114 &388580838661595607
 MonoBehaviour:
   m_ObjectHideFlags: 0
