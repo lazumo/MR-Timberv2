@@ -49,8 +49,6 @@ public class HouseFireController : NetworkBehaviour
             fireCtrl.BindHouse(this);
         }
         IsBurning = true;
-
-        Debug.Log("[Fire] Spawned");
     }
 
     public void ClearFire()
@@ -67,8 +65,6 @@ public class HouseFireController : NetworkBehaviour
         _currentFire = null;
 
         IsBurning = false;
-
-        Debug.Log("[Fire] Despawned");
     }
     public void Ignite()
     {

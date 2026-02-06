@@ -163,7 +163,7 @@ public class TreeSpawnerNetworked : NetworkBehaviour
         }
         else
         {
-            pos.y -= posOffset * 0.1f;
+            pos.y -= posOffset * 0.5f;
         }
         GameObject newObj = Instantiate(prefab, pos, rot);
         if (type == TreeType.Fruit)

@@ -109,7 +109,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 648533876145804743}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -121,7 +121,7 @@ Transform:
   - {fileID: 6503475128570578027}
   - {fileID: 7480156939212858523}
   m_Father: {fileID: 4140080874728492551}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
 --- !u!114 &3892853041658467194
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -160,7 +160,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8819417327000329747}
   - component: {fileID: 18174668212976673}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: front
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -214,7 +214,7 @@ GameObject:
   - component: {fileID: 1415473372789066604}
   - component: {fileID: 2597202720818644169}
   - component: {fileID: 283701852191731715}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: BoxForFruit
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -446,7 +446,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1089329639377209733}
   - component: {fileID: 1724270076655344697}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: left
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -517,7 +517,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.15, y: 0.15, z: 0.15}
+  m_LocalScale: {x: 0.2, y: 0.2, z: 0.2}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7801028531321675407}
@@ -569,8 +569,8 @@ MonoBehaviour:
   sliceLayer:
     serializedVersion: 2
     m_Bits: 128
-  crossSectionMaterial: {fileID: 5755806542659117252, guid: 3da7ef9b758a90141a46d294298c26a5,
-    type: 3}
+  crossSectionMaterial: {fileID: 2100000, guid: ec09fca7dfb74f54cadb264beac96a0b,
+    type: 2}
   energyThreshold: 5
   velocityWeight: 1
   woodChips: {fileID: 8131127260048251410}
@@ -657,7 +657,7 @@ Transform:
   m_GameObject: {fileID: 5109028889694778213}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.38, z: -0}
+  m_LocalPosition: {x: 0, y: 0.329, z: -0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -743,7 +743,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 454897194
+  GlobalObjectIdHash: 2622754741
   InScenePlacedSourceGlobalObjectIdHash: 1770182323
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -1045,7 +1045,7 @@ Transform:
   m_LocalRotation: {x: -0, y: 0.7071068, z: 0.7071068, w: 0}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
-  m_ConstrainProportionsScale: 0
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 2654308040872227189}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
@@ -1303,7 +1303,7 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 0.1
+      scalar: 0.5
       minScalar: 1
       maxCurve:
         serializedVersion: 2
@@ -5951,7 +5951,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4593793707706370038}
   - component: {fileID: 7423042914224305809}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: bottom
   m_TagString: Untagged
   m_Icon: {fileID: 0}

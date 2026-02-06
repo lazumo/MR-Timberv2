@@ -95,7 +95,7 @@ public class HouseSpawnerNetworked : NetworkBehaviour
             }
         }
 
-        while (successfulSpawns < numberOfHouses && attempts < 100)
+        while (successfulSpawns < numberOfHouses && attempts < 1000)
         {
             attempts++;
 

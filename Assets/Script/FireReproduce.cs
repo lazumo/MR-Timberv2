@@ -75,7 +75,7 @@ public class FireGrowServerOnly : NetworkBehaviour
                            bitangent * Random.Range(-1f, 1f)).normalized;
             if (upward)
             {
-                dir *= 1.15f;
+                dir *= 1.12f;
             }
             else
             {
@@ -90,7 +90,6 @@ public class FireGrowServerOnly : NetworkBehaviour
             {
                 Vector3 n = hit.normal.normalized;
                 Vector3 pos = hit.point + n * offsetFromSurface;
-                Debug.DrawLine(pos, pos + n * 0.2f, Color.red, 2f);
                 if (TryIgniteHouseAt(pos))
                 {
                     return;
@@ -98,10 +97,6 @@ public class FireGrowServerOnly : NetworkBehaviour
                 
                 if (avoidFireOverlap && IsNearOtherFire(pos))
                     continue;
-                if (upward)
-                {
-                    Debug.Log("upward");
-                }
                 Quaternion rot = Quaternion.AngleAxis(Random.Range(0f, 360f), Vector3.up);
 
                 var childNetObj = Instantiate(firePrefab, pos, rot);

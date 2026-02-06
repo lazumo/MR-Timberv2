@@ -563,7 +563,7 @@ MonoBehaviour:
   fruitTag: Fruit
   minSqueeze: 0.35
   maxSqueeze: 1
-  threshold: 0.4
+  threshold: 0.85
   lerpSpeed: 15
   volumeCompensate: 1
   compensateStrength: 0.5
