@@ -5,7 +5,7 @@ public class FireGrowServerOnly : NetworkBehaviour
 {
     [Header("Network Prefab (self)")]
     [SerializeField] private NetworkObject firePrefab;
-
+    [SerializeField] private LayerMask houseLayerMask;
     [Header("Growth")]
     [SerializeField] private float spawnInterval = 0.35f;
     [SerializeField] private float step = 0.22f;
@@ -73,7 +73,10 @@ public class FireGrowServerOnly : NetworkBehaviour
             {
                 Vector3 n = hit.normal.normalized;
                 Vector3 pos = hit.point + n * offsetFromSurface;
-
+                if (TryIgniteHouseAt(pos))
+                {
+                    return;
+                }
                 if (avoidFireOverlap && IsNearOtherFire(pos))
                     continue;
 
@@ -95,5 +98,26 @@ public class FireGrowServerOnly : NetworkBehaviour
             QueryTriggerInteraction.Collide);
 
         return hits.Length > 0;
+    }
+    bool TryIgniteHouseAt(Vector3 pos)
+    {
+        Collider[] hits = Physics.OverlapSphere(
+            pos,
+            0.03f, // 小一點避免誤判，可調
+            houseLayerMask,
+            QueryTriggerInteraction.Collide
+        );
+
+        foreach (var hit in hits)
+        {
+            var houseFire = hit.GetComponentInParent<HouseFireController>();
+            if (houseFire != null)
+            {
+                houseFire.Ignite();
+                return true;
+            }
+        }
+
+        return false;
     }
 }

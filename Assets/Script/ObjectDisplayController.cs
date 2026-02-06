@@ -1,6 +1,6 @@
-﻿using UnityEngine;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 // =======================
 // Enums / Data
@@ -83,21 +83,37 @@ public class ObjectDisplayController : MonoBehaviour
             }
         }
 
-        // 2️⃣ 上色只在 Coloring / Colored
-        if (state != HouseState.Coloring && state != HouseState.Colored)
+        if (!TryGetPaintStage(state, stage, out var finalStage))
             return;
-
         HouseColor color = GetHouseColorFromIndex(colorIndex);
-
-        if (!_paintMap.TryGetValue(color, out var paintSet))
-            return;
-
-        ApplyPaintStage(paintSet, stage);
+        if (!_paintMap.TryGetValue(color, out var paintSet)) return;
+        ApplyPaintStage(paintSet, finalStage);
     }
 
     // =======================
     // Internal helpers
     // =======================
+    private bool TryGetPaintStage(
+        HouseState state,
+        PaintStage input,
+        out PaintStage result
+    )
+    {
+        if (state == HouseState.Firing || state == HouseState.Saved)
+        {
+            result = PaintStage.Full;
+            return true;
+        }
+
+        if (state == HouseState.Coloring || state == HouseState.Colored)
+        {
+            result = input;
+            return true;
+        }
+
+        result = PaintStage.None;
+        return false;
+    }
 
     private void ApplyPaintStage(ColorPaintSet set, PaintStage stage)
     {
