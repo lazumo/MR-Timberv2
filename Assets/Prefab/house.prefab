@@ -253,7 +253,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e99dec818b97992488eb452350d56c81, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  fireTimeoutSeconds: 30
+  fireTimeoutSeconds: 10
 --- !u!65 &1143069886931894110
 BoxCollider:
   m_ObjectHideFlags: 0

@@ -78,7 +78,7 @@ public class HouseFireController : NetworkBehaviour
         if (house == null) return;
 
         // 已經在 Firing，就不用再請求
-        if (house.CurrentState == HouseState.Firing)
+        if (house.CurrentState == HouseState.Firing || house.CurrentState == HouseState.Destroyed)
             return;
 
         house.SetState(HouseState.Firing);

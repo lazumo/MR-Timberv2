@@ -43,7 +43,7 @@ public class HouseFireStateController : NetworkBehaviour
     private void HandleHouseStateChanged(HouseState newState)
     {
         if (!IsServer) return;
-
+        if(newState == HouseState.Destroyed) return;
         if (newState == HouseState.Firing)
         {
             StartFireCountdown();
@@ -60,7 +60,8 @@ public class HouseFireStateController : NetworkBehaviour
 
     private void StartFireCountdown()
     {
-        StopFireCountdown(); // 防止重複啟動
+        if (_fireCountdownCoroutine != null) return;
+        Debug.Log("starting fire countdown");
         _fireCountdownCoroutine = StartCoroutine(FireCountdownCoroutine());
     }
 
@@ -83,6 +84,7 @@ public class HouseFireStateController : NetworkBehaviour
             if (_fire != null && !_fire.IsBurning)
             {
                 _house.SetState(HouseState.Saved);
+                StopFireCountdown();
                 yield break;
             }
 

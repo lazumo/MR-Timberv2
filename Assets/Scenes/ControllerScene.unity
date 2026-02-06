@@ -1892,7 +1892,7 @@ PrefabInstance:
     - target: {fileID: 7164615428790912599, guid: 862e4b767a0283742a2b9e41d51781ad,
         type: 3}
       propertyPath: numberOfHouses
-      value: 3
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 7164615428790912599, guid: 862e4b767a0283742a2b9e41d51781ad,
         type: 3}
