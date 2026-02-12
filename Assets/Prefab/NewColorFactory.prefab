@@ -563,7 +563,7 @@ MonoBehaviour:
   fruitTag: Fruit
   minSqueeze: 0.35
   maxSqueeze: 1
-  threshold: 0.85
+  threshold: 0.9
   lerpSpeed: 15
   volumeCompensate: 1
   compensateStrength: 0.5
@@ -1803,9 +1803,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   driver: {fileID: 7175907965347539326}
   visual: {fileID: 3308849157903602386}
-  offsetScale: 1
-  minOffset: -0.3
-  maxOffset: 0.3
+  offsetScale: 1.2
+  minOffset: -0.5
+  maxOffset: 0.5
   lerpSpeed: 25
 --- !u!114 &7175907965347539326
 MonoBehaviour:
@@ -1848,10 +1848,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.19767761
-  m_Height: 0.98852605
+  m_Radius: 0.2
+  m_Height: 1
   m_Direction: 1
-  m_Center: {x: -0.047677606, y: 0.6129983, z: 0}
+  m_Center: {x: 0, y: 0.6129983, z: 0}
 --- !u!114 &3308849157903602386
 MonoBehaviour:
   m_ObjectHideFlags: 0
