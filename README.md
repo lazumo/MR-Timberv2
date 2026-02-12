@@ -111,8 +111,7 @@ Open the project using **Unity 2022.3.62f3**.
 
 Install the following dependencies via Unity Package Manager:
 
-- **Meta XR All-in-One SDK** — Install via Unity Asset Store:  
-  https://assetstore.unity.com/packages/tools/integration/meta-xr-all-in-one-sdk-269657
+- **Meta XR All-in-One SDK** — Install via [Unity Asset Store](https://assetstore.unity.com/packages/tools/integration/meta-xr-all-in-one-sdk-269657)
 - **Netcode for GameObjects** — Unity Registry
 - **Unity Transport Package** — Required for networking support
 
@@ -134,8 +133,6 @@ Assets/
 ├── Prefab/      Networked game objects
 └── Scenes/      Main gameplay scenes
 ```
-
----
 
 ## ⚙️ Implementation Highlights
 
