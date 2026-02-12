@@ -2,7 +2,7 @@
 
 <img src="images/title.jpg" width="100%">
 
-*Figure: TimberLand is a co-located mixed reality cooperative game where two players manipulate a shared modular prop to perform embodied physical coordination.*
+*TimberLand is a co-located mixed reality cooperative game where two players jointly manipulate a modular shared prop to perform embodied physical collaboration.*
 
 ## 🪵 Overview
 
@@ -40,15 +40,11 @@ Full paper will be available upon publication.
 
 <img src="images/mingleKit.jpg" width="100%">
 
-*Figure: The modular shared prop kit used for cooperative interaction.*
-
 MingleKit is a reconfigurable shared physical prop designed for joint manipulation by two players.
 
 ## 🤝 Interaction Modes
 
 <img src="images/interaction.jpg" width="100%">
-
-*Figure: Illustrations of the physical interaction primitives enabled by the shared prop, including coordinated movement, balance control, rotational alignment, and compression-based actions.*
 
 The shared prop serves as a tangible medium for embodied communication between players.  
 Through its mechanical constraints and physical affordances, it enables multiple forms of cooperative coordination that rely on touch, resistance, and mutual force sensing.
@@ -57,7 +53,7 @@ Through its mechanical constraints and physical affordances, it enables multiple
 - **Balance** — Stability-based coordination  
 - **Rotate** — Joint orientation control  
 - **Squeeze / Stretch** — Compression-based signaling  
-- **Split & Merge** — Dynamic coupling and decoupling of roles  
+- **Split & Merge** — Dynamic coupling and decoupling of roles
 
 ## 🎮 Gameplay Overview
 
@@ -136,7 +132,7 @@ Load the main scene: `Assets/Scenes/ControllerScene.unity`
 Assets/
 ├── Script/      Game logic and interaction code
 ├── Prefab/      Networked game objects
-└── Scenes/       Main gameplay scenes
+└── Scenes/      Main gameplay scenes
 ```
 
 ---
