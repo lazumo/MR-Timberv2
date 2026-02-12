@@ -38,7 +38,7 @@ Full paper will be available upon publication.
 
 ## 🧩 MingleKit Shared Prop System
 
-<img src="images/mingleKit.jpg" width="100%">
+<img src="images/mingleKit.jpg" width="75%">
 
 MingleKit is a reconfigurable shared physical prop designed for joint manipulation by two players.
 
