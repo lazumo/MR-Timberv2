@@ -57,16 +57,21 @@ Through its mechanical constraints and physical affordances, it enables multiple
 
 ## 🎮 Gameplay Overview
 
-<img src="images/stage_1.png" width="100%">
-
+<table>
+  <tr>
+    <td width="50%"><img src="images/stage_1.png" width="100%"></td>
+    <td width="50%"><img src="images/stage_2.png" width="100%"></td>
+  </tr>
+</table>
 
 TimberLand follows a resource-driven progression pipeline, where each cooperative action contributes to the next stage:
 
 - Cutting trees generates wood materials used to construct houses.  
 - Catching fruits delivers raw resources to color factories.  
 - Squeezing fruits produces pigments that gradually paint the houses.  
+- Fires threaten the completed houses, requiring players to protect their work through dynamic split-and-merge coordination.
 
-Through this pipeline, players must coordinate multiple physical interaction modes to successfully build and complete the environment.
+Through this pipeline, players must coordinate multiple physical interaction modes to build, maintain, and defend the shared environment.
 
 ### 🌲 Sawing — Reciprocal Force Cooperation
 
@@ -82,8 +87,6 @@ Players apply synchronized inward and outward forces to extract pigments from th
 Successful squeezing produces pigments that gradually fill and color the houses.
 
 ### 🔥 Firefighting — Split-and-Merge Cooperation
-
-<img src="images/stage_2.png" width="100%">
 
 Players dynamically split the shared prop into individual extinguishers to handle scattered fires, or recombine it into a high-power hose for coordinated firefighting.
 
