@@ -57,10 +57,10 @@ Through its mechanical constraints and physical affordances, it enables multiple
 
 ## 🎮 Gameplay Overview
 
-<table>
+<table style="border: none;">
   <tr>
-    <td width="50%"><img src="images/stage_1.png" width="100%"></td>
-    <td width="50%"><img src="images/stage_2.png" width="100%"></td>
+    <td width="50%" style="border: none; "><img src="images/stage_1.png" width="100%"></td>
+    <td width="50%" style="border: none; "><img src="images/stage_2.png" width="100%"></td>
   </tr>
 </table>
 
