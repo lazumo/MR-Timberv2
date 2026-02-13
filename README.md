@@ -57,12 +57,10 @@ Through its mechanical constraints and physical affordances, it enables multiple
 
 ## 🎮 Gameplay Overview
 
-<table style="border: none;">
-  <tr>
-    <td width="50%" style="border: none; "><img src="images/stage_1.png" width="100%"></td>
-    <td width="50%" style="border: none; "><img src="images/stage_2.png" width="100%"></td>
-  </tr>
-</table>
+<div align="center">
+  <img src="images/stage_1.png" width="49%">
+  <img src="images/stage_2.png" width="49%">
+</div>
 
 TimberLand follows a resource-driven progression pipeline, where each cooperative action contributes to the next stage:
 
