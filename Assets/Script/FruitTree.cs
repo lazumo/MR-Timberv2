@@ -13,6 +13,9 @@ public class FruitTree : NetworkBehaviour
     [Header("Tree Lifetime (after grown)")]
     public float aliveDuration = 30f;
 
+    [Tooltip("若為 true，樹永不消失，並持續循環生成果實。")]
+    public bool keepAliveForever = true;
+
     [Header("Fruit Spawner")]
     public FruitSpawnController fruitSpawnController;
 
@@ -95,6 +98,9 @@ public class FruitTree : NetworkBehaviour
         // ✅ 啟動果實生成
         if (fruitSpawnController != null)
             fruitSpawnController.StartFruitSpawn();
+
+        if (keepAliveForever)
+            yield break;
 
         // 成熟期
         yield return new WaitForSeconds(aliveDuration);

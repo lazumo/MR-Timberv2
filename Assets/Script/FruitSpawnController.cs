@@ -19,6 +19,9 @@ public class FruitSpawnController : NetworkBehaviour
     public float fruitFallMinDelay = 2f;
     public float fruitFallMaxDelay = 5f;
 
+    [Tooltip("若為 true，將忽略 fruitCount 並無限循環生成果實。")]
+    public bool spawnForever = true;
+
     private FruitTree tree;
     private bool hasStarted = false;
 
@@ -49,14 +52,19 @@ public class FruitSpawnController : NetworkBehaviour
     private IEnumerator SpawnRoutine()
     {
         int spawnIndex = 0;
+        int produced = 0;
 
-        for (int i = 0; i < fruitCount; i++)
+        while (spawnForever || produced < fruitCount)
         {
             float delay = Random.Range(fruitSpawnMinDelay, fruitSpawnMaxDelay);
             yield return new WaitForSeconds(delay);
 
+            if (spawnPoints == null || spawnPoints.Length == 0)
+                yield break;
+
             Transform point = spawnPoints[spawnIndex % spawnPoints.Length];
             spawnIndex++;
+            produced++;
 
             SpawnSingleFruit(point);
         }

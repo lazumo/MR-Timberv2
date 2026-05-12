@@ -27,7 +27,10 @@ public class HouseSpawnerNetworked : NetworkBehaviour
 
     [Header("Settings")]
     public GameObject housePrefab;
-    public int numberOfHouses = 5;
+    public int numberOfHouses = 1;
+
+    public int SpawnedHouseColorIndex { get; private set; } = -1;
+    public bool HasSpawnedHouse => SpawnedHouseColorIndex >= 0;
     [SerializeField] private float minWallHeight = 1.0f;  // 離地 50 cm
     [SerializeField] private float maxWallHeight = 2.5f;  // 離地 180 cm
     [Header("Placement Rules")]
@@ -118,11 +121,13 @@ public class HouseSpawnerNetworked : NetworkBehaviour
                     netObj.Spawn();
 
                     var houseSync = houseObj.GetComponent<ObjectNetworkSync>();
+                    int randomColor = Random.Range(0, ColorTable.Count);
                     if (houseSync != null)
                     {
-                        int randomColor = Random.Range(0, ColorTable.Count);
                         houseSync.InitializeColorIndex(randomColor);
                     }
+                    if (successfulSpawns == 0)
+                        SpawnedHouseColorIndex = randomColor;
 
                     HouseData data = new HouseData
                     {

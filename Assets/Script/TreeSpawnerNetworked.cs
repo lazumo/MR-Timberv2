@@ -14,12 +14,12 @@ public class TreeSpawnerNetworked : NetworkBehaviour
     public GameObject fruitTreePrefab;
 
     [Header("Settings")]
-    public int targetWoodTrees = 3;
-    public float woodStartDelay = 2.0f;
+    public int targetWoodTrees = 1;
+    public float woodStartDelay = 0.5f;
     public float woodSpawnInterval = 5.0f;
 
-    public int targetFruitTrees = 3;
-    public float fruitStartDelay = 4.0f;
+    public int targetFruitTrees = 1;
+    public float fruitStartDelay = 1.0f;
     public float fruitSpawnInterval = 8.0f;
     
     [Header("Safety Area")]
@@ -75,6 +75,12 @@ public class TreeSpawnerNetworked : NetworkBehaviour
     private IEnumerator ManageFruitLifecycle()
     {
         yield return new WaitForSeconds(fruitStartDelay);
+
+        while (IsServer && (HouseSpawnerNetworked.Instance == null || !HouseSpawnerNetworked.Instance.HasSpawnedHouse))
+        {
+            yield return new WaitForSeconds(0.2f);
+        }
+
         while (IsServer)
         {
             if (_currentFruitCount < targetFruitTrees)
@@ -171,11 +177,16 @@ public class TreeSpawnerNetworked : NetworkBehaviour
             FruitTree tree = newObj.GetComponent<FruitTree>();
             if (tree != null)
             {
-                tree.selectedColorIndex = _nextFruitColorIndex;
-
-                // 往下一個顏色（loop）
-                _nextFruitColorIndex =
-                    (_nextFruitColorIndex + 1) % ColorTable.Count;
+                // 顏色與已生成的房子對齊；找不到時退回循環色
+                if (HouseSpawnerNetworked.Instance != null && HouseSpawnerNetworked.Instance.HasSpawnedHouse)
+                {
+                    tree.selectedColorIndex = HouseSpawnerNetworked.Instance.SpawnedHouseColorIndex;
+                }
+                else
+                {
+                    tree.selectedColorIndex = _nextFruitColorIndex;
+                    _nextFruitColorIndex = (_nextFruitColorIndex + 1) % ColorTable.Count;
+                }
             }
         }
         newObj.GetComponent<NetworkObject>().Spawn();
