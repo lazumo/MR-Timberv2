@@ -14,7 +14,7 @@ public class SliceObject : NetworkBehaviour
     [Header("Slice")]
     public LayerMask sliceLayer;
     public Material crossSectionMaterial;
-    public float energyThreshold = 5f;
+    public float energyThreshold = 1f;
     public float velocityWeight = 1f;
 
     [Header("Particles")]

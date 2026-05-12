@@ -571,7 +571,7 @@ MonoBehaviour:
     m_Bits: 128
   crossSectionMaterial: {fileID: 2100000, guid: ec09fca7dfb74f54cadb264beac96a0b,
     type: 2}
-  energyThreshold: 5
+  energyThreshold: 1
   velocityWeight: 1
   woodChips: {fileID: 8131127260048251410}
   vfxPrefab: {fileID: 141433446842962269, guid: 9fe8f8b3288e45a44af36ff8aa04486e,
