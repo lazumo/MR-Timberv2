@@ -35,9 +35,7 @@ public class HouseSpawnerNetworked : NetworkBehaviour
     [SerializeField] private float maxWallHeight = 2.5f;  // 離地 180 cm
     [Header("Placement Rules")]
     public LayerMask obstacleLayerMask;
-    [Header("Spawn Boundary")]
-    [SerializeField] private Transform spawnBoundary;
-    // TUNED: Set to 0.5f. (0.5 + 0.5 = 1.0 meter total size). 
+    // TUNED: Set to 0.5f. (0.5 + 0.5 = 1.0 meter total size).
     // 0.1f is often too small to stop overlaps.
     public Vector3 collisionCheckSize = new Vector3(0.5f, 0.5f, 0.5f);
     static readonly float[] NormalAxisRotations = { 0f, 90f, 180f, 270f };
@@ -106,7 +104,7 @@ public class HouseSpawnerNetworked : NetworkBehaviour
             {
                 if (pos.y < minWallHeight || pos.y > maxWallHeight)
                     continue;
-                if (spawnBoundary != null && pos.x < spawnBoundary.position.x)
+                if (SpawnArea.Instance != null && !SpawnArea.Instance.IsInside(pos))
                     continue;
                 // --- 以下是原本的旋轉與生成邏輯 (保持不變) ---
                 Quaternion rot = Quaternion.FromToRotation(Vector3.up, normal);

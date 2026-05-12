@@ -127,6 +127,10 @@ public class TreeSpawnerNetworked : NetworkBehaviour
     // --- COLUMN CHECK LOGIC ---
     private bool IsSpaceEmpty(Vector3 center, Quaternion rotation)
     {
+        // 0. SpawnArea radius check (XZ plane, centered on player initial position)
+        if (SpawnArea.Instance != null && !SpawnArea.Instance.IsInside(center))
+            return false;
+
         // 1. Physics Column Check (Tall Box)
         Vector3 columnSize = safetyCheckSize;
         columnSize.y = 10.0f; // 20m Tall box to hit Floor AND Ceiling
