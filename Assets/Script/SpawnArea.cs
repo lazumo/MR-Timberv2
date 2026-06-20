@@ -47,6 +47,13 @@ public class SpawnArea : MonoBehaviour
 
     public Vector3 GetCenter() => _center;
 
+    public void SetCenter(Vector3 center)
+    {
+        _center = center;
+        IsInitialized = true;
+        Debug.Log($"[SpawnArea] Center overridden to {_center} (radius={radius})");
+    }
+
     public bool IsInside(Vector3 worldPos)
     {
         if (!IsInitialized) return false;
