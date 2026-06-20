@@ -83,6 +83,13 @@ public class TreeSpawnerNetworked : NetworkBehaviour
 
         while (IsServer)
         {
+            // 進入滅火 stage 後不再生成新的果樹
+            if (SceneController.Instance != null && SceneController.Instance.GetCurrentStage() > 1)
+            {
+                yield return new WaitForSeconds(1.0f);
+                continue;
+            }
+
             if (_currentFruitCount < targetFruitTrees)
             {
                 bool success = SpawnTree(TreeType.Fruit);

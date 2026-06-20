@@ -24,6 +24,8 @@ public class FruitSpawnController : NetworkBehaviour
 
     private FruitTree tree;
     private bool hasStarted = false;
+    private bool stopped = false;
+    private Coroutine spawnRoutine;
 
     private readonly List<GameObject> spawnedFruits = new();
 
@@ -39,10 +41,37 @@ public class FruitSpawnController : NetworkBehaviour
     public void StartFruitSpawn()
     {
         if (!IsServer) return;
-        if (hasStarted) return;
+        if (hasStarted || stopped) return;
 
         hasStarted = true;
-        StartCoroutine(SpawnRoutine());
+        spawnRoutine = StartCoroutine(SpawnRoutine());
+    }
+
+    // 切換到滅火 stage 時呼叫：停止生成 + 把現有果子用 VFX 直接消掉
+    public void StopAndDespawnFruits()
+    {
+        if (!IsServer) return;
+        stopped = true;
+
+        if (spawnRoutine != null)
+        {
+            StopCoroutine(spawnRoutine);
+            spawnRoutine = null;
+        }
+
+        foreach (var fruit in spawnedFruits)
+        {
+            if (fruit == null) continue;
+            var netObj = fruit.GetComponent<NetworkObject>();
+            if (netObj == null || !netObj.IsSpawned) continue;
+
+            var autoDestroy = fruit.GetComponent<AutoDestroyNetworkObject>();
+            if (autoDestroy != null)
+                autoDestroy.ScheduleDespawn(0f);
+            else
+                netObj.Despawn(true);
+        }
+        spawnedFruits.Clear();
     }
 
     // =====================

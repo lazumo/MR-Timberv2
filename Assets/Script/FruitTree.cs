@@ -44,7 +44,11 @@ public class FruitTree : NetworkBehaviour
             StartGrow(networkTargetScale.Value);
 
         if (IsServer)
+        {
             StartCoroutine(LifeRoutine());
+            if (SceneController.Instance != null)
+                SceneController.Instance.CurrentLevel.OnValueChanged += OnStageChanged;
+        }
     }
 
     public override void OnNetworkDespawn()
@@ -52,6 +56,16 @@ public class FruitTree : NetworkBehaviour
         networkTargetScale.OnValueChanged -= OnScaleChanged;
         if (growCoroutine != null)
             StopCoroutine(growCoroutine);
+
+        if (IsServer && SceneController.Instance != null)
+            SceneController.Instance.CurrentLevel.OnValueChanged -= OnStageChanged;
+    }
+
+    // 進入滅火 stage（stage > 1）時，停止生果實並把現有的果子消掉
+    private void OnStageChanged(int oldStage, int newStage)
+    {
+        if (newStage > 1 && fruitSpawnController != null)
+            fruitSpawnController.StopAndDespawnFruits();
     }
 
     private void OnScaleChanged(Vector3 oldVal, Vector3 newVal)
@@ -95,8 +109,9 @@ public class FruitTree : NetworkBehaviour
         // 等樹長好
         yield return new WaitForSeconds(growDuration);
 
-        // ✅ 啟動果實生成
-        if (fruitSpawnController != null)
+        // ✅ 啟動果實生成（若已切到 stage 2 則不啟動）
+        bool inFireStage = SceneController.Instance != null && SceneController.Instance.GetCurrentStage() > 1;
+        if (fruitSpawnController != null && !inFireStage)
             fruitSpawnController.StartFruitSpawn();
 
         if (keepAliveForever)
