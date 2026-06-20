@@ -19,8 +19,13 @@ public class FruitSpawnController : NetworkBehaviour
     public float fruitFallMinDelay = 2f;
     public float fruitFallMaxDelay = 5f;
 
+    [Tooltip("若為 true，將忽略 fruitCount 並無限循環生成果實。")]
+    public bool spawnForever = true;
+
     private FruitTree tree;
     private bool hasStarted = false;
+    private bool stopped = false;
+    private Coroutine spawnRoutine;
 
     private readonly List<GameObject> spawnedFruits = new();
 
@@ -36,10 +41,37 @@ public class FruitSpawnController : NetworkBehaviour
     public void StartFruitSpawn()
     {
         if (!IsServer) return;
-        if (hasStarted) return;
+        if (hasStarted || stopped) return;
 
         hasStarted = true;
-        StartCoroutine(SpawnRoutine());
+        spawnRoutine = StartCoroutine(SpawnRoutine());
+    }
+
+    // 切換到滅火 stage 時呼叫：停止生成 + 把現有果子用 VFX 直接消掉
+    public void StopAndDespawnFruits()
+    {
+        if (!IsServer) return;
+        stopped = true;
+
+        if (spawnRoutine != null)
+        {
+            StopCoroutine(spawnRoutine);
+            spawnRoutine = null;
+        }
+
+        foreach (var fruit in spawnedFruits)
+        {
+            if (fruit == null) continue;
+            var netObj = fruit.GetComponent<NetworkObject>();
+            if (netObj == null || !netObj.IsSpawned) continue;
+
+            var autoDestroy = fruit.GetComponent<AutoDestroyNetworkObject>();
+            if (autoDestroy != null)
+                autoDestroy.ScheduleDespawn(0f);
+            else
+                netObj.Despawn(true);
+        }
+        spawnedFruits.Clear();
     }
 
     // =====================
@@ -49,14 +81,19 @@ public class FruitSpawnController : NetworkBehaviour
     private IEnumerator SpawnRoutine()
     {
         int spawnIndex = 0;
+        int produced = 0;
 
-        for (int i = 0; i < fruitCount; i++)
+        while (spawnForever || produced < fruitCount)
         {
             float delay = Random.Range(fruitSpawnMinDelay, fruitSpawnMaxDelay);
             yield return new WaitForSeconds(delay);
 
+            if (spawnPoints == null || spawnPoints.Length == 0)
+                yield break;
+
             Transform point = spawnPoints[spawnIndex % spawnPoints.Length];
             spawnIndex++;
+            produced++;
 
             SpawnSingleFruit(point);
         }
