@@ -28,9 +28,21 @@ public class TreeSpawnerNetworked : NetworkBehaviour
     public LayerMask collisionLayerMask;
     public float posOffset = 1.5f;
 
+    [Header("Phase Control")]
+    [Tooltip("Legacy auto-start on spawn. Leave OFF — LoggingPhase / CatchingPhase now drive spawning.")]
+    [SerializeField] private bool autoStartLegacy = false;
+
     private int _currentWoodCount = 0;
     private int _currentFruitCount = 0;
     private int _nextFruitColorIndex = 0;
+
+    // ⭐ Phase-driven wood logging (Layer 2: LoggingPhase)
+    private bool _woodLogging = false;
+    private readonly List<NetworkObject> _woodTrees = new List<NetworkObject>();
+
+    // ⭐ Phase-driven fruit spawning (Layer 2: CatchingPhase)
+    private bool _fruitSpawning = false;
+    private readonly List<NetworkObject> _fruitTrees = new List<NetworkObject>();
 
     private void Awake()
     {
@@ -40,11 +52,121 @@ public class TreeSpawnerNetworked : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        if (IsServer)
+        if (IsServer && autoStartLegacy)
         {
             if (MRUK.Instance && MRUK.Instance.GetCurrentRoom() != null) StartSpawningRoutines();
             else if (MRUK.Instance) MRUK.Instance.RegisterSceneLoadedCallback(StartSpawningRoutines);
         }
+    }
+
+    // =====================================================
+    // Phase control — called by LoggingPhase (server only)
+    // =====================================================
+
+    public void BeginWoodLogging()
+    {
+        if (!IsServer) return;
+        if (_woodLogging) return;
+        _woodLogging = true;
+
+        if (MRUK.Instance && MRUK.Instance.GetCurrentRoom() != null)
+            StartCoroutine(EnsureInitialWoodTree());
+        else if (MRUK.Instance)
+            MRUK.Instance.RegisterSceneLoadedCallback(() => { if (_woodLogging) StartCoroutine(EnsureInitialWoodTree()); });
+        else
+            Debug.LogError("[TreeSpawner] BeginWoodLogging — MRUK.Instance is null; no tree will spawn.");
+    }
+
+    public void StopWoodLogging(bool despawnExisting)
+    {
+        if (!IsServer) return;
+        _woodLogging = false;
+
+        if (despawnExisting)
+        {
+            foreach (var t in _woodTrees)
+                if (t != null && t.IsSpawned) t.Despawn(true);
+        }
+
+        _woodTrees.Clear();
+        _currentWoodCount = 0;
+    }
+
+    // Keep at least targetWoodTrees standing at phase start. Respawn-on-chop is
+    // driven by SliceObject (calls SpawnTree(Wood)), gated by _woodLogging.
+    private IEnumerator EnsureInitialWoodTree()
+    {
+        int tries = 0;
+        while (_woodLogging && _currentWoodCount < targetWoodTrees && tries < 50)
+        {
+            tries++;
+            if (SpawnTree(TreeType.Wood)) yield break;
+            yield return new WaitForSeconds(1.0f);
+        }
+
+        if (_woodLogging && _currentWoodCount < targetWoodTrees)
+            Debug.LogWarning("[TreeSpawner] Could not find space for the initial wood tree.");
+    }
+
+    // =====================================================
+    // Phase control — called by CatchingPhase (server only)
+    // =====================================================
+
+    // Spawn `treeCount` fruit trees on the ceiling, each a different colour.
+    public void BeginFruitSpawning(int treeCount)
+    {
+        if (!IsServer) return;
+        if (_fruitSpawning) return;
+        _fruitSpawning = true;
+
+        if (MRUK.Instance && MRUK.Instance.GetCurrentRoom() != null)
+            StartCoroutine(SpawnFruitTreesRoutine(treeCount));
+        else if (MRUK.Instance)
+            MRUK.Instance.RegisterSceneLoadedCallback(() => { if (_fruitSpawning) StartCoroutine(SpawnFruitTreesRoutine(treeCount)); });
+        else
+            Debug.LogError("[TreeSpawner] BeginFruitSpawning — MRUK.Instance is null; no fruit tree will spawn.");
+    }
+
+    // Stops spawning new fruit trees. Existing trees/fruits stay (needed by the Juicing phase)
+    // unless despawnExisting is requested (Firefighting clears everything).
+    public void StopFruitSpawning(bool despawnExisting)
+    {
+        if (!IsServer) return;
+        _fruitSpawning = false;
+
+        if (despawnExisting)
+        {
+            foreach (var t in _fruitTrees)
+                if (t != null && t.IsSpawned) t.Despawn(true);
+
+            _fruitTrees.Clear();
+            _currentFruitCount = 0;
+        }
+    }
+
+    private IEnumerator SpawnFruitTreesRoutine(int treeCount)
+    {
+        int spawned = 0;
+        int guard = 0;
+        int maxGuard = Mathf.Max(1, treeCount) * 50;
+
+        while (_fruitSpawning && spawned < treeCount && guard < maxGuard)
+        {
+            guard++;
+            int color = spawned % ColorTable.Count; // 不同顏色的果樹
+            if (SpawnTree(TreeType.Fruit, color))
+            {
+                spawned++;
+                yield return new WaitForSeconds(0.3f);
+            }
+            else
+            {
+                yield return new WaitForSeconds(0.5f);
+            }
+        }
+
+        if (_fruitSpawning && spawned < treeCount)
+            Debug.LogWarning($"[TreeSpawner] Only spawned {spawned}/{treeCount} fruit trees (no space).");
     }
 
     private void StartSpawningRoutines()
@@ -103,8 +225,12 @@ public class TreeSpawnerNetworked : NetworkBehaviour
             else yield return new WaitForSeconds(1.0f);
         }
     }
-    public bool SpawnTree(TreeType type)
+    public bool SpawnTree(TreeType type, int forcedFruitColorIndex = -1)
     {
+        // ⭐ Once a phase has ended, refuse respawns (e.g. SliceObject / FruitTree delayed respawn).
+        if (type == TreeType.Wood && !_woodLogging) return false;
+        if (type == TreeType.Fruit && !_fruitSpawning) return false;
+
         MRUKRoom room = MRUK.Instance.GetCurrentRoom();
         if (room == null) return false;
 
@@ -123,7 +249,7 @@ public class TreeSpawnerNetworked : NetworkBehaviour
 
                 if (IsSpaceEmpty(pos, rotation))
                 {
-                    PerformSpawn(type, pos, rotation);
+                    PerformSpawn(type, pos, rotation, forcedFruitColorIndex);
                     return true;
                 }
             }
@@ -171,7 +297,7 @@ public class TreeSpawnerNetworked : NetworkBehaviour
         return true;
     }
 
-    private void PerformSpawn(TreeType type, Vector3 pos, Quaternion rot)
+    private void PerformSpawn(TreeType type, Vector3 pos, Quaternion rot, int forcedFruitColorIndex = -1)
     {
         GameObject prefab = (type == TreeType.Wood) ? woodTreePrefab : fruitTreePrefab;
         if (type == TreeType.Fruit)
@@ -188,9 +314,14 @@ public class TreeSpawnerNetworked : NetworkBehaviour
             FruitTree tree = newObj.GetComponent<FruitTree>();
             if (tree != null)
             {
-                // 顏色與已生成的房子對齊；找不到時退回循環色
-                if (HouseSpawnerNetworked.Instance != null && HouseSpawnerNetworked.Instance.HasSpawnedHouse)
+                if (forcedFruitColorIndex >= 0)
                 {
+                    // CatchingPhase wants a specific colour per tree (3 different colours).
+                    tree.selectedColorIndex = forcedFruitColorIndex % ColorTable.Count;
+                }
+                else if (HouseSpawnerNetworked.Instance != null && HouseSpawnerNetworked.Instance.HasSpawnedHouse)
+                {
+                    // 顏色與已生成的房子對齊；找不到時退回循環色
                     tree.selectedColorIndex = HouseSpawnerNetworked.Instance.SpawnedHouseColorIndex;
                 }
                 else
@@ -200,10 +331,19 @@ public class TreeSpawnerNetworked : NetworkBehaviour
                 }
             }
         }
-        newObj.GetComponent<NetworkObject>().Spawn();
+        NetworkObject netObj = newObj.GetComponent<NetworkObject>();
+        netObj.Spawn();
 
-        if (type == TreeType.Wood) _currentWoodCount++;
-        else _currentFruitCount++;
+        if (type == TreeType.Wood)
+        {
+            _currentWoodCount++;
+            _woodTrees.Add(netObj); // track so LoggingPhase.EndPhase can clear standing trees
+        }
+        else
+        {
+            _currentFruitCount++;
+            _fruitTrees.Add(netObj); // track so phases can clear fruit trees
+        }
     }
 
     public void NotifyTreeDestroyed(TreeType type)

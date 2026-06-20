@@ -5,43 +5,43 @@ public class ProximitySwitchManager : NetworkBehaviour
 {
     [SerializeField] private MiddlePointProvider provider;
 
-    [Header("¶ZÂ÷ªùÂe¡]exit > enter ¨¾§Ý°Ê¡^")]
+    [Header("ï¿½Zï¿½ï¿½ï¿½ï¿½ï¿½eï¿½]exit > enter ï¿½ï¿½ï¿½Ý°Ê¡^")]
     [SerializeField] private float enterDistance = 0.20f;
     [SerializeField] private float exitDistance = 0.25f;
 
-    [Header("Pipe Prefab¡]¥²¶·¦³ NetworkObject + NetworkTransform¡^")]
+    [Header("Pipe Prefabï¿½]ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ NetworkObject + NetworkTransformï¿½^")]
     [SerializeField] private NetworkObject pipePrefab;
 
-    [Header("·À¤õ¾¹¥R¯àªùÂe¡]¤À¶}ª¬ºA¤~­p®É¡^")]
+    [Header("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Rï¿½ï¿½ï¿½ï¿½eï¿½]ï¿½ï¿½ï¿½}ï¿½ï¿½ï¿½Aï¿½~ï¿½pï¿½É¡^")]
     [SerializeField] public float extinguisherGlowAfter = 30f;
 
-    [Header("Pipe ³W«h")]
+    [Header("Pipe ï¿½Wï¿½h")]
     [SerializeField] public float pipeForceBackAfter = 15f;
     [SerializeField] public float warnBeforeForceBack = 5f;
     [SerializeField] public float blinkHzSlow = 2f;
     [SerializeField] public float blinkHzFast = 10f;
 
-    [Header("§N«o¾÷¨î¡]±j¨î©î¶}«á¡^")]
+    [Header("ï¿½Nï¿½oï¿½ï¿½ï¿½ï¿½]ï¿½jï¿½ï¿½ï¿½}ï¿½ï¿½^")]
     [SerializeField] public float remergeCooldown = 10f;
 
-    // ===== Network state (client ºÝ¥iÅª) =====
+    // ===== Network state (client ï¿½Ý¥iÅª) =====
     public NetworkVariable<float> PipeAge = new(0f);
     public NetworkVariable<float> CooldownRemain = new(0f);
 
-    // ¦XÅé§PÂ_µ¹·À¤õ¾¹¯S®Ä¥Î
+    // ï¿½Xï¿½ï¿½Pï¿½_ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Sï¿½Ä¥ï¿½
     public bool IsMerged => isClose && pipeInstance != null;
 
     private bool isClose = false;
     private NetworkObject pipeInstance;
 
-    // §N«oµ²§ô«á¥²¶·¥ýÂ÷¶}¡A¦A¾aªñ¤~¥i¦XÅé¡]Á×§K¶KµÛµ¥§N«oµ²§ô´NÀþ¶¡¤S¦XÅé¡^
+    // ï¿½Nï¿½oï¿½ï¿½ï¿½ï¿½ï¿½á¥²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½}ï¿½Aï¿½Aï¿½aï¿½ï¿½~ï¿½iï¿½Xï¿½ï¿½]ï¿½×§Kï¿½Kï¿½Ûµï¿½ï¿½Nï¿½oï¿½ï¿½ï¿½ï¿½ï¿½Nï¿½ï¿½ï¿½ï¿½ï¿½Sï¿½Xï¿½ï¿½^
     private bool needReleaseAfterCooldown = false;
 
     public override void OnNetworkSpawn()
     {
         if (!IsServer) return;
 
-        // «OÀI¡G¶}³õ¥ý½T«O·À¤õ¾¹¥i¨£¡Bpipe ¤£¦s¦b
+        // ï¿½Oï¿½Iï¿½Gï¿½}ï¿½ï¿½ï¿½ï¿½ï¿½Tï¿½Oï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½iï¿½ï¿½ï¿½Bpipe ï¿½ï¿½ï¿½sï¿½b
         ForceShowExtinguishers_Server();
     }
 
@@ -53,7 +53,7 @@ public class ProximitySwitchManager : NetworkBehaviour
 
         float d = provider.Distance.Value;
 
-        // 1) §N«o­Ë¼Æ
+        // 1) ï¿½Nï¿½oï¿½Ë¼ï¿½
         if (CooldownRemain.Value > 0f)
         {
             CooldownRemain.Value = Mathf.Max(0f, CooldownRemain.Value - Time.deltaTime);
@@ -62,11 +62,11 @@ public class ProximitySwitchManager : NetworkBehaviour
                 needReleaseAfterCooldown = true;
         }
 
-        // 2) §N«o­èµ²§ô«á¡A¥²¶·¥ýÂ÷¶}¨ì exitDistance ¥H¥~¤~¯à¸Ñ°£­­¨î
+        // 2) ï¿½Nï¿½oï¿½èµ²ï¿½ï¿½ï¿½ï¿½Aï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½}ï¿½ï¿½ exitDistance ï¿½Hï¿½~ï¿½~ï¿½ï¿½Ñ°ï¿½ï¿½ï¿½ï¿½ï¿½
         if (needReleaseAfterCooldown && d >= exitDistance)
             needReleaseAfterCooldown = false;
 
-        // 3) ¦XÅé/¤À¶}ª¬ºA¾÷
+        // 3) ï¿½Xï¿½ï¿½/ï¿½ï¿½ï¿½}ï¿½ï¿½ï¿½Aï¿½ï¿½
         if (!isClose)
         {
             bool canEnter = (CooldownRemain.Value <= 0f) && !needReleaseAfterCooldown;
@@ -82,7 +82,7 @@ public class ProximitySwitchManager : NetworkBehaviour
                 UpdatePipePose_Server();
         }
 
-        // 4) pipe ­p®É + ±j¨î©î¶}¡]Ä²µo§N«o¡^
+        // 4) pipe ï¿½pï¿½ï¿½ + ï¿½jï¿½ï¿½ï¿½}ï¿½]Ä²ï¿½oï¿½Nï¿½oï¿½^
         if (isClose && pipeInstance != null)
         {
             PipeAge.Value += Time.deltaTime;
@@ -98,7 +98,7 @@ public class ProximitySwitchManager : NetworkBehaviour
     {
         isClose = true;
 
-        // ÁôÂÃ·À¤õ¾¹¡]HandFollower¡^
+        // ï¿½ï¿½ï¿½Ã·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½]HandFollowerï¿½^
         provider.HostHand.VisualsOn.Value = false;
         provider.ClientHand.VisualsOn.Value = false;
 
@@ -118,7 +118,7 @@ public class ProximitySwitchManager : NetworkBehaviour
     {
         isClose = false;
 
-        // Åã¥Ü·À¤õ¾¹¡]HandFollower¡^
+        // ï¿½ï¿½Ü·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½]HandFollowerï¿½^
         provider.HostHand.VisualsOn.Value = true;
         provider.ClientHand.VisualsOn.Value = true;
 
@@ -153,8 +153,12 @@ public class ProximitySwitchManager : NetworkBehaviour
         isClose = false;
         needReleaseAfterCooldown = false;
 
-        provider.HostHand.VisualsOn.Value = true;
-        provider.ClientHand.VisualsOn.Value = true;
+        // provider / hands may not be assigned or spawned yet at OnNetworkSpawn time.
+        if (provider != null && provider.HostHand != null && provider.ClientHand != null)
+        {
+            provider.HostHand.VisualsOn.Value = true;
+            provider.ClientHand.VisualsOn.Value = true;
+        }
 
         if (pipeInstance != null)
         {

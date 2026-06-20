@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using Unity.Netcode;
 
@@ -24,6 +25,21 @@ public class ToolController : NetworkBehaviour
     [Header("Tool Objects (children under this object, index = global state)")]
     public GameObject[] toolObjects;
 
+    // =========================
+    // Phase-driven prop lock
+    // =========================
+
+    [Header("Phase → prop (index into toolObjects)")]
+    [Tooltip("When a GameFlowController exists, the prop is locked to the current phase's tool and auto-switching is disabled.")]
+    [SerializeField] private bool driveByPhase = true;
+    [SerializeField] private int loggingState = 0;       // saw
+    [SerializeField] private int catchingState = 2;      // box
+    [SerializeField] private int juicingState = 1;       // juicer
+    [SerializeField] private int firefightingState = 3;  // extinguisher
+
+    /// True while the prop is locked by the phase system (ToolStateResolver should stand down).
+    public bool PhaseDriven => driveByPhase && GameFlowController.Instance != null;
+
     private int lastState = -1;
 
     // =========================
@@ -34,24 +50,86 @@ public class ToolController : NetworkBehaviour
     {
         netState.OnValueChanged += OnNetStateChanged;
 
-        if (IsServer)
-        {
-            SetupInitialStateByStage();
-        }
-        
         // Initially hide all to ensure clean slate
         for (int i = 0; i < toolObjects.Length; i++)
         {
             SetToolVisible(toolObjects[i], false);
         }
-        
+
         // Apply current state
         ApplyState(netState.Value, invokeEvent: false);
+
+        if (IsServer)
+        {
+            if (driveByPhase)
+                StartCoroutine(BindPhaseDriver());
+            else
+                SetupInitialStateByStage();
+        }
     }
 
     public override void OnNetworkDespawn()
     {
         netState.OnValueChanged -= OnNetStateChanged;
+
+        if (GameFlowController.Instance != null)
+            GameFlowController.Instance.CurrentPhase.OnValueChanged -= OnPhaseChanged;
+    }
+
+    // =========================
+    // Phase-driven prop lock (server)
+    // =========================
+
+    private IEnumerator BindPhaseDriver()
+    {
+        // Tools spawn after the scene's GameFlowController, but wait a little just in case.
+        float t = 0f;
+        while (GameFlowController.Instance == null && t < 5f)
+        {
+            t += Time.deltaTime;
+            yield return null;
+        }
+
+        var flow = GameFlowController.Instance;
+        if (flow == null)
+        {
+            // No flow controller in this scene → legacy behaviour.
+            SetupInitialStateByStage();
+            yield break;
+        }
+
+        flow.CurrentPhase.OnValueChanged += OnPhaseChanged;
+        ApplyPhaseState(flow.CurrentPhase.Value);
+    }
+
+    private void OnPhaseChanged(GamePhase oldPhase, GamePhase newPhase)
+    {
+        ApplyPhaseState(newPhase);
+    }
+
+    // Sets netState directly (server) — bypasses IsValidStateForStage so e.g. the
+    // extinguisher state is allowed regardless of the legacy SceneController stage.
+    private void ApplyPhaseState(GamePhase phase)
+    {
+        if (!IsServer) return;
+
+        int target = StateForPhase(phase);
+        if (target < 0) return;
+
+        if (netState.Value != target)
+            netState.Value = target;
+    }
+
+    private int StateForPhase(GamePhase phase)
+    {
+        switch (phase)
+        {
+            case GamePhase.Logging:      return loggingState;
+            case GamePhase.Catching:     return catchingState;
+            case GamePhase.Juicing:      return juicingState;
+            case GamePhase.Firefighting: return firefightingState;
+            default:                     return loggingState;
+        }
     }
 
     // =========================

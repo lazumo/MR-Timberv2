@@ -15,6 +15,10 @@ public class ToolStateResolver : NetworkBehaviour
     {
         if (!IsOwner && !IsServer) return;
         if (toolController == null) return;
+
+        // Phase system locks the prop per phase → disable shadow/zone auto-switching.
+        if (toolController.PhaseDriven) return;
+
         if (toolController.CurrentState >= 3)
             return;
         int targetState = ResolveState();
