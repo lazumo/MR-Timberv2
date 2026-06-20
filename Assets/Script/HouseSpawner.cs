@@ -186,4 +186,40 @@ public class HouseSpawnerNetworked : NetworkBehaviour
         foreach (var h in _spawnedHouseData) list.Add(h);
         return list;
     }
+
+    // Firefighting: remove all houses and their bound color factories.
+    public void DespawnAllHouses()
+    {
+        if (!IsServer) return;
+
+        // Color factories are separate NetworkObjects bound to houses — despawn them first.
+        foreach (var f in FindObjectsByType<ColorFactory>(FindObjectsSortMode.None))
+        {
+            var no = f.GetComponent<NetworkObject>();
+            if (no != null && no.IsSpawned) no.Despawn(true);
+        }
+
+        foreach (var kv in _houseObjectMap)
+        {
+            var houseObj = kv.Value;
+            if (houseObj == null) continue;
+            var no = houseObj.GetComponent<NetworkObject>();
+            if (no != null && no.IsSpawned) no.Despawn(true);
+        }
+
+        _houseObjectMap.Clear();
+        _spawnedHouseData.Clear();
+    }
+
+    // Restart: clear existing houses and spawn fresh Unbuilt placeholders.
+    public void RespawnHouses()
+    {
+        if (!IsServer) return;
+
+        DespawnAllHouses();
+        SpawnedHouseColorIndex = -1;
+
+        if (MRUK.Instance != null && MRUK.Instance.GetCurrentRoom() != null)
+            SpawnHousesLogic();
+    }
 }

@@ -27,6 +27,13 @@ public class GameFlowController : NetworkBehaviour
     [SerializeField] private bool autoStartOnSpawn = true;
     [Tooltip("Delay before the pipeline starts, so every scene NetworkObject (treeSpawner, houseSpawner, ...) finishes spawning first.")]
     [SerializeField] private float startupDelay = 0.5f;
+    [Tooltip("Optional editor/testing shortcut to restart. Leave as None to disable.")]
+    [SerializeField] private KeyCode debugRestartKey = KeyCode.None;
+
+    [Header("Restart Input (physical controller)")]
+    [Tooltip("Controller button that triggers a restart. Set to None to disable.")]
+    [SerializeField] private OVRInput.Button restartButton = OVRInput.Button.Two; // B / Y
+    [SerializeField] private OVRInput.Controller restartController = OVRInput.Controller.Active;
 
     /// So other systems (e.g. ToolController) can read the current phase.
     public static GameFlowController Instance { get; private set; }
@@ -76,6 +83,18 @@ public class GameFlowController : NetworkBehaviour
     {
         if (IsServer)
             StopPipelineInternal();
+    }
+
+    private void Update()
+    {
+        // Editor/testing key (server only).
+        if (IsServer && debugRestartKey != KeyCode.None && Input.GetKeyDown(debugRestartKey))
+            Restart();
+
+        // Physical controller button — runs on each peer (reads local controller);
+        // Restart() routes to the server (host runs it directly, client via ServerRpc).
+        if (restartButton != OVRInput.Button.None && OVRInput.GetDown(restartButton, restartController))
+            Restart();
     }
 
     // =========================
@@ -143,16 +162,39 @@ public class GameFlowController : NetworkBehaviour
     // =========================
 
     /// Hook a UI Button's OnClick to this. Works whether pressed on host or client.
+    /// Restart = reset the world to its initial state and re-run the pipeline from Logging.
     public void Restart()
     {
-        if (IsServer) StartPipeline();
+        if (IsServer) RestartInternal();
         else          RestartServerRpc();
     }
 
     [ServerRpc(RequireOwnership = false)]
     public void RestartServerRpc()
     {
-        Debug.Log("[GameFlow] Restart requested.");
+        RestartInternal();
+    }
+
+    private void RestartInternal()
+    {
+        if (!IsServer) return;
+
+        Debug.Log("[GameFlow] Restart — resetting world, back to Logging.");
+        ResetWorld();
         StartPipeline();
+    }
+
+    // Clear leftovers from the previous run so Logging starts fresh.
+    // Prop (ToolController) and passthrough darken reset themselves via CurrentPhase.
+    private void ResetWorld()
+    {
+        if (TreeSpawnerNetworked.Instance != null)
+        {
+            TreeSpawnerNetworked.Instance.StopWoodLogging(despawnExisting: true);
+            TreeSpawnerNetworked.Instance.ClearAllFruits(keepTrees: false);
+        }
+
+        if (HouseSpawnerNetworked.Instance != null)
+            HouseSpawnerNetworked.Instance.RespawnHouses();
     }
 }

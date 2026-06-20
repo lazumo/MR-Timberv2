@@ -25,6 +25,10 @@ public class PassthroughDarkener : MonoBehaviour
 
     Coroutine fadeRoutine;
 
+    // ✅ Phase-driven: darken during the Firefighting phase (replaces the legacy
+    // SceneController stage-2 trigger, which no longer fires under GameFlowController).
+    private GameFlowController _flow;
+
     private void Awake()
     {
         Instance = this;
@@ -50,6 +54,25 @@ public class PassthroughDarkener : MonoBehaviour
     {
         if (SceneController.Instance != null)
             SceneController.Instance.CurrentLevel.OnValueChanged -= OnStageChanged;
+
+        if (_flow != null)
+            _flow.CurrentPhase.OnValueChanged -= OnPhaseChanged;
+    }
+
+    private void Update()
+    {
+        // Late-bind to the flow controller (it may spawn after this object's Start).
+        if (_flow == null && GameFlowController.Instance != null)
+        {
+            _flow = GameFlowController.Instance;
+            _flow.CurrentPhase.OnValueChanged += OnPhaseChanged;
+            Apply(_flow.CurrentPhase.Value == GamePhase.Firefighting);
+        }
+    }
+
+    private void OnPhaseChanged(GamePhase oldPhase, GamePhase newPhase)
+    {
+        Apply(newPhase == GamePhase.Firefighting);
     }
 
     private void OnStageChanged(int prev, int cur)

@@ -144,6 +144,37 @@ public class TreeSpawnerNetworked : NetworkBehaviour
         }
     }
 
+    // Firefighting: remove all loose fruits (and optionally the fruit trees), stop dropping.
+    public void ClearAllFruits(bool keepTrees)
+    {
+        if (!IsServer) return;
+        _fruitSpawning = false;
+
+        // Stop each tree's spawner and despawn the fruits it dropped.
+        foreach (var t in _fruitTrees)
+        {
+            if (t == null) continue;
+            var fsc = t.GetComponentInChildren<FruitSpawnController>();
+            if (fsc != null) fsc.StopAndDespawnFruits();
+        }
+
+        // Catch-all: despawn any remaining fruit (e.g. fruits sitting inside factories).
+        foreach (var fd in FindObjectsByType<FruitData>(FindObjectsSortMode.None))
+        {
+            var no = fd.GetComponent<NetworkObject>();
+            if (no != null && no.IsSpawned) no.Despawn(true);
+        }
+
+        if (!keepTrees)
+        {
+            foreach (var t in _fruitTrees)
+                if (t != null && t.IsSpawned) t.Despawn(true);
+
+            _fruitTrees.Clear();
+            _currentFruitCount = 0;
+        }
+    }
+
     private IEnumerator SpawnFruitTreesRoutine(int treeCount)
     {
         int spawned = 0;
