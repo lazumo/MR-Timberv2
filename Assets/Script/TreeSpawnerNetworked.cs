@@ -181,10 +181,16 @@ public class TreeSpawnerNetworked : NetworkBehaviour
         int guard = 0;
         int maxGuard = Mathf.Max(1, treeCount) * 50;
 
+        // First tree matches the house colour (so it can be juiced); the rest get
+        // different colours. Falls back to cycling colours if no house colour is known.
+        int houseColor = (HouseSpawnerNetworked.Instance != null && HouseSpawnerNetworked.Instance.HasSpawnedHouse)
+            ? HouseSpawnerNetworked.Instance.SpawnedHouseColorIndex
+            : 0;
+
         while (_fruitSpawning && spawned < treeCount && guard < maxGuard)
         {
             guard++;
-            int color = spawned % ColorTable.Count; // 不同顏色的果樹
+            int color = (spawned == 0) ? houseColor : (houseColor + spawned) % ColorTable.Count; // 一棵=房子色，其餘不同色
             if (SpawnTree(TreeType.Fruit, color))
             {
                 spawned++;

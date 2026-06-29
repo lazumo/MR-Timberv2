@@ -27,6 +27,9 @@ public class BarShowWhenEnoughMatchingFruits : NetworkBehaviour
 
     private readonly HashSet<ulong> inside = new();
     public IReadOnlyCollection<ulong> InsideFruitIds => inside;
+
+    // Latch so we only advance the game flow once (box disappears once).
+    private bool _notifiedReady;
     private void OnEnable()
     {
         if (visual != null)
@@ -129,7 +132,17 @@ public class BarShowWhenEnoughMatchingFruits : NetworkBehaviour
                 match++;
         }
 
-        shouldShowBars.Value = (match + consumedMatch.Value >= requiredCount);
+        bool met = (match + consumedMatch.Value >= requiredCount);
+        shouldShowBars.Value = met;
+
+        // First time we have enough matching fruits → advance the flow (box prop disappears,
+        // juice UI shows). Latched so it only fires once.
+        if (met && !_notifiedReady)
+        {
+            _notifiedReady = true;
+            if (GameFlowController.Instance != null)
+                GameFlowController.Instance.NotifyFruitsReady();
+        }
     }
 
     public void NotifyFruitConsumed(int fruitColorIndex)

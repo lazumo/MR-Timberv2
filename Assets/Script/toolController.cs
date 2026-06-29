@@ -34,8 +34,21 @@ public class ToolController : NetworkBehaviour
     [SerializeField] private bool driveByPhase = true;
     [SerializeField] private int loggingState = 0;       // saw
     [SerializeField] private int catchingState = 2;      // box
-    [SerializeField] private int juicingState = 1;       // juicer
+    [SerializeField] private int juicingState = 1;       // juicer (unused when juicingHidesProp)
     [SerializeField] private int firefightingState = 3;  // extinguisher
+
+    [Tooltip("Juicing has no held prop — squeeze is done two-handed at the factory. " +
+             "When true, the prop is hidden during Juicing instead of showing a juicer.")]
+    [SerializeField] private bool juicingHidesProp = true;
+    private const int HiddenState = -1;
+
+    [Header("Transition FX (saw→box on chop, box→hidden on 3 fruits)")]
+    [Tooltip("Smoke/poof particle prefab spawned at the prop when it transforms.")]
+    [SerializeField] private GameObject transitionVfxPrefab;
+    [Tooltip("Sound played when the prop transforms.")]
+    [SerializeField] private AudioClip transitionSfx;
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private float transitionVfxLifetime = 3f;
 
     /// True while the prop is locked by the phase system (ToolStateResolver should stand down).
     public bool PhaseDriven => driveByPhase && GameFlowController.Instance != null;
@@ -114,7 +127,7 @@ public class ToolController : NetworkBehaviour
         if (!IsServer) return;
 
         int target = StateForPhase(phase);
-        if (target < 0) return;
+        // target may be HiddenState (-1) for Juicing — that's intentional (no prop), so don't early-out.
 
         if (netState.Value != target)
             netState.Value = target;
@@ -126,7 +139,7 @@ public class ToolController : NetworkBehaviour
         {
             case GamePhase.Logging:      return loggingState;
             case GamePhase.Catching:     return catchingState;
-            case GamePhase.Juicing:      return juicingState;
+            case GamePhase.Juicing:      return juicingHidesProp ? HiddenState : juicingState;
             case GamePhase.Firefighting: return firefightingState;
             default:                     return loggingState;
         }
@@ -183,7 +196,31 @@ public class ToolController : NetworkBehaviour
 
     private void OnNetStateChanged(int oldValue, int newValue)
     {
+        MaybePlayTransitionFx(oldValue, newValue);
         ApplyState(newValue, invokeEvent: true);
+    }
+
+    // Smoke + sound when the saw becomes the box, and when the box disappears for juicing.
+    // Runs on every peer (driven by the netState change), so both players see/hear it.
+    private void MaybePlayTransitionFx(int oldState, int newState)
+    {
+        bool sawToBox  = (oldState == loggingState  && newState == catchingState);
+        bool boxToHide = (oldState == catchingState && newState == HiddenState);
+        if (!sawToBox && !boxToHide) return;
+
+        Vector3 pos = transform.position;
+        if (oldState >= 0 && oldState < toolObjects.Length && toolObjects[oldState] != null)
+            pos = toolObjects[oldState].transform.position;
+
+        if (transitionVfxPrefab != null)
+        {
+            var go = Instantiate(transitionVfxPrefab, pos, Quaternion.identity);
+            if (transitionVfxLifetime > 0f) Destroy(go, transitionVfxLifetime);
+        }
+
+        if (audioSource == null) audioSource = GetComponent<AudioSource>();
+        if (audioSource != null && transitionSfx != null)
+            audioSource.PlayOneShot(transitionSfx);
     }
 
     // =========================
@@ -195,7 +232,8 @@ public class ToolController : NetworkBehaviour
         if (!IsSpawned)
             return;
 
-        if (state < 0 || state >= toolObjects.Length)
+        // state == HiddenState (-1) is valid and means "no prop shown" (Juicing).
+        if (state >= toolObjects.Length)
         {
             Debug.LogWarning("[ToolController] Invalid tool index");
             return;
@@ -207,8 +245,9 @@ public class ToolController : NetworkBehaviour
             SetToolVisible(toolObjects[lastState], false);
         }
 
-        // Show New
-        SetToolVisible(toolObjects[state], true);
+        // Show New (skip when hidden)
+        if (state >= 0)
+            SetToolVisible(toolObjects[state], true);
 
         lastState = state;
 

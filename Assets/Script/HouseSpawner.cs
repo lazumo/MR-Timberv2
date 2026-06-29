@@ -1,6 +1,7 @@
 using UnityEngine;
 using Unity.Netcode;
 using Meta.XR.MRUtilityKit;
+using System.Collections;
 using System.Collections.Generic;
 
 public class HouseSpawnerNetworked : NetworkBehaviour
@@ -209,6 +210,46 @@ public class HouseSpawnerNetworked : NetworkBehaviour
 
         _houseObjectMap.Clear();
         _spawnedHouseData.Clear();
+    }
+
+    // Firefighting bridge: fade houses out (scale → 0) then despawn, plus their color factories.
+    // Mirrors the existing factory scale-fade (ObjectNetworkSync.DespawnFactoryWithScale).
+    public void FadeOutAllHouses(float duration)
+    {
+        if (!IsServer) return;
+
+        foreach (var f in FindObjectsByType<ColorFactory>(FindObjectsSortMode.None))
+        {
+            var no = f.GetComponent<NetworkObject>();
+            if (no != null && no.IsSpawned) StartCoroutine(FadeAndDespawn(no, duration));
+        }
+
+        foreach (var kv in _houseObjectMap)
+        {
+            var houseObj = kv.Value;
+            if (houseObj == null) continue;
+            var no = houseObj.GetComponent<NetworkObject>();
+            if (no != null && no.IsSpawned) StartCoroutine(FadeAndDespawn(no, duration));
+        }
+
+        _houseObjectMap.Clear();
+        _spawnedHouseData.Clear();
+    }
+
+    private IEnumerator FadeAndDespawn(NetworkObject no, float duration)
+    {
+        Transform t = no.transform;
+        Vector3 start = t.localScale;
+        float time = 0f;
+
+        while (time < duration && no != null && t != null)
+        {
+            time += Time.deltaTime;
+            t.localScale = Vector3.Lerp(start, Vector3.zero, duration <= 0f ? 1f : time / duration);
+            yield return null;
+        }
+
+        if (no != null && no.IsSpawned) no.Despawn(true);
     }
 
     // Restart: clear existing houses and spawn fresh Unbuilt placeholders.

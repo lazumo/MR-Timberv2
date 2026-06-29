@@ -98,6 +98,9 @@ public class ObjectNetworkSync : NetworkBehaviour
             case HouseState.Colored:
                 paintStage.Value = PaintStage.Full;
                 DespawnFactoryIfExists();
+                // Goal reached → let the director run the fire bridge into Firefighting.
+                if (GameFlowController.Instance != null)
+                    GameFlowController.Instance.NotifyHouseColored(transform);
                 break;
         }
     }

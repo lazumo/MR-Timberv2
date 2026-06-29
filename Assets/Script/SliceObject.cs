@@ -106,25 +106,21 @@ public class SliceObject : NetworkBehaviour
     [ServerRpc]
     void RequestSliceServerRpc(ulong objId, Vector3 point, Vector3 normal)
     {
-        // B. Notify Spawner (Decrements count so new tree grows)
+        // B. Notify the spawner this tree died (decrements the standing count).
+        //    NOTE: we no longer auto-respawn another wood tree — the demo flow is a single
+        //    tree, and felling it advances the game (Logging → Catching) via GameFlowController.
         if (TreeSpawnerNetworked.Instance != null)
         {
             TreeSpawnerNetworked.Instance.NotifyTreeDestroyed(TreeSpawnerNetworked.TreeType.Wood);
             Debug.Log("[SliceObject] Notified Spawner of Wood Tree death.");
-            StartCoroutine(DelayedSpawnTree(8f));
         }
+
+        // Advance the event-driven pipeline: this fell ends the logging phase.
+        if (GameFlowController.Instance != null)
+            GameFlowController.Instance.NotifyWoodFelled();
+
         // 3. Perform Visual Slice on all clients (MOVED INSIDE CHECK)
         PerformSliceClientRpc(objId, point, normal);
-    }
-    private IEnumerator DelayedSpawnTree(float delay)
-    {
-        yield return new WaitForSeconds(delay);
-
-        if (TreeSpawnerNetworked.Instance != null)
-        {
-            TreeSpawnerNetworked.Instance.SpawnTree(TreeSpawnerNetworked.TreeType.Wood);
-            Debug.Log("[SliceObject] Delayed Wood Tree generation.");
-        }
     }
 
     [ClientRpc]
