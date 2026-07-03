@@ -14,6 +14,11 @@ public class ColorVariantBinding
     // ⭐ 新增：handlers
     public Transform barHandlerB;
     public Transform barHandlerC;
+
+    [Tooltip("Extra visible parts (e.g. L-push/L-crash/L_spring + R-...) hidden together with " +
+             "the bars until enough fruits are collected. No re-parenting needed — animation " +
+             "paths stay intact.")]
+    public GameObject[] handleParts;
 }
 
 
@@ -30,6 +35,9 @@ public class ColorFactoryVisual : NetworkBehaviour
     // ⭐ 已經有這兩個，但現在要真正賦值
     public Transform CurrentBarHandlerB { get; private set; }
     public Transform CurrentBarHandlerC { get; private set; }
+
+    // ⭐ 目前 variant 要跟 bar 一起顯示/隱藏的其他零件
+    public GameObject[] CurrentHandleParts { get; private set; }
 
     public event Action OnVisualReady;
 
@@ -73,6 +81,7 @@ public class ColorFactoryVisual : NetworkBehaviour
         // ⭐ 新增：設定 handler
         CurrentBarHandlerB = v.barHandlerB;
         CurrentBarHandlerC = v.barHandlerC;
+        CurrentHandleParts = v.handleParts;
 
         Debug.Log($"[ColorFactoryVisual] Applied color {color} -> {v.root.name}");
 

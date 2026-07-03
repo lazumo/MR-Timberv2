@@ -257,7 +257,16 @@ public class HouseSpawnerNetworked : NetworkBehaviour
     {
         if (!IsServer) return;
 
+        StopAllCoroutines();   // cancel any in-progress fade-outs
         DespawnAllHouses();
+
+        // Catch houses whose fade was interrupted (already removed from the map).
+        foreach (var h in FindObjectsByType<ObjectNetworkSync>(FindObjectsSortMode.None))
+        {
+            var no = h.GetComponent<NetworkObject>();
+            if (no != null && no.IsSpawned) no.Despawn(true);
+        }
+
         SpawnedHouseColorIndex = -1;
 
         if (MRUK.Instance != null && MRUK.Instance.GetCurrentRoom() != null)

@@ -84,6 +84,13 @@ public class BarShowWhenEnoughMatchingFruits : NetworkBehaviour
         // ✅ handler 也一起顯示/隱藏
         if (b_handler) b_handler.gameObject.SetActive(show);
         if (c_handler) c_handler.gameObject.SetActive(show);
+
+        // ✅ 其他左右手把零件（免重新分組，動畫路徑不變）
+        var parts = visual.CurrentHandleParts;
+        if (parts != null)
+            foreach (var p in parts)
+                if (p != null && p.activeSelf != show)
+                    p.SetActive(show);
     }
 
     private void OnTriggerEnter(Collider other)

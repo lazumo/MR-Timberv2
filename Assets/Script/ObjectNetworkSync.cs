@@ -10,6 +10,13 @@ public class ObjectNetworkSync : NetworkBehaviour
     private HouseColorFactoryPlacer _factoryPlacer;
     private HouseFireController _fireController;
     private Coroutine _despawnCoroutine;
+
+    [Header("Build VFX (played when the house is built — assign the tree-vanish VFX prefab)")]
+    [SerializeField] private GameObject buildVfxPrefab;
+    [Tooltip("Optional spawn point; defaults to this house's transform.")]
+    [SerializeField] private Transform buildVfxAnchor;
+    [SerializeField] private float buildVfxLifetime = 3f;
+
     // =============================
     // Network Variables
     // =============================
@@ -87,7 +94,11 @@ public class ObjectNetworkSync : NetworkBehaviour
         switch (newState)
         {
             case HouseState.Built:
+                PlayBuildVfxClientRpc();
                 TrySpawnAndBindFactory();
+                // House is now up → let the director advance Logging → Catching.
+                if (GameFlowController.Instance != null)
+                    GameFlowController.Instance.NotifyHouseBuilt();
                 break;
 
             case HouseState.Coloring:
@@ -103,6 +114,22 @@ public class ObjectNetworkSync : NetworkBehaviour
                     GameFlowController.Instance.NotifyHouseColored(transform);
                 break;
         }
+    }
+
+    // Same effect as the tree-vanish VFX, played at the house when the elf finishes building it.
+    [ClientRpc]
+    private void PlayBuildVfxClientRpc()
+    {
+        if (buildVfxPrefab == null) return;
+
+        Vector3 pos = buildVfxAnchor != null ? buildVfxAnchor.position : transform.position;
+        GameObject vfx = Instantiate(buildVfxPrefab, pos, Quaternion.identity);
+
+        var ps = vfx.GetComponent<ParticleSystem>();
+        if (ps != null)
+            Destroy(vfx, ps.main.duration + ps.main.startLifetime.constantMax);
+        else
+            Destroy(vfx, buildVfxLifetime);
     }
 
     private void TrySpawnAndBindFactory()

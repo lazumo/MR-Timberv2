@@ -8,6 +8,10 @@ public class ColorFactoryNetDriver : NetworkBehaviour
 
     [Header("Rotate (Yaw only)")]
     [SerializeField] private float rotateLerp = 20f;
+    [Tooltip("Extra yaw added on top of the left→right hand direction. The new juicer model's " +
+             "squeeze axis is 90° off the old one — tune to 90 / -90 / 0 so the push handles " +
+             "line up with the two players' hands.")]
+    [SerializeField] private float yawOffsetDegrees = 90f;
 
     [Header("Networking")]
     public NetworkVariable<bool> IsActive = new(false);
@@ -173,7 +177,8 @@ public class ColorFactoryNetDriver : NetworkBehaviour
 
         if (dir.sqrMagnitude > 0.0001f)
         {
-            Quaternion targetYaw = Quaternion.LookRotation(dir.normalized, Vector3.up);
+            Quaternion targetYaw = Quaternion.LookRotation(dir.normalized, Vector3.up)
+                                   * Quaternion.Euler(0f, yawOffsetDegrees, 0f);
             factoryTransform.rotation =
                 Quaternion.Slerp(factoryTransform.rotation, targetYaw, Time.deltaTime * rotateLerp);
         }

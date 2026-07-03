@@ -153,31 +153,21 @@ MonoBehaviour:
   - state: 0
     activeObjects:
     - {fileID: 7156189671750295336}
-    - {fileID: 8028127287622975103}
   - state: 1
     activeObjects:
     - {fileID: 8020961656919196075}
-    - {fileID: 8028127287622975103}
     - {fileID: 7156189671750295336}
   - state: 2
     activeObjects:
-    - {fileID: 8028127287622975103}
     - {fileID: 7156189671750295336}
   - state: 3
     activeObjects:
-    - {fileID: 8028127287622975103}
-    - {fileID: 7156189671750295336}
-  - state: 4
-    activeObjects:
-    - {fileID: 8028127287622975103}
     - {fileID: 7156189671750295336}
   - state: 5
     activeObjects:
-    - {fileID: 8028127287622975103}
     - {fileID: 7156189671750295336}
   - state: 6
     activeObjects:
-    - {fileID: 8028127287622975103}
     - {fileID: 7156189671750295336}
     - {fileID: 3155893798371458526}
   colorPaintSets:
@@ -205,6 +195,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 92eb64aa37e4f5a4589741dc62c4c745, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  buildVfxPrefab: {fileID: 141433446842962269, guid: 9fe8f8b3288e45a44af36ff8aa04486e,
+    type: 3}
+  buildVfxAnchor: {fileID: 0}
+  buildVfxLifetime: 3
 --- !u!114 &8623700983161867751
 MonoBehaviour:
   m_ObjectHideFlags: 0

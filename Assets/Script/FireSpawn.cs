@@ -34,6 +34,7 @@ public class FireSpawnerIgnitionPointsNetworked : NetworkBehaviour
     public LayerMask collisionLayerMask;
 
     private bool _started = false;
+    private Coroutine _fireLoop;
 
     public override void OnNetworkSpawn()
     {
@@ -83,12 +84,36 @@ public class FireSpawnerIgnitionPointsNetworked : NetworkBehaviour
     {
         if (!IsServer) return;
         if (cur == 2 && !_started) StartSpawningRoutine();
+        else if (cur != 2 && _started) ExtinguishAllAndStop();
     }
 
     private void StartSpawningRoutine()
     {
         _started = true;
-        StartCoroutine(FireManagementLoop());
+        _fireLoop = StartCoroutine(FireManagementLoop());
+    }
+
+    // Restart / leaving stage 2: stop replenishing and despawn every fire
+    // (each fire object owns its own crackle audio, so despawning also stops the sound).
+    public void ExtinguishAllAndStop()
+    {
+        if (!IsServer) return;
+
+        if (_fireLoop != null) { StopCoroutine(_fireLoop); _fireLoop = null; }
+        _started = false;
+
+        foreach (var fire in FindObjectsByType<FireGrowServerOnly>(FindObjectsSortMode.None))
+        {
+            var no = fire.GetComponent<NetworkObject>();
+            if (no != null && no.IsSpawned) no.Despawn(true);
+        }
+
+        // Catch any remaining fire objects (e.g. house fires) so their audio stops too.
+        foreach (var fire in FindObjectsByType<NetworkFireController>(FindObjectsSortMode.None))
+        {
+            var no = fire.GetComponent<NetworkObject>();
+            if (no != null && no.IsSpawned) no.Despawn(true);
+        }
     }
 
     // =================== 你要的新邏輯核心 ===================
@@ -103,33 +128,41 @@ public class FireSpawnerIgnitionPointsNetworked : NetworkBehaviour
             yield return new WaitForSeconds(0.15f);
         }
 
+        float nextReplenish = Time.time + checkInterval;
+
         while (IsServer)
         {
             int current = FireGrowServerOnly.TotalFires;   // 從繁殖腳本取得目前火數
 
-            // 如果全場已經沒有火了 → 停止
+            // ✅ 火全滅 → 立即恢復場景（每秒檢查，不再等 checkInterval 20 秒）
             if (current <= 0)
             {
-                Debug.Log("[FireSpawner] No more fires in scene. Fade passthrough back.");
-
+                Debug.Log("[FireSpawner] All fires out — restoring passthrough.");
                 FadePassthroughBackClientRpc();
 
+                // 過關音效 + 特效（GameFlow 統一播放）
+                if (GameFlowController.Instance != null)
+                    GameFlowController.Instance.NotifyFiresExtinguished();
+
+                _started = false;   // allow a future stage-2 to start a fresh loop
+                _fireLoop = null;
                 yield break;
             }
 
-
-
-            // 還有額度就補一個
-            if (current < targetTotalFires)
+            // 補火維持原本的 checkInterval 節奏
+            if (Time.time >= nextReplenish)
             {
-                bool success = SpawnOneIgnition();
-                if (success)
+                nextReplenish = Time.time + checkInterval;
+
+                if (current < targetTotalFires)
                 {
-                    Debug.Log($"[FireSpawner] Replenish fire. Now: {current + 1}/{targetTotalFires}");
+                    bool success = SpawnOneIgnition();
+                    if (success)
+                        Debug.Log($"[FireSpawner] Replenish fire. Now: {current + 1}/{targetTotalFires}");
                 }
             }
 
-            yield return new WaitForSeconds(checkInterval);
+            yield return new WaitForSeconds(1f);
         }
     }
     // =======================================================

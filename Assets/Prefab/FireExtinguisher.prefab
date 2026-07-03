@@ -98,6 +98,7 @@ GameObject:
   - component: {fileID: 8369863616983269361}
   - component: {fileID: 3597143408202544751}
   - component: {fileID: 8196266388907533182}
+  - component: {fileID: 511455702477955847}
   m_Layer: 0
   m_Name: FireExtinguisher
   m_TagString: Untagged
@@ -227,6 +228,28 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   manager: {fileID: 0}
   chargeVfx: {fileID: 1042868008702948379}
+  targetRenderer: {fileID: 0}
+  flashDuration: 1.2
+  flashIntensity: 2.5
+  flashSpeed: 12
+--- !u!114 &511455702477955847
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4295368331041777713}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7255d31b83d988b439b977827f29ce08, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  handle: {fileID: 0}
+  pressedLocalEuler: {x: -20, y: 0, z: 0}
+  pressedLocalOffset: {x: 0, y: 0, z: 0}
+  followSpeed: 22
+  sprayController: {fileID: 8369863616983269361}
+  deadzone: 0.02
 --- !u!1 &5723441411532360927
 GameObject:
   m_ObjectHideFlags: 0

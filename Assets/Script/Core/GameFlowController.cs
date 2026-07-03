@@ -31,6 +31,8 @@ public class GameFlowController : NetworkBehaviour
     [SerializeField] private GameObject telegraphSmokePrefab;
     [Tooltip("Chime played when the house is finished.")]
     [SerializeField] private AudioClip celebrateSfx;
+    [Tooltip("Jingle played when the LAST fire is put out (firefighting victory).")]
+    [SerializeField] private AudioClip victorySfx;
     [SerializeField] private AudioSource audioSource;
     [Tooltip("Seconds before auto-spawned bridge VFX are destroyed.")]
     [SerializeField] private float bridgeVfxLifetime = 4f;
@@ -136,13 +138,24 @@ public class GameFlowController : NetworkBehaviour
     // Gameplay event hooks (called by Layer-3 systems on the server)
     // =========================
 
-    /// The one logging tree was felled → move to catching.
+    /// The one logging tree was felled. We do NOT advance yet — the elf still has to carry
+    /// the wood over and build the house (takes a few seconds). We wait for NotifyHouseBuilt
+    /// so Catching never starts before the house actually exists.
     public void NotifyWoodFelled()
     {
         if (!IsServer || !_started) return;
         if (CurrentPhase.Value != GamePhase.Logging) return;
 
-        Debug.Log("[GameFlow] Wood felled → Catching.");
+        Debug.Log("[GameFlow] Wood felled — waiting for the elf to build the house before Catching.");
+    }
+
+    /// The elf finished delivering the wood and the house is built → move to Catching.
+    public void NotifyHouseBuilt()
+    {
+        if (!IsServer || !_started) return;
+        if (CurrentPhase.Value != GamePhase.Logging) return;
+
+        Debug.Log("[GameFlow] House built → Catching.");
         EnterPhase(GamePhase.Catching);
     }
 
@@ -171,11 +184,14 @@ public class GameFlowController : NetworkBehaviour
         _bridging = true;
         Debug.Log("[GameFlow] House coloured → fire bridge.");
 
-        // 1) Celebration beat — reward the players for finishing the house.
+        // 1) Celebration beat — reward the players for finishing the house (過關音效).
         PlayCelebrateClientRpc(housePos);
         yield return new WaitForSeconds(celebrateSeconds);
 
-        // 2) Telegraph beat — smoke rises as a warning before the fire.
+        // 2) 天色先暗下來…
+        DarkenClientRpc();
+
+        // 3) …才開始冒煙，預告失火。
         PlayTelegraphClientRpc(housePos);
         yield return new WaitForSeconds(telegraphSeconds);
 
@@ -210,6 +226,35 @@ public class GameFlowController : NetworkBehaviour
     private void PlayTelegraphClientRpc(Vector3 pos)
     {
         SpawnLocalVfx(telegraphSmokePrefab, pos);
+    }
+
+    [ClientRpc]
+    private void DarkenClientRpc()
+    {
+        if (PassthroughDarkener.Instance != null)
+            PassthroughDarkener.Instance.Apply(true);
+    }
+
+    /// Called by FireSpawnerIgnitionPointsNetworked when the last fire goes out.
+    public void NotifyFiresExtinguished()
+    {
+        if (!IsServer || !_started) return;
+        if (CurrentPhase.Value != GamePhase.Firefighting) return;
+
+        Debug.Log("[GameFlow] All fires extinguished — victory!");
+        PlayVictoryClientRpc();
+    }
+
+    [ClientRpc]
+    private void PlayVictoryClientRpc()
+    {
+        if (audioSource != null && victorySfx != null)
+            audioSource.PlayOneShot(victorySfx);
+
+        // 過關特效：在玩家面前 1.5m 播慶祝粒子（若有指定）
+        var cam = Camera.main;
+        if (cam != null)
+            SpawnLocalVfx(celebrateVfxPrefab, cam.transform.position + cam.transform.forward * 1.5f);
     }
 
     private void SpawnLocalVfx(GameObject prefab, Vector3 pos)

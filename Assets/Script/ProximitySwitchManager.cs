@@ -13,7 +13,7 @@ public class ProximitySwitchManager : NetworkBehaviour
     [SerializeField] private NetworkObject pipePrefab;
 
     [Header("�������R����e�]���}���A�~�p�ɡ^")]
-    [SerializeField] public float extinguisherGlowAfter = 30f;
+    [SerializeField] public float extinguisherGlowAfter = 10f;
 
     [Header("Pipe �W�h")]
     [SerializeField] public float pipeForceBackAfter = 15f;

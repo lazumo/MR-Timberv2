@@ -30,6 +30,10 @@ public class JuicerSqueezeAnimDriver : MonoBehaviour
     [Tooltip("Smoothing of the scrub. 0 = snap to the hand value.")]
     [SerializeField] private float lerpSpeed = 25f;
 
+    [Tooltip("Log why the animation isn't moving (once per second). Turn off after debugging.")]
+    [SerializeField] private bool debugLog = true;
+    private float _nextLogTime;
+
     private Animator _animator;
     private int _stateHash;
     private float _normTime;
@@ -61,6 +65,19 @@ public class JuicerSqueezeAnimDriver : MonoBehaviour
             target = squeezeRange > 0.0001f
                 ? Mathf.Clamp01(closed / squeezeRange)
                 : 0f;
+
+            if (debugLog && Time.time >= _nextLogTime)
+            {
+                _nextLogTime = Time.time + 1f;
+                Debug.Log($"[JuicerSqueeze] ACTIVE base={baseD:F3} cur={curD:F3} closed={closed:F3} → target={target:F2}");
+            }
+        }
+        else if (debugLog && Time.time >= _nextLogTime)
+        {
+            _nextLogTime = Time.time + 1f;
+            Debug.Log(driver == null
+                ? "[JuicerSqueeze] driver NOT assigned — animation stays at 0."
+                : "[JuicerSqueeze] driver.IsActive=false (MiddlePoint not inside factory trigger) — animation stays at 0.");
         }
 
         _normTime = lerpSpeed > 0f

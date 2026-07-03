@@ -5,14 +5,14 @@ public class ExtinguisherChargeParticle : MonoBehaviour
     [Header("Auto-find ProximitySwitchManager")]
     [SerializeField] private ProximitySwitchManager manager;
 
-    [Header("¥R¯à²É¤l¡]©ì¤lª«¥ó ParticleSystem¡F¤£©ì¤]·|¦Û°Ê§ä¡^")]
+    [Header("ï¿½Rï¿½ï¿½É¤lï¿½]ï¿½ï¿½lï¿½ï¿½ï¿½ï¿½ ParticleSystemï¿½Fï¿½ï¿½ï¿½ï¿½]ï¿½|ï¿½Û°Ê§ï¿½^")]
     [SerializeField] private ParticleSystem chargeVfx;
 
-    [Header("°{Ã{µøÄ±¡]¥i¿ï¡^")]
+    [Header("ï¿½{ï¿½{ï¿½ï¿½Ä±ï¿½]ï¿½iï¿½ï¿½^")]
     [SerializeField] private Renderer targetRenderer;
-    [SerializeField] private float flashDuration = 1.2f;      // °{Ã{«ùÄò®É¶¡
-    [SerializeField] private float flashIntensity = 2.5f;     // ³Ì«G­¿²v
-    [SerializeField] private float flashSpeed = 12f;          // °{Ã{ÀW²v
+    [SerializeField] private float flashDuration = 1.2f;      // ï¿½{ï¿½{ï¿½ï¿½ï¿½ï¿½É¶ï¿½
+    [SerializeField] private float flashIntensity = 2.5f;     // ï¿½Ì«Gï¿½ï¿½ï¿½v
+    [SerializeField] private float flashSpeed = 12f;          // ï¿½{ï¿½{ï¿½Wï¿½v
 
     private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
 
@@ -31,6 +31,8 @@ public class ExtinguisherChargeParticle : MonoBehaviour
             targetRenderer = GetComponentInChildren<Renderer>();
     }
 
+    private float _nextFindTime;
+
     private void Start()
     {
         if (manager == null)
@@ -42,9 +44,21 @@ public class ExtinguisherChargeParticle : MonoBehaviour
 
     private void Update()
     {
-        if (manager == null || chargeVfx == null) return;
+        // Late-bind: the extinguisher is runtime-spawned and may appear before the
+        // manager exists/activates â€” keep retrying instead of giving up forever.
+        if (manager == null)
+        {
+            if (Time.time >= _nextFindTime)
+            {
+                _nextFindTime = Time.time + 1f;
+                manager = FindObjectOfType<ProximitySwitchManager>();
+            }
+            if (manager == null) return;
+        }
 
-        // ¦XÅéª¬ºA¡G¥ß¨è­«¸m
+        if (chargeVfx == null) return;
+
+        // ï¿½Xï¿½éª¬ï¿½Aï¿½Gï¿½ß¨è­«ï¿½m
         if (manager.IsMerged)
         {
             separatedTime = 0f;
@@ -54,28 +68,33 @@ public class ExtinguisherChargeParticle : MonoBehaviour
             return;
         }
 
-        // ¤À¶}ª¬ºA¡G²Ö¿n®É¶¡
+        // ï¿½ï¿½ï¿½}ï¿½ï¿½ï¿½Aï¿½Gï¿½Ö¿nï¿½É¶ï¿½
         separatedTime += Time.deltaTime;
 
-        // 30 ¬í¨ì¡G¼½©ñ²É¤l + Ä²µo°{Ã{
+        // 30 ï¿½ï¿½ï¿½ï¿½Gï¿½ï¿½ï¿½ï¿½É¤l + Ä²ï¿½oï¿½{ï¿½{
         if (!played && separatedTime >= manager.extinguisherGlowAfter)
         {
             played = true;
+
+            // Play() on an inactive GameObject silently does nothing â€” activate first.
+            if (!chargeVfx.gameObject.activeInHierarchy)
+                chargeVfx.gameObject.SetActive(true);
 
             chargeVfx.Play(true);
             StartFlash();
         }
 
-        // ³B²z°{Ã{®ÄªG
+        // ï¿½Bï¿½zï¿½{ï¿½{ï¿½ÄªG
         UpdateFlash();
     }
 
     private void StopAndClear()
     {
-        chargeVfx.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        if (chargeVfx != null)
+            chargeVfx.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
     }
 
-    // ====== °{Ã{ÅÞ¿è ======
+    // ====== ï¿½{ï¿½{ï¿½Þ¿ï¿½ ======
 
     private void StartFlash()
     {
@@ -105,10 +124,10 @@ public class ExtinguisherChargeParticle : MonoBehaviour
 
         flashTimer -= Time.deltaTime;
 
-        // ¥Î sin ²£¥Í§Ö³t°{Ã{
+        // ï¿½ï¿½ sin ï¿½ï¿½ï¿½Í§Ö³tï¿½{ï¿½{
         float blink = 0.5f + 0.5f * Mathf.Sin(Time.time * flashSpeed);
 
-        // ÀHµÛ®É¶¡ºCºC°I´î
+        // ï¿½Hï¿½Û®É¶ï¿½ï¿½Cï¿½Cï¿½Iï¿½ï¿½
         float fade = Mathf.Clamp01(flashTimer / flashDuration);
 
         float intensity = blink * flashIntensity * fade;
