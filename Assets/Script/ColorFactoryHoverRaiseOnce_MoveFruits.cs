@@ -36,6 +36,28 @@ public class RaiseFactoryWhenRequirementMet : NetworkBehaviour
     private float t = 0f;
     private Coroutine co;
 
+    // 上升音效：hasStarted 是同步變數，每個 client 各自等 delay 後播
+    public override void OnNetworkSpawn()
+    {
+        hasStarted.OnValueChanged += OnStartedChanged;
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        hasStarted.OnValueChanged -= OnStartedChanged;
+    }
+
+    private void OnStartedChanged(bool oldVal, bool started)
+    {
+        if (started) StartCoroutine(PlayRiseSfxAfterDelay());
+    }
+
+    private IEnumerator PlayRiseSfxAfterDelay()
+    {
+        yield return new WaitForSeconds(delaySeconds);
+        SfxLib.PlayAt("FactoryRise", factoryRoot != null ? factoryRoot.position : transform.position, 0.9f);
+    }
+
     private void Reset()
     {
         factoryRoot = transform.root;

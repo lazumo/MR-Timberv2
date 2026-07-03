@@ -37,11 +37,13 @@ public class JuicerSqueezeAnimDriver : MonoBehaviour
     private Animator _animator;
     private int _stateHash;
     private float _normTime;
+    private AudioSource _creak;   // squeeze creak loop, volume follows movement speed
 
     private void Awake()
     {
         _animator = GetComponent<Animator>();
         _stateHash = Animator.StringToHash(stateName);
+        _creak = SfxLib.AddLoop(gameObject, "SqueezeCreak", 0f);
     }
 
     private void OnEnable()
@@ -80,10 +82,22 @@ public class JuicerSqueezeAnimDriver : MonoBehaviour
                 : "[JuicerSqueeze] driver.IsActive=false (MiddlePoint not inside factory trigger) — animation stays at 0.");
         }
 
+        float prev = _normTime;
         _normTime = lerpSpeed > 0f
             ? Mathf.Lerp(_normTime, target, Time.deltaTime * lerpSpeed)
             : target;
 
         _animator.Play(_stateHash, layer, _normTime);
+
+        // 擠壓吱嘎聲：音量跟著擠壓移動速度
+        if (_creak != null)
+        {
+            float speed = Time.deltaTime > 0f ? Mathf.Abs(_normTime - prev) / Time.deltaTime : 0f;
+            float vol = Mathf.Clamp01(speed * 2.5f) * 0.7f;
+            _creak.volume = Mathf.Lerp(_creak.volume, vol, Time.deltaTime * 10f);
+
+            if (_creak.volume > 0.02f && !_creak.isPlaying) _creak.Play();
+            else if (_creak.volume <= 0.02f && _creak.isPlaying) _creak.Pause();
+        }
     }
 }

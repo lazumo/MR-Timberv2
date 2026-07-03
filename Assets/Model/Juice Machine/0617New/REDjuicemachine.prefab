@@ -144,6 +144,6 @@ MonoBehaviour:
   driver: {fileID: 0}
   stateName: Jucier
   layer: 0
-  squeezeRange: 0.3
+  squeezeRange: 0.6
   invert: 0
-  lerpSpeed: 25
+  lerpSpeed: 12

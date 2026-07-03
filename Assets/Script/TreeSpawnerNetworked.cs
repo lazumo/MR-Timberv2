@@ -44,6 +44,13 @@ public class TreeSpawnerNetworked : NetworkBehaviour
     private bool _fruitSpawning = false;
     private readonly List<NetworkObject> _fruitTrees = new List<NetworkObject>();
 
+    // ⭐ First-run poses, replayed on restart so trees reappear in the SAME spots.
+    private bool _woodPoseSaved;
+    private Vector3 _savedWoodPos;
+    private Quaternion _savedWoodRot;
+    private bool _fruitPosesLocked;
+    private readonly List<(Vector3 pos, Quaternion rot)> _savedFruitPoses = new();
+
     private void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
@@ -96,6 +103,14 @@ public class TreeSpawnerNetworked : NetworkBehaviour
     // driven by SliceObject (calls SpawnTree(Wood)), gated by _woodLogging.
     private IEnumerator EnsureInitialWoodTree()
     {
+        // ⭐ Restart replay: reuse the first run's spot.
+        if (_woodPoseSaved)
+        {
+            if (_currentWoodCount < targetWoodTrees)
+                PerformSpawn(TreeType.Wood, _savedWoodPos, _savedWoodRot);
+            yield break;
+        }
+
         int tries = 0;
         while (_woodLogging && _currentWoodCount < targetWoodTrees && tries < 50)
         {
@@ -177,6 +192,22 @@ public class TreeSpawnerNetworked : NetworkBehaviour
 
     private IEnumerator SpawnFruitTreesRoutine(int treeCount)
     {
+        // ⭐ Restart replay: reuse the first run's ceiling spots (colours recomputed the same way).
+        if (_fruitPosesLocked && _savedFruitPoses.Count >= treeCount)
+        {
+            int replayHouseColor = (HouseSpawnerNetworked.Instance != null && HouseSpawnerNetworked.Instance.HasSpawnedHouse)
+                ? HouseSpawnerNetworked.Instance.SpawnedHouseColorIndex
+                : 0;
+
+            for (int i = 0; i < treeCount && _fruitSpawning; i++)
+            {
+                int c = (i == 0) ? replayHouseColor : (replayHouseColor + i) % ColorTable.Count;
+                PerformSpawn(TreeType.Fruit, _savedFruitPoses[i].pos, _savedFruitPoses[i].rot, c);
+                yield return new WaitForSeconds(0.3f);
+            }
+            yield break;
+        }
+
         int spawned = 0;
         int guard = 0;
         int maxGuard = Mathf.Max(1, treeCount) * 50;
@@ -204,6 +235,8 @@ public class TreeSpawnerNetworked : NetworkBehaviour
 
         if (_fruitSpawning && spawned < treeCount)
             Debug.LogWarning($"[TreeSpawner] Only spawned {spawned}/{treeCount} fruit trees (no space).");
+        else if (spawned >= treeCount)
+            _fruitPosesLocked = true;   // full first run captured → replay these spots on restart
     }
 
     private void StartSpawningRoutines()
@@ -336,6 +369,18 @@ public class TreeSpawnerNetworked : NetworkBehaviour
 
     private void PerformSpawn(TreeType type, Vector3 pos, Quaternion rot, int forcedFruitColorIndex = -1)
     {
+        // ⭐ Capture first-run poses (pre-offset args) for restart replay.
+        if (type == TreeType.Wood && !_woodPoseSaved)
+        {
+            _woodPoseSaved = true;
+            _savedWoodPos = pos;
+            _savedWoodRot = rot;
+        }
+        else if (type == TreeType.Fruit && !_fruitPosesLocked)
+        {
+            _savedFruitPoses.Add((pos, rot));
+        }
+
         GameObject prefab = (type == TreeType.Wood) ? woodTreePrefab : fruitTreePrefab;
         if (type == TreeType.Fruit)
         {

@@ -44,6 +44,9 @@ public class AutoDestroyNetworkObject : NetworkBehaviour
     [ClientRpc]
     private void PlayDestroyVFXClientRpc(int colorIndex, Vector3 pos)
     {
+        // 噗嘰啪 — 這是果子在地板爆掉的實際路徑（FruitExplodeVfx 沒掛在 Fruit 上）
+        SfxLib.PlayAt("FruitPop", pos, 0.9f);
+
         if (destroyVFXByColor == null || destroyVFXByColor.Length == 0)
             return;
 

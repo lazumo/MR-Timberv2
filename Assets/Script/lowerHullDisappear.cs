@@ -18,6 +18,9 @@ public class LowerHullShrinkDisappear : MonoBehaviour
         if (delayBeforeShrink > 0)
             yield return new WaitForSeconds(delayBeforeShrink);
 
+        // 樹根萎縮音（hull 是每個 client 本地生成的，所以各自播放）
+        SfxLib.PlayAt("StumpShrink", transform.position, 0.8f);
+
         float elapsed = 0f;
         Vector3 initialScale = transform.localScale;
 

@@ -122,20 +122,26 @@ public class FireSpawnerIgnitionPointsNetworked : NetworkBehaviour
         yield return new WaitForSeconds(startDelay);
 
         // 先生成初始 4 個起火點
+        int ignited = 0;
         for (int i = 0; i < initialIgnitionCount; i++)
         {
-            SpawnOneIgnition();
+            if (SpawnOneIgnition()) ignited++;
             yield return new WaitForSeconds(0.15f);
         }
+        Debug.Log($"[FireSpawner] Initial ignition: {ignited}/{initialIgnitionCount} (TotalFires={FireGrowServerOnly.TotalFires})");
+        if (ignited == 0)
+            Debug.LogError("[FireSpawner] No ignition point found space! Check MRUK surfaces / spawn weights.");
 
         float nextReplenish = Time.time + checkInterval;
+        bool everHadFire = FireGrowServerOnly.TotalFires > 0;
 
         while (IsServer)
         {
             int current = FireGrowServerOnly.TotalFires;   // 從繁殖腳本取得目前火數
+            if (current > 0) everHadFire = true;
 
-            // ✅ 火全滅 → 立即恢復場景（每秒檢查，不再等 checkInterval 20 秒）
-            if (current <= 0)
+            // ✅ 火全滅 → 立即恢復場景（只有「曾經有火」才算勝利，避免生成失敗被誤判）
+            if (current <= 0 && everHadFire)
             {
                 Debug.Log("[FireSpawner] All fires out — restoring passthrough.");
                 FadePassthroughBackClientRpc();

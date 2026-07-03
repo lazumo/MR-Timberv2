@@ -34,6 +34,10 @@ public class FruitTree : NetworkBehaviour
         transform.localScale = Vector3.zero;
         if (!audioSource)
             audioSource = gameObject.AddComponent<AudioSource>();
+
+        // 沒指定生長音效時用內建的（馬力歐變大風）
+        if (!sfxGrow)
+            sfxGrow = SfxLib.Get("GrowUp");
     }
 
     public override void OnNetworkSpawn()

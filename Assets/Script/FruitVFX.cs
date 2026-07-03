@@ -31,6 +31,9 @@ public class FruitDestroyVFX : NetworkBehaviour
     [ClientRpc]
     private void PlayDestroyVFXClientRpc(int colorIndex)
     {
+        // 榨汁擠爆也用同一個「噗嘰啪」
+        SfxLib.PlayAt("FruitPop", transform.position, 0.9f);
+
         if (colorIndex < 0 || colorIndex >= destroyVfxList.Count)
         {
             Debug.LogWarning($"[FruitDestroyVFX] Invalid colorIndex: {colorIndex}");

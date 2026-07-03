@@ -37,13 +37,23 @@ public class SliceObject : NetworkBehaviour
         NetworkVariableWritePermission.Owner
     );
 
+    private AudioSource sawAudio;   // friction loop, follows isSawingNet on every peer
+
     void Start()
     {
         lastPos = transform.position;
+        sawAudio = SfxLib.AddLoop(gameObject, "SawLoop", 0.6f);
     }
 
     void Update()
     {
+        // 摩擦音效跟粒子一樣跟著「正在鋸」狀態走
+        if (sawAudio != null)
+        {
+            if (isSawingNet.Value && !sawAudio.isPlaying) sawAudio.Play();
+            else if (!isSawingNet.Value && sawAudio.isPlaying) sawAudio.Stop();
+        }
+
         if (!woodChips) return;
 
         if (isSawingNet.Value && !woodChips.isPlaying)
@@ -133,6 +143,9 @@ public class SliceObject : NetworkBehaviour
 
         var hull = target.Slice(point, normal, crossSectionMaterial, 1);
         if (hull == null) return;
+
+        // 樹倒下：吱嘎→咻→碰（每個 client 都在本地切割，所以在這裡播）
+        SfxLib.PlayAt("TreeFall", point, 0.9f);
 
         Transform parent = target.transform.parent;
         Vector3 originalPos = target.transform.position;

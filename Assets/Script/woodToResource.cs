@@ -8,6 +8,9 @@ public class WoodDropToResource : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        // 木材素材出現的提示音（每個 client 都播）
+        SfxLib.PlayAt("WoodPop", transform.position, 0.8f);
+
         if (IsServer)
             StartCoroutine(SpawnFinalResourceAfterDelay());
     }

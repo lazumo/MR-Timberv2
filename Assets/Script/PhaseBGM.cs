@@ -19,6 +19,10 @@ public class PhaseBGM : MonoBehaviour
     [SerializeField] private AudioSource fireSource;
     [Range(0f, 1f)] [SerializeField] private float fireVolume = 0.35f;
 
+    [Header("Victory Music (滅火成功後)")]
+    [Tooltip("Looping BGM after all fires are out. Empty = auto-load Resources/SFX/VictoryBGM.")]
+    [SerializeField] private AudioClip victoryMusicClip;
+
     [Header("Levels")]
     [Range(0f, 1f)] [SerializeField] private float volume = 0.35f;
     [Tooltip("Seconds to fade in/out when the phase changes.")]
@@ -36,13 +40,19 @@ public class PhaseBGM : MonoBehaviour
             if (_flow == null) return;
         }
 
-        bool firePhase = _flow.CurrentPhase.Value == GamePhase.Firefighting;
+        if (victoryMusicClip == null)
+            victoryMusicClip = SfxLib.Get("VictoryBGM");
+
+        bool victory  = _flow.VictoryReached.Value;
+        bool firePhase = _flow.CurrentPhase.Value == GamePhase.Firefighting && !victory;
 
         float step = fadeSeconds > 0f ? Time.deltaTime / fadeSeconds : 1f;
         _level     = Mathf.MoveTowards(_level,     firePhase ? 0f : 1f, step);
         _fireLevel = Mathf.MoveTowards(_fireLevel, firePhase ? 1f : 0f, step);
 
-        Drive(source,     musicClip,     volume,     _level);
+        // 勝利後主音軌改播勝利曲；restart 後 VictoryReached=false 自動換回平常曲
+        AudioClip mainClip = victory && victoryMusicClip != null ? victoryMusicClip : musicClip;
+        Drive(source,     mainClip,      volume,     _level);
         Drive(fireSource, fireMusicClip, fireVolume, _fireLevel);
     }
 

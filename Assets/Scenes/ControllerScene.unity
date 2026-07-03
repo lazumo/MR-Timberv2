@@ -2752,7 +2752,7 @@ MonoBehaviour:
   source: {fileID: 1254098481}
   fireMusicClip: {fileID: 8300000, guid: 5c2be871d4a94f30b8e61a9c03d75288, type: 3}
   fireSource: {fileID: 1254098483}
-  fireVolume: 0.35
+  fireVolume: 0.7
   volume: 0.35
   fadeSeconds: 1.5
 --- !u!82 &1254098483

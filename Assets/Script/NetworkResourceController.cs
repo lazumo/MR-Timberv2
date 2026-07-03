@@ -9,6 +9,18 @@ public class NetworkResourceController : NetworkBehaviour
     private int targetHouseId;
     private Vector3 targetPos;
 
+    // 小精靈飛行聲：存活期間循環播（despawn 時隨物件一起消失）
+    public override void OnNetworkSpawn()
+    {
+        var fly = SfxLib.AddLoop(gameObject, "ElfFly", 0.85f);
+        if (fly != null)
+        {
+            fly.minDistance = 0.3f;    // 近距離更明顯的方向感
+            fly.dopplerLevel = 1.5f;   // 移動時有都卜勒效果，更能聽出往哪飛
+            fly.Play();
+        }
+    }
+
     public void AssignJob(int houseId, Vector3 pos)
     {
         if (!IsServer) return;

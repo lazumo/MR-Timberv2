@@ -45,6 +45,10 @@ public class HouseSpawnerNetworked : NetworkBehaviour
     private NetworkList<HouseData> _spawnedHouseData;
     private int _nextQueryID;
     private Dictionary<int, GameObject> _houseObjectMap = new();
+
+    // ⭐ First-run layout, replayed on restart so houses reappear in the SAME spots/colours.
+    private struct HouseLayout { public Vector3 pos; public Quaternion rot; public int color; }
+    private readonly List<HouseLayout> _initialLayout = new();
     private void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
@@ -77,6 +81,7 @@ public class HouseSpawnerNetworked : NetworkBehaviour
         if (room == null) return;
 
         _spawnedHouseData.Clear();
+        _initialLayout.Clear();   // fresh random run re-captures the layout
         int successfulSpawns = 0;
         int attempts = 0;
         _nextQueryID = 0;
@@ -115,30 +120,31 @@ public class HouseSpawnerNetworked : NetworkBehaviour
 
                 if (IsSpaceEmpty(pos, rot))
                 {
-                    GameObject houseObj = Instantiate(housePrefab, pos, rot);
-                    var netObj = houseObj.GetComponent<NetworkObject>();
-                    netObj.Spawn();
-
-                    var houseSync = houseObj.GetComponent<ObjectNetworkSync>();
                     int randomColor = Random.Range(0, ColorTable.Count);
-                    if (houseSync != null)
-                    {
-                        houseSync.InitializeColorIndex(randomColor);
-                    }
-                    if (successfulSpawns == 0)
-                        SpawnedHouseColorIndex = randomColor;
+                    SpawnHouseAt(pos, rot, randomColor, successfulSpawns);
 
-                    HouseData data = new HouseData
-                    {
-                        Id = successfulSpawns,
-                        Position = pos
-                    };
-                    _houseObjectMap[data.Id] = houseObj;
+                    // remember first-run layout for restart replay
+                    _initialLayout.Add(new HouseLayout { pos = pos, rot = rot, color = randomColor });
                     successfulSpawns++;
-                    _spawnedHouseData.Add(data);
                 }
             }
         }
+    }
+
+    private void SpawnHouseAt(Vector3 pos, Quaternion rot, int color, int id)
+    {
+        GameObject houseObj = Instantiate(housePrefab, pos, rot);
+        houseObj.GetComponent<NetworkObject>().Spawn();
+
+        var houseSync = houseObj.GetComponent<ObjectNetworkSync>();
+        if (houseSync != null)
+            houseSync.InitializeColorIndex(color);
+
+        if (id == 0)
+            SpawnedHouseColorIndex = color;
+
+        _houseObjectMap[id] = houseObj;
+        _spawnedHouseData.Add(new HouseData { Id = id, Position = pos });
     }
     public bool TryGetHouseObject(int id, out GameObject houseObj)
     {
@@ -268,6 +274,17 @@ public class HouseSpawnerNetworked : NetworkBehaviour
         }
 
         SpawnedHouseColorIndex = -1;
+
+        // ⭐ Replay the first-run layout → same positions & colours every restart.
+        if (_initialLayout.Count > 0)
+        {
+            _spawnedHouseData.Clear();
+            _nextQueryID = 0;
+
+            for (int i = 0; i < _initialLayout.Count; i++)
+                SpawnHouseAt(_initialLayout[i].pos, _initialLayout[i].rot, _initialLayout[i].color, i);
+            return;
+        }
 
         if (MRUK.Instance != null && MRUK.Instance.GetCurrentRoom() != null)
             SpawnHousesLogic();

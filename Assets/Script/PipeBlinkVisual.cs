@@ -7,6 +7,8 @@ public class PipeBlinkVisual : MonoBehaviour
 
     private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
 
+    private float _nextTickTime;   // 叮叮叮警示聲（跟閃爍同節奏）
+
     private void Awake()
     {
         if (targetRenderer == null) targetRenderer = GetComponentInChildren<Renderer>();
@@ -21,7 +23,7 @@ public class PipeBlinkVisual : MonoBehaviour
     {
         if (manager == null || targetRenderer == null) return;
 
-        // �p�G�b�N�o�]�z�פW pipe �w despawn�A���H���U�@�^
+        // �p�G�b�N�o�]�z�פW pipe �w despawn�A���H���U�@�^
         if (manager.CooldownRemain.Value > 0f)
         {
             SetEmission(0f);
@@ -41,6 +43,13 @@ public class PipeBlinkVisual : MonoBehaviour
         float blink = 0.5f + 0.5f * Mathf.Sin(Time.time * Mathf.PI * 2f * hz);
 
         SetEmission(blink);
+
+        // 叮叮叮：跟閃爍頻率一致、越接近變回越急促
+        if (Time.time >= _nextTickTime)
+        {
+            _nextTickTime = Time.time + 1f / Mathf.Max(1f, hz);
+            SfxLib.PlayAt("WarnTick", transform.position, 0.7f);
+        }
     }
 
     private void SetEmission(float strength01)

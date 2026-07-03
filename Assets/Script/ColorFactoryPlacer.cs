@@ -127,9 +127,24 @@ public class HouseColorFactoryPlacer : NetworkBehaviour
         // optional debug
         Debug.DrawRay(rayOrigin, Vector3.down * 2f, Color.red, 1f);
 
-        if (!Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, raycastDistance, groundLayer))
+        // ⭐ 不能用單一 Raycast：box/工具剛好在下方時會被打到，factory 就生在半空中。
+        //    改用 RaycastAll，跳過 trigger、動態物件（有 Rigidbody）與玩家工具，取最近的「真地板」。
+        RaycastHit[] hits = Physics.RaycastAll(rayOrigin, Vector3.down, raycastDistance, groundLayer);
+        System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+
+        bool found = false;
+        RaycastHit hit = default;
+        foreach (var h in hits)
         {
-            Debug.LogWarning($"[HouseColorFactoryPlacer] Raycast failed from {rayOrigin}");
+            if (h.collider.isTrigger) continue;
+            if (h.collider.attachedRigidbody != null) continue;                      // 動態物件（果子等）
+            if (h.collider.GetComponentInParent<ToolController>() != null) continue; // 玩家的工具（box/鋸子）
+            hit = h; found = true; break;
+        }
+
+        if (!found)
+        {
+            Debug.LogWarning($"[HouseColorFactoryPlacer] No static ground under {rayOrigin}");
             return false;
         }
 

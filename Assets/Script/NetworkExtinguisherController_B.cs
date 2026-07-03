@@ -13,19 +13,22 @@ public class NetworkExtinguisherController_B : NetworkBehaviour
     public float triggerThreshold = 0.25f;
 
     [SerializeField] LayerMask fireLayer;
-    // Server ¦P¨B¼Q®gª¬ºA¡AÅý©Ò¦³¤H¬Ý¨ì VFX
+    // Server ï¿½Pï¿½Bï¿½Qï¿½gï¿½ï¿½ï¿½Aï¿½Aï¿½ï¿½ï¿½Ò¦ï¿½ï¿½Hï¿½Ý¨ï¿½ VFX
     public NetworkVariable<bool> isSpraying =
         new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
-    // Server «O¦s¨âÃä¦^³øªº trigger ª¬ºA
+    // Server ï¿½Oï¿½sï¿½ï¿½ï¿½ï¿½^ï¿½ï¿½ï¿½ï¿½ trigger ï¿½ï¿½ï¿½A
     private bool serverPressed;
     private bool clientPressed;
 
-    // ¨CºÝ¥»¦a cache¡AÁ×§K¨C´V¨g°e RPC
+    // ï¿½Cï¿½Ý¥ï¿½ï¿½a cacheï¿½Aï¿½×§Kï¿½Cï¿½Vï¿½gï¿½e RPC
     private bool lastLocalPressed;
+
+    private AudioSource sprayAudio;
 
     public override void OnNetworkSpawn()
     {
+        sprayAudio = SfxLib.AddLoop(gameObject, "SprayLoop", 0.85f);   // æ°´ç®¡æ¯”å–®æ”¯å¤§è²
         isSpraying.OnValueChanged += OnSprayChanged;
         ApplySprayVFX(isSpraying.Value);
     }
@@ -39,12 +42,12 @@ public class NetworkExtinguisherController_B : NetworkBehaviour
 
     void Update()
     {
-        // ¦@¨Éª«¥ó¡G¨C­Ó Client ³£Åª¦Û¤vªº trigger¡]Host ¤]ºâ client¡^
+        // ï¿½@ï¿½Éªï¿½ï¿½ï¿½Gï¿½Cï¿½ï¿½ Client ï¿½ï¿½Åªï¿½Û¤vï¿½ï¿½ triggerï¿½]Host ï¿½]ï¿½ï¿½ clientï¿½^
         if (IsClient)
         {
             bool pressed = ReadAnyTrigger();
 
-            // ¥u¦bÅÜ¤Æ®É¦^³ø Server
+            // ï¿½uï¿½bï¿½Ü¤Æ®É¦^ï¿½ï¿½ Server
             if (pressed != lastLocalPressed)
             {
                 lastLocalPressed = pressed;
@@ -52,7 +55,7 @@ public class NetworkExtinguisherController_B : NetworkBehaviour
             }
         }
 
-        // ¥u¦³ Server °µ·À¤õ raycast
+        // ï¿½uï¿½ï¿½ Server ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ raycast
         if (IsServer && isSpraying.Value)
             DoExtinguishRaycast();
     }
@@ -68,7 +71,7 @@ public class NetworkExtinguisherController_B : NetworkBehaviour
         return (li >= triggerThreshold) || (ri >= triggerThreshold);
     }
 
-    // ¦@¨Éª«¥ó³q±` owner ¤£¬O¨C­Ó¤H¡A©Ò¥H­n¤¹³\«D owner ©I¥s
+    // ï¿½@ï¿½Éªï¿½ï¿½ï¿½qï¿½` owner ï¿½ï¿½ï¿½Oï¿½Cï¿½Ó¤Hï¿½Aï¿½Ò¥Hï¿½nï¿½ï¿½ï¿½\ï¿½D owner ï¿½Iï¿½s
     [ServerRpc(RequireOwnership = false)]
     void ReportTriggerServerRpc(bool pressed, ServerRpcParams rpcParams = default)
     {
@@ -87,6 +90,12 @@ public class NetworkExtinguisherController_B : NetworkBehaviour
 
     void ApplySprayVFX(bool on)
     {
+        if (sprayAudio != null)
+        {
+            if (on && !sprayAudio.isPlaying) sprayAudio.Play();
+            else if (!on && sprayAudio.isPlaying) sprayAudio.Stop();
+        }
+
         if (sprayVFX == null) return;
         if (on) sprayVFX.Play();
         else sprayVFX.Stop();

@@ -11,7 +11,7 @@ public class FruitExplodeVfx : NetworkBehaviour
 
     private bool exploded;
 
-    // Server ©I¥s¡GÄ²µo¯S®Ä¨Ã©µ¿ğ despawn
+    // Server ï¿½Iï¿½sï¿½GÄ²ï¿½oï¿½Sï¿½Ä¨Ã©ï¿½ï¿½ï¿½ despawn
     public void ExplodeServer()
     {
         if (!IsServer) return;
@@ -26,13 +26,16 @@ public class FruitExplodeVfx : NetworkBehaviour
     [ClientRpc]
     private void PlayVfxClientRpc()
     {
+        // å™—å˜°å•ª â€” æœå­åœ¨åœ°æ¿çˆ†æ‰
+        SfxLib.PlayAt("FruitPop", transform.position, 0.9f);
+
         if (vfxPrefab == null) return;
 
         var t = vfxSpawnPoint != null ? vfxSpawnPoint : transform;
         var ps = Instantiate(vfxPrefab, t.position, t.rotation);
         ps.Play();
 
-        // ¦Û°Ê²M±¼¯S®Äª«¥ó¡AÁ×§K°ï©U§£
+        // ï¿½Û°Ê²Mï¿½ï¿½ï¿½Sï¿½Äªï¿½ï¿½ï¿½Aï¿½×§Kï¿½ï¿½Uï¿½ï¿½
         float life = ps.main.duration;
         if (ps.main.startLifetime.mode == ParticleSystemCurveMode.TwoConstants)
             life += ps.main.startLifetime.constantMax;

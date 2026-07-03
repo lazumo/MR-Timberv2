@@ -82,6 +82,7 @@ public class ExtinguisherChargeParticle : MonoBehaviour
 
             chargeVfx.Play(true);
             StartFlash();
+            SfxLib.PlayAt("ChargeReady", transform.position, 0.9f);   // 充能完成提示音
         }
 
         // �B�z�{�{�ĪG

@@ -44,6 +44,15 @@ public class GameFlowController : NetworkBehaviour
     [Tooltip("Optional editor/testing shortcut to restart. Leave as None to disable.")]
     [SerializeField] private KeyCode debugRestartKey = KeyCode.None;
 
+    [Header("Victory elf dance (all fires out)")]
+    [SerializeField] private int danceElfCount = 10;
+    [SerializeField] private float danceRadius = 1f;
+    [SerializeField] private float danceOrbitSpeed = 60f;   // deg/s around the circle (dance lasts until restart)
+    [Tooltip("Optional dance-circle center; falls back to SpawnArea, then world origin.")]
+    [SerializeField] private Transform danceCenter;
+
+    private readonly System.Collections.Generic.List<NetworkObject> _danceElves = new();
+
     [Header("Restart Input (physical controller)")]
     [SerializeField] private OVRInput.Button restartButton = OVRInput.Button.Two; // B / Y
     [SerializeField] private OVRInput.Controller restartController = OVRInput.Controller.Active;
@@ -54,6 +63,12 @@ public class GameFlowController : NetworkBehaviour
     /// Current phase, synced to all clients (server writes).
     public NetworkVariable<GamePhase> CurrentPhase = new NetworkVariable<GamePhase>(
         GamePhase.Logging,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+
+    /// True after the last fire is put out (drives victory BGM); reset on restart.
+    public NetworkVariable<bool> VictoryReached = new NetworkVariable<bool>(
+        false,
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server);
 
@@ -120,6 +135,7 @@ public class GameFlowController : NetworkBehaviour
 
         _started = true;
         _bridging = false;
+        VictoryReached.Value = false;
         EnterPhase(GamePhase.Logging);
     }
 
@@ -188,8 +204,9 @@ public class GameFlowController : NetworkBehaviour
         PlayCelebrateClientRpc(housePos);
         yield return new WaitForSeconds(celebrateSeconds);
 
-        // 2) 天色先暗下來…
-        DarkenClientRpc();
+        // 2) 一明一滅閃爍 + 不祥音效，然後暗下來…
+        FlickerDarkenClientRpc(housePos);
+        yield return new WaitForSeconds(1.2f);   // flicker length
 
         // 3) …才開始冒煙，預告失火。
         PlayTelegraphClientRpc(housePos);
@@ -235,6 +252,32 @@ public class GameFlowController : NetworkBehaviour
             PassthroughDarkener.Instance.Apply(true);
     }
 
+    // 一明一滅的閃爍（加速）→ 定暗，配「有事情要發生」的音效
+    [ClientRpc]
+    private void FlickerDarkenClientRpc(Vector3 pos)
+    {
+        SfxLib.PlayAt("OminousAlarm", pos, 1f);
+        StartCoroutine(FlickerDarkenLocal());
+    }
+
+    private IEnumerator FlickerDarkenLocal()
+    {
+        var pd = PassthroughDarkener.Instance;
+        if (pd == null) yield break;
+
+        // 暗-亮-暗-亮-暗，間隔越來越短
+        float[] beats = { 0.25f, 0.2f, 0.18f, 0.14f, 0.1f };
+        bool dark = true;
+        foreach (var b in beats)
+        {
+            pd.Apply(dark, instant: true);
+            dark = !dark;
+            yield return new WaitForSeconds(b);
+        }
+
+        pd.Apply(true);   // 最後淡入定暗
+    }
+
     /// Called by FireSpawnerIgnitionPointsNetworked when the last fire goes out.
     public void NotifyFiresExtinguished()
     {
@@ -242,7 +285,78 @@ public class GameFlowController : NetworkBehaviour
         if (CurrentPhase.Value != GamePhase.Firefighting) return;
 
         Debug.Log("[GameFlow] All fires extinguished — victory!");
+        VictoryReached.Value = true;   // PhaseBGM 切成勝利背景音樂
         PlayVictoryClientRpc();
+        StartCoroutine(VictoryElfDance());
+    }
+
+    // 10 elves circle the room center (radius 1 m), bobbing and swaying, then vanish.
+    private IEnumerator VictoryElfDance()
+    {
+        var mgr = ResourceManager.Instance;
+        if (mgr == null || mgr.resourcePrefab == null) yield break;
+
+        // 圓心 = 當下玩家位置中心（用兩人手上的滅火器平均位置），退而求其次才用固定點
+        Vector3 center;
+        var exts = FindObjectsByType<NetworkExtinguisherController>(FindObjectsSortMode.None);
+        if (exts.Length > 0)
+        {
+            Vector3 sum = Vector3.zero;
+            foreach (var e in exts) sum += e.transform.position;
+            center = sum / exts.Length;
+        }
+        else
+        {
+            center = danceCenter != null ? danceCenter.position
+                   : SpawnArea.Instance != null ? SpawnArea.Instance.transform.position
+                   : Vector3.zero;
+            center.y += 1.0f;
+        }
+
+        DespawnDanceElves();
+        for (int i = 0; i < danceElfCount; i++)
+        {
+            float a = i * Mathf.PI * 2f / danceElfCount;
+            Vector3 pos = center + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * danceRadius;
+            var go = Instantiate(mgr.resourcePrefab, pos, Quaternion.identity);
+            var no = go.GetComponent<NetworkObject>();
+            if (no == null) { Destroy(go); yield break; }
+            no.Spawn(true);
+            _danceElves.Add(no);
+        }
+
+        // 一直跳到 Restart 為止（ResetWorld 會清掉舞者）
+        float t = 0f;
+        while (true)
+        {
+            t += Time.deltaTime;
+            float orbit = t * danceOrbitSpeed * Mathf.Deg2Rad;
+
+            for (int i = 0; i < _danceElves.Count; i++)
+            {
+                var no = _danceElves[i];
+                if (no == null) continue;
+
+                float a = orbit + i * Mathf.PI * 2f / danceElfCount;
+                Vector3 pos = center + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * danceRadius;
+                pos.y += Mathf.Sin(t * 6f + i) * 0.15f;                       // 上下彈跳
+
+                Vector3 tangent = new Vector3(-Mathf.Sin(a), 0f, Mathf.Cos(a));
+                Quaternion rot = Quaternion.LookRotation(tangent, Vector3.up)
+                               * Quaternion.Euler(Mathf.Sin(t * 8f + i) * 15f, 0f, Mathf.Sin(t * 7f + i * 2f) * 12f); // 手舞足蹈搖擺
+
+                no.transform.SetPositionAndRotation(pos, rot);
+            }
+            yield return null;
+        }
+        // unreachable — dancers are cleared by ResetWorld (StopAllCoroutines + DespawnDanceElves)
+    }
+
+    private void DespawnDanceElves()
+    {
+        foreach (var no in _danceElves)
+            if (no != null && no.IsSpawned) no.Despawn(true);
+        _danceElves.Clear();
     }
 
     [ClientRpc]
@@ -295,6 +409,7 @@ public class GameFlowController : NetworkBehaviour
     // Clear leftovers so Logging starts fresh. Prop + passthrough reset via CurrentPhase.
     private void ResetWorld()
     {
+        DespawnDanceElves();   // victory dancers, if any
         if (TreeSpawnerNetworked.Instance != null)
         {
             TreeSpawnerNetworked.Instance.StopWoodLogging(despawnExisting: true);

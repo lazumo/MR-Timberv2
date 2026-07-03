@@ -120,9 +120,12 @@ public class ObjectNetworkSync : NetworkBehaviour
     [ClientRpc]
     private void PlayBuildVfxClientRpc()
     {
+        Vector3 sfxPos = buildVfxAnchor != null ? buildVfxAnchor.position : transform.position;
+        SfxLib.PlayAt("GrowUp", sfxPos);   // 馬力歐變大風的生長音
+
         if (buildVfxPrefab == null) return;
 
-        Vector3 pos = buildVfxAnchor != null ? buildVfxAnchor.position : transform.position;
+        Vector3 pos = sfxPos;
         GameObject vfx = Instantiate(buildVfxPrefab, pos, Quaternion.identity);
 
         var ps = vfx.GetComponent<ParticleSystem>();
