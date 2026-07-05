@@ -27,14 +27,15 @@ public class HouseSpawnerNetworked : NetworkBehaviour
 
     [Header("Settings")]
     public GameObject housePrefab;
-    public int numberOfHouses = 5;
+    public int numberOfHouses = 1;
+
+    public int SpawnedHouseColorIndex { get; private set; } = -1;
+    public bool HasSpawnedHouse => SpawnedHouseColorIndex >= 0;
     [SerializeField] private float minWallHeight = 1.0f;  // 離地 50 cm
     [SerializeField] private float maxWallHeight = 2.5f;  // 離地 180 cm
     [Header("Placement Rules")]
     public LayerMask obstacleLayerMask;
-    [Header("Spawn Boundary")]
-    [SerializeField] private Transform spawnBoundary;
-    // TUNED: Set to 0.5f. (0.5 + 0.5 = 1.0 meter total size). 
+    // TUNED: Set to 0.5f. (0.5 + 0.5 = 1.0 meter total size).
     // 0.1f is often too small to stop overlaps.
     public Vector3 collisionCheckSize = new Vector3(0.5f, 0.5f, 0.5f);
     static readonly float[] NormalAxisRotations = { 0f, 90f, 180f, 270f };
@@ -103,7 +104,7 @@ public class HouseSpawnerNetworked : NetworkBehaviour
             {
                 if (pos.y < minWallHeight || pos.y > maxWallHeight)
                     continue;
-                if (spawnBoundary != null && pos.x < spawnBoundary.position.x)
+                if (SpawnArea.Instance != null && !SpawnArea.Instance.IsInside(pos))
                     continue;
                 // --- 以下是原本的旋轉與生成邏輯 (保持不變) ---
                 Quaternion rot = Quaternion.FromToRotation(Vector3.up, normal);
@@ -118,11 +119,13 @@ public class HouseSpawnerNetworked : NetworkBehaviour
                     netObj.Spawn();
 
                     var houseSync = houseObj.GetComponent<ObjectNetworkSync>();
+                    int randomColor = Random.Range(0, ColorTable.Count);
                     if (houseSync != null)
                     {
-                        int randomColor = Random.Range(0, ColorTable.Count);
                         houseSync.InitializeColorIndex(randomColor);
                     }
+                    if (successfulSpawns == 0)
+                        SpawnedHouseColorIndex = randomColor;
 
                     HouseData data = new HouseData
                     {

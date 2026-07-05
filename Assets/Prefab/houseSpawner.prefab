@@ -68,7 +68,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   housePrefab: {fileID: 4980801623367337527, guid: e67960f81476ae349870e53df5755e00,
     type: 3}
-  numberOfHouses: 5
+  numberOfHouses: 1
   obstacleLayerMask:
     serializedVersion: 2
     m_Bits: 64
