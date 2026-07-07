@@ -13,15 +13,15 @@ public class NetworkExtinguisherController_B : NetworkBehaviour
     public float triggerThreshold = 0.25f;
 
     [SerializeField] LayerMask fireLayer;
-    // Server �P�B�Q�g���A�A���Ҧ��H�ݨ� VFX
+    // Server 同步噴射狀態，讓所有人看到 VFX
     public NetworkVariable<bool> isSpraying =
         new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
-    // Server �O�s����^���� trigger ���A
+    // Server 保存的「任一玩家 trigger」狀態
     private bool serverPressed;
     private bool clientPressed;
 
-    // �C�ݥ��a cache�A�קK�C�V�g�e RPC
+    // 每個玩家 cache，避免每幀送 RPC
     private bool lastLocalPressed;
 
     private AudioSource sprayAudio;
@@ -42,12 +42,12 @@ public class NetworkExtinguisherController_B : NetworkBehaviour
 
     void Update()
     {
-        // �@�ɪ���G�C�� Client ��Ū�ۤv�� trigger�]Host �]�� client�^
+        // 共用物件：每個 Client 各讀自己的 trigger（Host 也是 client）
         if (IsClient)
         {
             bool pressed = ReadAnyTrigger();
 
-            // �u�b�ܤƮɦ^�� Server
+            // 只在變化時回報 Server
             if (pressed != lastLocalPressed)
             {
                 lastLocalPressed = pressed;
@@ -55,7 +55,7 @@ public class NetworkExtinguisherController_B : NetworkBehaviour
             }
         }
 
-        // �u�� Server ������ raycast
+        // 只有 Server 做滅火 raycast
         if (IsServer && isSpraying.Value)
             DoExtinguishRaycast();
     }
@@ -71,7 +71,7 @@ public class NetworkExtinguisherController_B : NetworkBehaviour
         return (li >= triggerThreshold) || (ri >= triggerThreshold);
     }
 
-    // �@�ɪ���q�` owner ���O�C�ӤH�A�ҥH�n���\�D owner �I�s
+    // 共用物件通常 owner 不是每個人，所以要允許非 owner 呼叫
     [ServerRpc(RequireOwnership = false)]
     void ReportTriggerServerRpc(bool pressed, ServerRpcParams rpcParams = default)
     {

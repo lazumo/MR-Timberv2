@@ -1,50 +1,58 @@
 using Unity.Netcode;
 using UnityEngine;
 
+/// <summary>
+/// 兩支滅火器靠近 → 合體成強力水管；拉開 / 逾時 → 變回兩支。
+/// 合體需要先「充能」（分離狀態累積 extinguisherGlowAfter 秒，與 Buff 特效同步）。
+/// Server 權威：所有狀態切換只在 server 端執行，client 透過 NetworkVariable 讀取。
+/// </summary>
 public class ProximitySwitchManager : NetworkBehaviour
 {
     [SerializeField] private MiddlePointProvider provider;
 
-    [Header("�Z�����e�]exit > enter ���ݰʡ^")]
+    [Header("距離門檻（exit > enter 防抖動）")]
     [SerializeField] private float enterDistance = 0.20f;
     [SerializeField] private float exitDistance = 0.25f;
 
-    [Header("Pipe Prefab�]������ NetworkObject + NetworkTransform�^")]
+    [Header("Pipe Prefab（需含 NetworkObject + NetworkTransform）")]
     [SerializeField] private NetworkObject pipePrefab;
 
-    [Header("�������R����e�]���}���A�~�p�ɡ^")]
+    [Header("滅火器充能秒數（分離狀態才計時）")]
     [SerializeField] public float extinguisherGlowAfter = 10f;
 
-    [Header("Pipe �W�h")]
+    [Header("Pipe 規則")]
     [SerializeField] public float pipeForceBackAfter = 25f;
     [SerializeField] public float warnBeforeForceBack = 5f;
     [SerializeField] public float blinkHzSlow = 2f;
     [SerializeField] public float blinkHzFast = 10f;
 
-    [Header("�N�o����]�j���}��^")]
+    [Header("冷卻秒數（強制分開後）")]
     [SerializeField] public float remergeCooldown = 10f;
 
-    // ===== Network state (client �ݥiŪ) =====
+    // ===== Network state（client 可讀）=====
     public NetworkVariable<float> PipeAge = new(0f);
     public NetworkVariable<float> CooldownRemain = new(0f);
 
-    // �X��P�_���������S�ĥ�
+    // 合體狀態同步版：client 也讀得到（Buff 充能特效的重置要用這個）
+    public NetworkVariable<bool> IsMergedNet = new(false);
+
+    // ⚠️ server-only：client 上永遠 false，勿用於視覺判斷（視覺請用 IsMergedNet）
     public bool IsMerged => isClose && pipeInstance != null;
 
     private bool isClose = false;
     private NetworkObject pipeInstance;
 
-    // ⭐ Buff gate：分離累積時間 ≥ extinguisherGlowAfter（充能完成）才允許合體
+    // Buff gate：分離累積時間 ≥ extinguisherGlowAfter（充能完成）才允許合體
     private float _separatedTime = 0f;
 
-    // �N�o�����ᥲ�������}�A�A�a��~�i�X��]�קK�K�۵��N�o�����N�����S�X��^
+    // 冷卻結束後必須先拉開距離、再靠近才可合體（避免貼著等冷卻結束就瞬間合體）
     private bool needReleaseAfterCooldown = false;
 
     public override void OnNetworkSpawn()
     {
         if (!IsServer) return;
 
-        // �O�I�G�}�����T�O�������i���Bpipe ���s�b
+        // 保險：開場時確保滅火器可見、pipe 不存在
         ForceShowExtinguishers_Server();
     }
 
@@ -56,7 +64,7 @@ public class ProximitySwitchManager : NetworkBehaviour
 
         float d = provider.Distance.Value;
 
-        // 1) �N�o�˼�
+        // 1) 冷卻倒數
         if (CooldownRemain.Value > 0f)
         {
             CooldownRemain.Value = Mathf.Max(0f, CooldownRemain.Value - Time.deltaTime);
@@ -65,7 +73,7 @@ public class ProximitySwitchManager : NetworkBehaviour
                 needReleaseAfterCooldown = true;
         }
 
-        // 2) �N�o�赲����A���������}�� exitDistance �H�~�~��Ѱ�����
+        // 2) 冷卻結束後，必須先拉開到 exitDistance 以外才解除鎖定
         if (needReleaseAfterCooldown && d >= exitDistance)
             needReleaseAfterCooldown = false;
 
@@ -73,10 +81,10 @@ public class ProximitySwitchManager : NetworkBehaviour
         if (!isClose)
             _separatedTime += Time.deltaTime;
 
-        // 3) �X��/���}���A��
+        // 3) 合體 / 分開狀態機
         if (!isClose)
         {
-            bool charged = _separatedTime >= extinguisherGlowAfter;   // ⭐ 沒充能不能合體
+            bool charged = _separatedTime >= extinguisherGlowAfter;   // 沒充能不能合體
             bool canEnter = charged && (CooldownRemain.Value <= 0f) && !needReleaseAfterCooldown;
 
             if (canEnter && d <= enterDistance)
@@ -90,7 +98,7 @@ public class ProximitySwitchManager : NetworkBehaviour
                 UpdatePipePose_Server();
         }
 
-        // 4) pipe �p�� + �j���}�]Ĳ�o�N�o�^
+        // 4) pipe 計時 + 逾時強制分開（觸發冷卻）
         if (isClose && pipeInstance != null)
         {
             PipeAge.Value += Time.deltaTime;
@@ -105,9 +113,10 @@ public class ProximitySwitchManager : NetworkBehaviour
     private void EnterClose_Server()
     {
         isClose = true;
+        IsMergedNet.Value = true;
         _separatedTime = 0f;   // 用掉這次充能
 
-        // ���÷������]HandFollower�^
+        // 隱藏兩支滅火器（HandFollower）
         provider.HostHand.VisualsOn.Value = false;
         provider.ClientHand.VisualsOn.Value = false;
 
@@ -126,9 +135,10 @@ public class ProximitySwitchManager : NetworkBehaviour
     private void ExitClose_Server(bool startCooldown)
     {
         isClose = false;
+        IsMergedNet.Value = false;
         _separatedTime = 0f;   // 變回後要重新充能
 
-        // ��ܷ������]HandFollower�^
+        // 顯示兩支滅火器（HandFollower）
         provider.HostHand.VisualsOn.Value = true;
         provider.ClientHand.VisualsOn.Value = true;
 
@@ -168,10 +178,11 @@ public class ProximitySwitchManager : NetworkBehaviour
     private void ForceShowExtinguishers_Server()
     {
         isClose = false;
+        IsMergedNet.Value = false;
         _separatedTime = 0f;
         needReleaseAfterCooldown = false;
 
-        // provider / hands may not be assigned or spawned yet at OnNetworkSpawn time.
+        // provider / hands 可能在 OnNetworkSpawn 時還沒就緒
         if (provider != null && provider.HostHand != null && provider.ClientHand != null)
         {
             provider.HostHand.VisualsOn.Value = true;

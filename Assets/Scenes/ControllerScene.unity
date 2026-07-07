@@ -1000,75 +1000,6 @@ MonoBehaviour:
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
   m_SoftShadowQuality: 1
---- !u!1 &445563907
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 445563910}
-  - component: {fileID: 445563908}
-  - component: {fileID: 445563909}
-  m_Layer: 0
-  m_Name: tool state testing
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &445563908
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 445563907}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3221420730
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
---- !u!114 &445563909
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 445563907}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 52584c1407743a6458b0ff682c1cdfc5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  toolController: {fileID: 2136755232}
-  minState: 0
-  maxState: 3
---- !u!4 &445563910
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 445563907}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.0005131066, y: 1.9169152, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &610215085
 GameObject:
   m_ObjectHideFlags: 0
@@ -2540,9 +2471,15 @@ MonoBehaviour:
   autoStartOnSpawn: 1
   startupDelay: 0.5
   debugRestartKey: 0
+  danceElfCount: 10
+  danceRadius: 1
+  danceOrbitSpeed: 60
+  danceCenter: {fileID: 0}
   restartButton: 2
   restartController: -2147483648
   CurrentPhase:
+    m_InternalValue: 0
+  VictoryReached:
     m_InternalValue: 0
 --- !u!82 &1254098480
 AudioSource:
@@ -2746,13 +2683,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a8e2d94c1f34b7f9d5a03e8b2c47611, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   musicClip: {fileID: 8300000, guid: 91d47e5a20cb4c6f8a3b5d17f6e92034, type: 3}
   source: {fileID: 1254098481}
   fireMusicClip: {fileID: 8300000, guid: 5c2be871d4a94f30b8e61a9c03d75288, type: 3}
   fireSource: {fileID: 1254098483}
   fireVolume: 0.7
+  victoryMusicClip: {fileID: 0}
   volume: 0.35
   fadeSeconds: 1.5
 --- !u!82 &1254098483
@@ -3856,18 +3794,6 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 354262665}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &2136755232 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 928557656100984634, guid: 0cda14b9e8db2d54986c45f62b140ae3,
-    type: 3}
-  m_PrefabInstance: {fileID: 1665802809}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1b97ee33d62375e409b146a01b09106c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1001 &3926295178287960272
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4044,7 +3970,6 @@ SceneRoots:
   - {fileID: 1451824868}
   - {fileID: 2018948282}
   - {fileID: 354262665}
-  - {fileID: 445563910}
   - {fileID: 4885938413852840078}
   - {fileID: 3926295178287960272}
   - {fileID: 1014022090}

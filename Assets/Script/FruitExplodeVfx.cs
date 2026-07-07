@@ -11,7 +11,7 @@ public class FruitExplodeVfx : NetworkBehaviour
 
     private bool exploded;
 
-    // Server �I�s�GĲ�o�S�Ĩé��� despawn
+    // Server 呼叫：觸發特效並延遲 despawn
     public void ExplodeServer()
     {
         if (!IsServer) return;
@@ -35,7 +35,7 @@ public class FruitExplodeVfx : NetworkBehaviour
         var ps = Instantiate(vfxPrefab, t.position, t.rotation);
         ps.Play();
 
-        // �۰ʲM���S�Ī���A�קK��U��
+        // 自動清掉特效物件，避免堆積
         float life = ps.main.duration;
         if (ps.main.startLifetime.mode == ParticleSystemCurveMode.TwoConstants)
             life += ps.main.startLifetime.constantMax;

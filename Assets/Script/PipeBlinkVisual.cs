@@ -23,7 +23,7 @@ public class PipeBlinkVisual : MonoBehaviour
     {
         if (manager == null || targetRenderer == null) return;
 
-        // �p�G�b�N�o�]�z�פW pipe �w despawn�A���H���U�@�^
+        // 如果在冷卻（理論上 pipe 已 despawn，防呆用）
         if (manager.CooldownRemain.Value > 0f)
         {
             SetEmission(0f);

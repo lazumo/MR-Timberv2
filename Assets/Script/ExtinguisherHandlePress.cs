@@ -2,90 +2,71 @@ using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
-/// Layer 3 — drives a press animation on the VIRTUAL extinguisher handle from the
-/// PHYSICAL controller trigger. Pure visual; extinguishing stays in NetworkExtinguisherController.
+/// 按下 trigger（= isSpraying 為 true）時，把手零件移動/旋轉到「按下姿勢」；
+/// 放開就回到原本姿勢。純視覺、boolean 驅動。
 ///
-/// Two drive modes (pick via the inspector):
-///  • Linked (recommended): assign <see cref="sprayController"/>. The handle follows its
-///    already-synced <c>isSpraying</c> flag, so BOTH players see the squeeze with zero
-///    ownership concerns (it's the same trigger signal that fires the spray).
-///  • Analog (fallback): leave sprayController empty. The owner reads the analog index-trigger
-///    (0..1) and syncs it for a smooth partial-press — only works while this prop is owned by
-///    the player holding it.
-///
-/// Put this on the extinguisher prop (same object as NetworkExtinguisherController),
-/// assign <see cref="handle"/> to the lever pivot and tune <see cref="pressedLocalEuler"/>.
+/// 用法：掛在滅火器 prefab 根物件（跟 NetworkExtinguisherController 同一層），
+/// 指定 sprayController，然後在 parts 裡為每個要動的零件填：
+///   target = 零件 Transform
+///   pressedLocalPosition / pressedLocalEuler = 按下時的 local 姿勢
+///   （在編輯器裡先把零件擺到按下的樣子，把數值抄進欄位，再還原零件）
+/// 未按下的姿勢會在啟動時自動記錄，不用填。
 /// </summary>
 public class ExtinguisherHandlePress : NetworkBehaviour
 {
-    [Header("Handle")]
-    [Tooltip("The lever/handle pivot transform that rotates when the trigger is pressed.")]
-    [SerializeField] private Transform handle;
-    [Tooltip("Local rotation (degrees) added at FULL press, relative to the handle's rest pose.")]
-    [SerializeField] private Vector3 pressedLocalEuler = new Vector3(-20f, 0f, 0f);
-    [Tooltip("Optional: a local position offset added at full press (e.g. handle slides in).")]
-    [SerializeField] private Vector3 pressedLocalOffset = Vector3.zero;
-    [Tooltip("How fast the visual catches up to the trigger value.")]
-    [SerializeField] private float followSpeed = 22f;
+    [System.Serializable]
+    public class PressPart
+    {
+        [Tooltip("要動的零件（例如把手）")]
+        public Transform target;
+        [Tooltip("按下時的 localPosition")]
+        public Vector3 pressedLocalPosition;
+        [Tooltip("按下時的 localEulerAngles")]
+        public Vector3 pressedLocalEuler;
 
-    [Header("Drive (recommended: link the spray controller)")]
-    [Tooltip("If assigned, the handle follows this controller's synced isSpraying flag " +
-             "(robust + both players see it). If empty, falls back to analog owner-read.")]
+        [HideInInspector] public Vector3 restPos;
+        [HideInInspector] public Quaternion restRot;
+    }
+
+    [Header("Parts（每個零件：按下時要到的 local 姿勢）")]
+    [SerializeField] private PressPart[] parts;
+
+    [Header("Drive")]
+    [Tooltip("布林來源：isSpraying（按 trigger 噴水時 = 按下）。跟噴水同步、雙方都看得到。")]
     [SerializeField] private NetworkExtinguisherController sprayController;
+    [Tooltip("姿勢切換的跟隨速度")]
+    [SerializeField] private float followSpeed = 18f;
 
-    [Header("Analog fallback (only used when sprayController is empty)")]
-    [Tooltip("Ignore tiny trigger values below this.")]
-    [SerializeField] private float deadzone = 0.02f;
-
-    // Owner writes the analog press amount (fallback mode); everyone reads it.
-    private NetworkVariable<float> press = new NetworkVariable<float>(
-        0f,
-        NetworkVariableReadPermission.Everyone,
-        NetworkVariableWritePermission.Owner);
-
-    private Quaternion _restLocalRot;
-    private Vector3 _restLocalPos;
-    private float _display;
+    private float _press;   // 0 = 放開, 1 = 按下（平滑過渡）
 
     private void Awake()
     {
-        if (handle != null)
+        // 記錄「沒按下」的原始姿勢
+        if (parts == null) return;
+        foreach (var p in parts)
         {
-            _restLocalRot = handle.localRotation;
-            _restLocalPos = handle.localPosition;
+            if (p.target == null) continue;
+            p.restPos = p.target.localPosition;
+            p.restRot = p.target.localRotation;
+
+            // pressedLocalPosition 留 (0,0,0) = 位置不動、只旋轉
+            if (p.pressedLocalPosition == Vector3.zero)
+                p.pressedLocalPosition = p.restPos;
         }
     }
 
     private void Update()
     {
-        float target = ReadTarget();
+        bool pressed = sprayController != null && sprayController.isSpraying.Value;
 
-        if (handle == null) return;
+        _press = Mathf.MoveTowards(_press, pressed ? 1f : 0f, Time.deltaTime * followSpeed);
 
-        // Smoothly drive the handle on every peer.
-        _display = Mathf.Lerp(_display, target, Time.deltaTime * followSpeed);
-        handle.localRotation = _restLocalRot * Quaternion.Euler(pressedLocalEuler * _display);
-        handle.localPosition = _restLocalPos + pressedLocalOffset * _display;
-    }
-
-    // Returns the press amount [0..1] every peer should display.
-    private float ReadTarget()
-    {
-        // Linked mode — read the synced spray flag (visible to everyone).
-        if (sprayController != null)
-            return sprayController.isSpraying.Value ? 1f : 0f;
-
-        // Analog fallback — owner reads the physical trigger and syncs it.
-        if (IsOwner)
+        if (parts == null) return;
+        foreach (var p in parts)
         {
-            float t = Mathf.Max(
-                OVRInput.Get(OVRInput.Axis1D.PrimaryIndexTrigger, OVRInput.Controller.LTouch),
-                OVRInput.Get(OVRInput.Axis1D.PrimaryIndexTrigger, OVRInput.Controller.RTouch));
-
-            if (t < deadzone) t = 0f;
-            if (Mathf.Abs(t - press.Value) > 0.01f)
-                press.Value = t;
+            if (p.target == null) continue;
+            p.target.localPosition = Vector3.Lerp(p.restPos, p.pressedLocalPosition, _press);
+            p.target.localRotation = Quaternion.Slerp(p.restRot, Quaternion.Euler(p.pressedLocalEuler), _press);
         }
-        return press.Value;
     }
 }

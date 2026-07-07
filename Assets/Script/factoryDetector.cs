@@ -3,13 +3,13 @@ using System.Collections.Generic;
 
 public class BoxDetector : MonoBehaviour
 {
-    // �ΨӰO���ثe�b���l�����ؼЪ���M��
+    // 用來記錄目前在盒子內的目標物件清單
     public List<GameObject> itemsInBox = new List<GameObject>();
 
-    // �]�w�n���������ҦW��
+    // 設定要偵測的標籤名稱
     [SerializeField] private string targetTag = "Fruit";
 
-    // ������i�J���l��
+    // 物件進入盒子時
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag(targetTag))
@@ -21,7 +21,7 @@ public class BoxDetector : MonoBehaviour
         }
     }
 
-    // ���������}���l��
+    // 物件離開盒子時
     private void OnTriggerExit(Collider other)
     {
         if (other.CompareTag(targetTag))
@@ -33,7 +33,7 @@ public class BoxDetector : MonoBehaviour
         }
     }
 
-    // ���Ѥ@��²�檺 API �ѥ~���d��
+    // 提供一個簡單的 API 供外部查詢
     public bool HasTargetObject()
     {
         return itemsInBox.Count > 0;

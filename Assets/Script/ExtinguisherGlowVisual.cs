@@ -1,18 +1,23 @@
 using UnityEngine;
 
+/// <summary>
+/// 滅火器充能特效（Buff）：分離狀態累積 extinguisherGlowAfter 秒後播放充能粒子
+/// + 白光閃爍 + 提示音，提示玩家可以合體成水管。
+/// 純視覺，每個 client 各自計時；合體狀態用同步的 IsMergedNet 重置。
+/// </summary>
 public class ExtinguisherChargeParticle : MonoBehaviour
 {
     [Header("Auto-find ProximitySwitchManager")]
     [SerializeField] private ProximitySwitchManager manager;
 
-    [Header("�R��ɤl�]��l���� ParticleSystem�F����]�|�۰ʧ�^")]
+    [Header("充能粒子（留空會自動抓子物件的 ParticleSystem）")]
     [SerializeField] private ParticleSystem chargeVfx;
 
-    [Header("�{�{��ı�]�i��^")]
+    [Header("閃光視覺（可選）")]
     [SerializeField] private Renderer targetRenderer;
-    [SerializeField] private float flashDuration = 1.2f;      // �{�{����ɶ�
-    [SerializeField] private float flashIntensity = 2.5f;     // �̫G���v
-    [SerializeField] private float flashSpeed = 12f;          // �{�{�W�v
+    [SerializeField] private float flashDuration = 1.2f;      // 閃爍持續時間
+    [SerializeField] private float flashIntensity = 2.5f;     // 最亮強度
+    [SerializeField] private float flashSpeed = 12f;          // 閃爍頻率
 
     private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
 
@@ -22,6 +27,8 @@ public class ExtinguisherChargeParticle : MonoBehaviour
     private bool flashing = false;
     private float flashTimer = 0f;
 
+    private float _nextFindTime;
+
     private void Awake()
     {
         if (chargeVfx == null)
@@ -30,8 +37,6 @@ public class ExtinguisherChargeParticle : MonoBehaviour
         if (targetRenderer == null)
             targetRenderer = GetComponentInChildren<Renderer>();
     }
-
-    private float _nextFindTime;
 
     private void Start()
     {
@@ -44,8 +49,7 @@ public class ExtinguisherChargeParticle : MonoBehaviour
 
     private void Update()
     {
-        // Late-bind: the extinguisher is runtime-spawned and may appear before the
-        // manager exists/activates — keep retrying instead of giving up forever.
+        // 滅火器是 runtime 生成的，manager 可能還沒就緒 — 每秒重試而不是永久放棄
         if (manager == null)
         {
             if (Time.time >= _nextFindTime)
@@ -58,8 +62,9 @@ public class ExtinguisherChargeParticle : MonoBehaviour
 
         if (chargeVfx == null) return;
 
-        // �X�骬�A�G�ߨ譫�m
-        if (manager.IsMerged)
+        // 合體狀態：立刻重置（用同步版 IsMergedNet — 舊的 IsMerged 在 client 永遠 false，
+        // 會導致 client 的 played 旗標從不重置、第二次充能後看不到 buff）
+        if (manager.IsMergedNet.Value)
         {
             separatedTime = 0f;
             played = false;
@@ -68,24 +73,23 @@ public class ExtinguisherChargeParticle : MonoBehaviour
             return;
         }
 
-        // ���}���A�G�ֿn�ɶ�
+        // 分離狀態：累積時間
         separatedTime += Time.deltaTime;
 
-        // 30 ����G����ɤl + Ĳ�o�{�{
+        // 充能完成：播放粒子 + 觸發閃光 + 提示音
         if (!played && separatedTime >= manager.extinguisherGlowAfter)
         {
             played = true;
 
-            // Play() on an inactive GameObject silently does nothing — activate first.
+            // Play() 對 inactive 物件無效，先啟用
             if (!chargeVfx.gameObject.activeInHierarchy)
                 chargeVfx.gameObject.SetActive(true);
 
             chargeVfx.Play(true);
             StartFlash();
-            SfxLib.PlayAt("ChargeReady", transform.position, 0.9f);   // 充能完成提示音
+            SfxLib.PlayAt("ChargeReady", transform.position, 0.9f);
         }
 
-        // �B�z�{�{�ĪG
         UpdateFlash();
     }
 
@@ -95,7 +99,7 @@ public class ExtinguisherChargeParticle : MonoBehaviour
             chargeVfx.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
     }
 
-    // ====== �{�{�޿� ======
+    // ====== 閃光邏輯 ======
 
     private void StartFlash()
     {
@@ -125,10 +129,10 @@ public class ExtinguisherChargeParticle : MonoBehaviour
 
         flashTimer -= Time.deltaTime;
 
-        // �� sin ���ֳͧt�{�{
+        // sin 波閃爍
         float blink = 0.5f + 0.5f * Mathf.Sin(Time.time * flashSpeed);
 
-        // �H�ۮɶ��C�C�I��
+        // 隨時間慢慢淡出
         float fade = Mathf.Clamp01(flashTimer / flashDuration);
 
         float intensity = blink * flashIntensity * fade;

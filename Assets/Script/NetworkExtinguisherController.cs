@@ -13,7 +13,7 @@ public class NetworkExtinguisherController : NetworkBehaviour
     public float triggerThreshold = 0.25f;
 
     [SerializeField] LayerMask fireLayer;
-    // Server �P�B�Q�g���A�A����ݳ���ݨ� VFX
+    // Server 同步噴射狀態，讓客戶端也能看到 VFX
     public NetworkVariable<bool> isSpraying =
         new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
@@ -33,17 +33,17 @@ public class NetworkExtinguisherController : NetworkBehaviour
 
     void Update()
     {
-        // 1) Owner Ū���k�� trigger�]���@���U�N�Q�^
+        // 1) Owner 讀取右手 trigger（任一按下就算）
         if (IsOwner)
         {
             bool want = ReadAnyTrigger();
 
-            // �u�b���A�ܤƮɰe RPC�]�٬y�q�^
+            // 只在狀態變化時送 RPC（省流量）
             if (want != isSpraying.Value)
                 SetSprayingServerRpc(want);
         }
 
-        // 2) �u�� Server �� Raycast �����]���G�@�P�^
+        // 2) 只有 Server 做 Raycast 滅火（結果一致）
         if (IsServer && isSpraying.Value)
             DoExtinguishRaycast();
     }

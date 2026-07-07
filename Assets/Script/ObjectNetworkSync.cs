@@ -241,25 +241,30 @@ public class ObjectNetworkSync : NetworkBehaviour
             SetState(HouseState.Colored);
     }
 
-    private void Update()
-    {
-        if (!IsServer) return;
-
-        if (OVRInput.GetDown(OVRInput.Button.PrimaryHandTrigger))
-            AdvancePaintStage();
-
-        if (OVRInput.GetDown(OVRInput.Button.PrimaryIndexTrigger, OVRInput.Controller.LTouch))
-            DebugCycleState();
-    }
-
-    private void DebugCycleState()
-    {
-        Array states = Enum.GetValues(typeof(HouseState));
-        int nextIndex = ((int)currentHouseState.Value + 1) % states.Length;
-
-        HouseState nextState = (HouseState)states.GetValue(nextIndex);
-
-        Debug.Log($"[DEBUG] Force switch state: {currentHouseState.Value} → {nextState}");
-        SetState(nextState);
-    }
+    // ============================================================
+    // DEBUG 後門（demo 前停用）：
+    //   grip = 強制上色一階、左手食指扳機 = 強制切換房子狀態
+    //   需要時把下面整段取消註解即可。
+    // ============================================================
+    //private void Update()
+    //{
+    //    if (!IsServer) return;
+    //
+    //    if (OVRInput.GetDown(OVRInput.Button.PrimaryHandTrigger))
+    //        AdvancePaintStage();
+    //
+    //    if (OVRInput.GetDown(OVRInput.Button.PrimaryIndexTrigger, OVRInput.Controller.LTouch))
+    //        DebugCycleState();
+    //}
+    //
+    //private void DebugCycleState()
+    //{
+    //    Array states = Enum.GetValues(typeof(HouseState));
+    //    int nextIndex = ((int)currentHouseState.Value + 1) % states.Length;
+    //
+    //    HouseState nextState = (HouseState)states.GetValue(nextIndex);
+    //
+    //    Debug.Log($"[DEBUG] Force switch state: {currentHouseState.Value} → {nextState}");
+    //    SetState(nextState);
+    //}
 }
