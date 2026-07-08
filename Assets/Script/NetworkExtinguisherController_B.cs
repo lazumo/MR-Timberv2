@@ -57,9 +57,10 @@ public class NetworkExtinguisherController_B : NetworkBehaviour
             }
 
             // 水管兩人共握：各震自己握水管的那隻手（Host=右手、Client=左手）
+            // 大水管威力大 → 震動滿檔（單支是 0.5，做出明顯對比）
             if (isSpraying.Value)
             {
-                Haptics.Set(Haptics.ExtinguisherHand, 1f, 0.6f);
+                Haptics.Set(Haptics.ExtinguisherHand, 1f, 1f);
                 _wasVibrating = true;
             }
             else if (_wasVibrating)
