@@ -242,6 +242,9 @@ public class FruitSqueezeInContainer_Tag : NetworkBehaviour
         Debug.Log("[FruitSqueeze] Pop FX RPC received.");   // adb logcat 可查
         SfxLib.Play2D("FruitPop", 1f);                       // 2D：保證聽得到
 
+        // 爆掉瞬間：握 prop 那隻手重重一震
+        StartCoroutine(Haptics.Pulse(Haptics.PropHand, 1f, 1f, 0.15f));
+
         if (popVfxByColor == null || popVfxByColor.Length == 0) return;
         if (colorIndex < 0 || colorIndex >= popVfxByColor.Length) colorIndex = 0;
         if (popVfxByColor[colorIndex] == null) return;

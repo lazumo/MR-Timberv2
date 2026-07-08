@@ -90,14 +90,29 @@ public class JuicerSqueezeAnimDriver : MonoBehaviour
         _animator.Play(_stateHash, layer, _normTime);
 
         // 擠壓吱嘎聲：音量跟著擠壓移動速度
+        float speed = Time.deltaTime > 0f ? Mathf.Abs(_normTime - prev) / Time.deltaTime : 0f;
         if (_creak != null)
         {
-            float speed = Time.deltaTime > 0f ? Mathf.Abs(_normTime - prev) / Time.deltaTime : 0f;
             float vol = Mathf.Clamp01(speed * 2.5f) * 0.7f;
             _creak.volume = Mathf.Lerp(_creak.volume, vol, Time.deltaTime * 10f);
 
             if (_creak.volume > 0.02f && !_creak.isPlaying) _creak.Play();
             else if (_creak.volume <= 0.02f && _creak.isPlaying) _creak.Pause();
         }
+
+        // 擠壓震動：握 prop 那隻手（Host=左、Client=右），強度跟著擠壓速度
+        float amp = Mathf.Clamp01(speed * 2.5f) * 0.6f;
+        if (amp > 0.03f)
+        {
+            Haptics.Set(Haptics.PropHand, 1f, amp);
+            _wasVibrating = true;
+        }
+        else if (_wasVibrating)
+        {
+            Haptics.Stop(Haptics.PropHand);
+            _wasVibrating = false;
+        }
     }
+
+    private bool _wasVibrating;
 }
