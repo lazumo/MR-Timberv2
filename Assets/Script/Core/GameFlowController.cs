@@ -106,8 +106,7 @@ public class GameFlowController : NetworkBehaviour
 
     private void Update()
     {
-        if (!IsServer) return;
-
+        // 每個 peer 都讀自己的輸入；動作經由 ServerRpc 路由到主機（host/client 按都有效）
         if (debugRestartKey != KeyCode.None && Input.GetKeyDown(debugRestartKey))
             Restart();
 
@@ -122,8 +121,14 @@ public class GameFlowController : NetworkBehaviour
             Input.GetKeyDown(KeyCode.JoystickButton9);
 
         if ((debugFireKey != KeyCode.None && Input.GetKeyDown(debugFireKey)) || stickPressed)
-            DebugJumpToFirefighting();
+        {
+            if (IsServer) DebugJumpToFirefighting();
+            else          DebugFireServerRpc();
+        }
     }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void DebugFireServerRpc() => DebugJumpToFirefighting();
 
     /// 測試用：略過前面流程，直接進滅火（點火 + 換 prop + 變暗都會跟著發生）
     public void DebugJumpToFirefighting()
