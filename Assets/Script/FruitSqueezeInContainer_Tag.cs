@@ -210,14 +210,12 @@ public class FruitSqueezeInContainer_Tag : NetworkBehaviour
 
         if (!fruit) return;
 
-        // 爆掉音效：由容器（不會 despawn）發 RPC，避免果子同幀消失導致 RPC 掉包
-        PlayPopSfxClientRpc(fruit.position);
-
-        // 播 VFX
-        var vfx = fruit.GetComponent<FruitDestroyVFX>();
-        if (vfx != null)
-            vfx.PlayDestroyVFX();
+        // 爆掉的音效+特效：由容器（不會 despawn）發 RPC。
+        // 以前掛在果子自己的 RPC 上，但果子同幀 despawn → RPC 在所有端被丟棄 → 沒特效沒聲音。
         var fruitData = fruit.GetComponent<FruitData>();
+        int colorIdx = fruitData != null ? fruitData.colorIndex.Value : 0;
+        PlayPopFxClientRpc(colorIdx, fruit.position);
+
         if (fruitData != null)
         {
             // 找 BarShowWhenEnoughMatchingFruits（同一個 container 上通常就找得到）
@@ -235,11 +233,22 @@ public class FruitSqueezeInContainer_Tag : NetworkBehaviour
         Debug.Log($"[FruitSqueeze] Fruit destroyed (FIFO): {fruit.name}");
     }
 
+    [Header("爆掉特效（依顏色，紅/綠/藍——同 Fruit prefab 的噴濺特效）")]
+    [SerializeField] private GameObject[] popVfxByColor;
+
     [ClientRpc]
-    private void PlayPopSfxClientRpc(Vector3 pos)
+    private void PlayPopFxClientRpc(int colorIndex, Vector3 pos)
     {
-        Debug.Log("[FruitSqueeze] Pop SFX RPC received.");   // adb logcat 可查
-        SfxLib.Play2D("FruitPop", 1f);                        // 2D：保證聽得到
+        Debug.Log("[FruitSqueeze] Pop FX RPC received.");   // adb logcat 可查
+        SfxLib.Play2D("FruitPop", 1f);                       // 2D：保證聽得到
+
+        if (popVfxByColor == null || popVfxByColor.Length == 0) return;
+        if (colorIndex < 0 || colorIndex >= popVfxByColor.Length) colorIndex = 0;
+        if (popVfxByColor[colorIndex] == null) return;
+
+        var vfx = Instantiate(popVfxByColor[colorIndex], pos, Quaternion.identity);
+        var ps = vfx.GetComponent<ParticleSystem>();
+        Destroy(vfx, ps != null ? ps.main.duration + ps.main.startLifetime.constantMax : 2f);
     }
 
     private void AdvanceHousePaintStage()

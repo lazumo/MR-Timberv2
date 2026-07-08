@@ -761,6 +761,10 @@ MonoBehaviour:
   volumeCompensate: 1
   compensateStrength: 0.5
   squeezesPerFruit: 3
+  popVfxByColor:
+  - {fileID: 8207120141953185362, guid: a50412f29b92bdc4888f3666dee1d2f0, type: 3}
+  - {fileID: 6562446266208103412, guid: 8eb992f41770e384cb6473b53315c94b, type: 3}
+  - {fileID: 2964767800185838405, guid: 794d574d45161344c97d9fda9b2fb3d7, type: 3}
 --- !u!114 &6522433059020539350
 MonoBehaviour:
   m_ObjectHideFlags: 0
