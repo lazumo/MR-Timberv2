@@ -47,8 +47,8 @@ public class GameFlowController : NetworkBehaviour
     [Header("Debug 後門（測試用；demo 前設為 None 關閉）")]
     [Tooltip("按此鍵直接跳到滅火階段（Editor/Simulator 用）。")]
     [SerializeField] private KeyCode debugFireKey = KeyCode.F;
-    [Tooltip("實體 controller 鈕跳到滅火階段（build 上測試用；None=關閉）。")]
-    [SerializeField] private OVRInput.Button debugFireButton = OVRInput.Button.None;
+    [Tooltip("實體 controller 鈕跳到滅火階段（build 上測試用；None=關閉）。預設=右手搖桿按下（同舊後門）。")]
+    [SerializeField] private OVRInput.Button debugFireButton = OVRInput.Button.SecondaryThumbstick;
 
     [Header("Victory elf dance (all fires out)")]
     [SerializeField] private int danceElfCount = 10;
