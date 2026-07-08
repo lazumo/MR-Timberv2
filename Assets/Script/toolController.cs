@@ -218,9 +218,16 @@ public class ToolController : NetworkBehaviour
             if (transitionVfxLifetime > 0f) Destroy(go, transitionVfxLifetime);
         }
 
-        if (audioSource == null) audioSource = GetComponent<AudioSource>();
-        if (audioSource != null && transitionSfx != null)
-            audioSource.PlayOneShot(transitionSfx);
+        // 欄位沒接時自動用內建 Poof 音（prefab 是舊版序列化、欄位為 null）
+        if (transitionSfx != null)
+        {
+            if (audioSource == null) audioSource = GetComponent<AudioSource>();
+            if (audioSource != null) audioSource.PlayOneShot(transitionSfx);
+        }
+        else
+        {
+            SfxLib.PlayAt("Poof", pos, 0.9f);
+        }
     }
 
     // =========================

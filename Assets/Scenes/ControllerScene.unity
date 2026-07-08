@@ -2462,8 +2462,8 @@ MonoBehaviour:
   firefightingPhase: {fileID: 1254098475}
   celebrateSeconds: 1.5
   telegraphSeconds: 1.5
-  celebrateVfxPrefab: {fileID: 0}
-  telegraphSmokePrefab: {fileID: 0}
+  celebrateVfxPrefab: {fileID: 344340219589855072, guid: 85b062a5517cf8345bb6784ffbed4877, type: 3}
+  telegraphSmokePrefab: {fileID: 141433446842962269, guid: 9fe8f8b3288e45a44af36ff8aa04486e, type: 3}
   celebrateSfx: {fileID: 8300000, guid: 8076c415594716241887aef8c0e4e6ac, type: 3}
   victorySfx: {fileID: 8300000, guid: 3f9a1c27b5de48d1a6c40f82e7b91455, type: 3}
   audioSource: {fileID: 1254098480}
