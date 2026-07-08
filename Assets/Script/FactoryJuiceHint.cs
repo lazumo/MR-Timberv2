@@ -1,25 +1,30 @@
 using UnityEngine;
 
 /// <summary>
-/// Layer 3 — shows a juicing UI hint (arrow direction + hand model) on a color factory
-/// during the Juicing phase only.
-///
-/// Visual-only and phase-driven: it reads the synced GameFlowController.CurrentPhase, so it
-/// works on every client and is robust to factory spawn timing / late join (factories spawn
-/// when a house becomes Built, which is before Juicing). A plain MonoBehaviour is enough
-/// because the phase NetworkVariable is readable everywhere and the hint is purely cosmetic.
+/// 榨汁 UI 提示（ghost 手 + 箭頭）的顯示時機：
+///   1. 只在 Juicing 階段顯示（讀同步的 GameFlowController.CurrentPhase）。
+///   2. 玩家實際開始擠壓時（ColorFactoryNetDriver.IsActive，中點進入 factory）自動收起，
+///      避免「兩組手」同時在動很亂；停手一段時間後再出現。
+/// 純視覺、每個 client 各自運作（兩個依據都是同步變數，結果自然一致）。
 /// </summary>
 public class FactoryJuiceHint : MonoBehaviour
 {
-    [Tooltip("The hint visuals (arrow + hand model). Active only during the Juicing phase.")]
+    [Tooltip("提示視覺（ghost 手 + 箭頭）。")]
     [SerializeField] private GameObject hintRoot;
 
-    private GameFlowController _flow;
+    [Tooltip("擠壓驅動（同物件上的 ColorFactoryNetDriver）。留空自動抓。")]
+    [SerializeField] private ColorFactoryNetDriver driver;
 
-    private void OnEnable()
+    [Tooltip("玩家停手後，提示要等幾秒才重新出現。")]
+    [SerializeField] private float reappearDelay = 2f;
+
+    private GameFlowController _flow;
+    private float _idleTime = 999f;   // 一開始視為「已閒置很久」→ 進 Juicing 立即顯示
+
+    private void Awake()
     {
-        TryBind();
-        Refresh();
+        if (driver == null)
+            driver = GetComponent<ColorFactoryNetDriver>();
     }
 
     private void OnDisable()
@@ -31,12 +36,15 @@ public class FactoryJuiceHint : MonoBehaviour
 
     private void Update()
     {
-        // Late-bind if the factory spawned before the GameFlowController existed.
+        // Factory 可能比 GameFlowController 先生成 → 持續補綁
         if (_flow == null)
-        {
             TryBind();
-            Refresh();
-        }
+
+        // 追蹤「距離上次擠壓」的閒置時間
+        bool squeezing = driver != null && driver.IsActive.Value;
+        _idleTime = squeezing ? 0f : _idleTime + Time.deltaTime;
+
+        Refresh();
     }
 
     private void TryBind()
@@ -54,7 +62,10 @@ public class FactoryJuiceHint : MonoBehaviour
     {
         if (hintRoot == null) return;
 
-        bool show = _flow != null && _flow.CurrentPhase.Value == GamePhase.Juicing;
+        bool inJuicing = _flow != null && _flow.CurrentPhase.Value == GamePhase.Juicing;
+        bool idleLongEnough = _idleTime >= reappearDelay;
+
+        bool show = inJuicing && idleLongEnough;
         if (hintRoot.activeSelf != show)
             hintRoot.SetActive(show);
     }
