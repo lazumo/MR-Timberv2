@@ -89,10 +89,10 @@ public class ExtinguisherChargeParticle : MonoBehaviour
             StartFlash();
             SfxLib.PlayAt("ChargeReady", transform.position, 0.9f);
 
-            // 充能完成：自己的滅火器 → 手把短震一下
+            // 充能完成：自己的滅火器 → 握滅火器那隻手短震一下（Host=右手、Client=左手）
             var netObj = GetComponentInParent<Unity.Netcode.NetworkObject>();
             if (netObj != null && netObj.IsOwner)
-                StartCoroutine(Haptics.Pulse(1f, 0.9f, 0.25f));
+                StartCoroutine(Haptics.Pulse(Haptics.ExtinguisherHand, 1f, 0.9f, 0.25f));
         }
 
         UpdateFlash();

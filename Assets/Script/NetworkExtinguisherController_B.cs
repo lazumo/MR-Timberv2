@@ -56,15 +56,15 @@ public class NetworkExtinguisherController_B : NetworkBehaviour
                 ReportTriggerServerRpc(pressed);
             }
 
-            // 水管是兩人共握：噴水時兩邊玩家的手把都持續震動
+            // 水管兩人共握：各震自己握水管的那隻手（Host=右手、Client=左手）
             if (isSpraying.Value)
             {
-                Haptics.SetBoth(1f, 0.6f);
+                Haptics.Set(Haptics.ExtinguisherHand, 1f, 0.6f);
                 _wasVibrating = true;
             }
             else if (_wasVibrating)
             {
-                Haptics.StopBoth();
+                Haptics.Stop(Haptics.ExtinguisherHand);
                 _wasVibrating = false;
             }
         }

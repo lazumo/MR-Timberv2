@@ -56,15 +56,15 @@ public class SliceObject : NetworkBehaviour
             else if (!isSawingNet.Value && sawAudio.isPlaying) sawAudio.Stop();
         }
 
-        // 鋸樹震動：兩位玩家共同持握 prop，所以每個 peer 都震自己的手把
+        // 鋸樹震動：只震握 prop 的那隻手（Host=左手、Client=右手）
         if (isSawingNet.Value)
         {
-            Haptics.SetBoth(1f, 0.35f);
+            Haptics.Set(Haptics.PropHand, 1f, 0.35f);
             _wasVibrating = true;
         }
         else if (_wasVibrating)
         {
-            Haptics.StopBoth();
+            Haptics.Stop(Haptics.PropHand);
             _wasVibrating = false;
         }
 

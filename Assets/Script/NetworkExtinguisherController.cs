@@ -44,15 +44,15 @@ public class NetworkExtinguisherController : NetworkBehaviour
             if (want != isSpraying.Value)
                 SetSprayingServerRpc(want);
 
-            // 噴水時持續震動（只震持有者自己的手把）
+            // 噴水時持續震動：只震握滅火器那隻手（Host=右手、Client=左手）
             if (isSpraying.Value)
             {
-                Haptics.SetBoth(1f, 0.5f);
+                Haptics.Set(Haptics.ExtinguisherHand, 1f, 0.5f);
                 _wasVibrating = true;
             }
             else if (_wasVibrating)
             {
-                Haptics.StopBoth();
+                Haptics.Stop(Haptics.ExtinguisherHand);
                 _wasVibrating = false;
             }
         }
