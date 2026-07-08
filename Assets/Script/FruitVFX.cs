@@ -31,8 +31,7 @@ public class FruitDestroyVFX : NetworkBehaviour
     [ClientRpc]
     private void PlayDestroyVFXClientRpc(int colorIndex)
     {
-        // 榨汁擠爆也用同一個「噗嘰啪」
-        SfxLib.PlayAt("FruitPop", transform.position, 0.9f);
+        // （爆掉音效改由 FruitSqueezeInContainer_Tag 的容器 RPC 播，避免果子同幀 despawn 掉包）
 
         if (colorIndex < 0 || colorIndex >= destroyVfxList.Count)
         {

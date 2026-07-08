@@ -40,6 +40,8 @@ public class NetworkExtinguisherController_B : NetworkBehaviour
 
     void OnSprayChanged(bool _, bool v) => ApplySprayVFX(v);
 
+    private bool _wasVibrating;
+
     void Update()
     {
         // 共用物件：每個 Client 各讀自己的 trigger（Host 也是 client）
@@ -52,6 +54,18 @@ public class NetworkExtinguisherController_B : NetworkBehaviour
             {
                 lastLocalPressed = pressed;
                 ReportTriggerServerRpc(pressed);
+            }
+
+            // 水管是兩人共握：噴水時兩邊玩家的手把都持續震動
+            if (isSpraying.Value)
+            {
+                Haptics.SetBoth(1f, 0.6f);
+                _wasVibrating = true;
+            }
+            else if (_wasVibrating)
+            {
+                Haptics.StopBoth();
+                _wasVibrating = false;
             }
         }
 

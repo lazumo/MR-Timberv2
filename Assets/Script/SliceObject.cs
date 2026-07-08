@@ -45,6 +45,8 @@ public class SliceObject : NetworkBehaviour
         sawAudio = SfxLib.AddLoop(gameObject, "SawLoop", 0.6f);
     }
 
+    private bool _wasVibrating;
+
     void Update()
     {
         // 摩擦音效跟粒子一樣跟著「正在鋸」狀態走
@@ -52,6 +54,18 @@ public class SliceObject : NetworkBehaviour
         {
             if (isSawingNet.Value && !sawAudio.isPlaying) sawAudio.Play();
             else if (!isSawingNet.Value && sawAudio.isPlaying) sawAudio.Stop();
+        }
+
+        // 鋸樹震動：兩位玩家共同持握 prop，所以每個 peer 都震自己的手把
+        if (isSawingNet.Value)
+        {
+            Haptics.SetBoth(1f, 0.35f);
+            _wasVibrating = true;
+        }
+        else if (_wasVibrating)
+        {
+            Haptics.StopBoth();
+            _wasVibrating = false;
         }
 
         if (!woodChips) return;

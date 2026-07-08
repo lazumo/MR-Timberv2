@@ -31,6 +31,8 @@ public class NetworkExtinguisherController : NetworkBehaviour
         isSpraying.OnValueChanged -= (_, v) => ApplySprayVFX(v);
     }
 
+    private bool _wasVibrating;
+
     void Update()
     {
         // 1) Owner 讀取右手 trigger（任一按下就算）
@@ -41,6 +43,18 @@ public class NetworkExtinguisherController : NetworkBehaviour
             // 只在狀態變化時送 RPC（省流量）
             if (want != isSpraying.Value)
                 SetSprayingServerRpc(want);
+
+            // 噴水時持續震動（只震持有者自己的手把）
+            if (isSpraying.Value)
+            {
+                Haptics.SetBoth(1f, 0.5f);
+                _wasVibrating = true;
+            }
+            else if (_wasVibrating)
+            {
+                Haptics.StopBoth();
+                _wasVibrating = false;
+            }
         }
 
         // 2) 只有 Server 做 Raycast 滅火（結果一致）

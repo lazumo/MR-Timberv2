@@ -142,6 +142,8 @@ public class FruitTree : NetworkBehaviour
     {
         if (audioSource && sfxGrow)
             audioSource.PlayOneShot(sfxGrow);
+        else
+            SfxLib.PlayAt("GrowUp", transform.position, 1f);   // 保險：欄位缺就直接在樹的位置播
     }
     private IEnumerator DelayedSpawnTree(float delay)
     {

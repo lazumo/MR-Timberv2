@@ -210,6 +210,9 @@ public class FruitSqueezeInContainer_Tag : NetworkBehaviour
 
         if (!fruit) return;
 
+        // 爆掉音效：由容器（不會 despawn）發 RPC，避免果子同幀消失導致 RPC 掉包
+        PlayPopSfxClientRpc(fruit.position);
+
         // 播 VFX
         var vfx = fruit.GetComponent<FruitDestroyVFX>();
         if (vfx != null)
@@ -230,6 +233,12 @@ public class FruitSqueezeInContainer_Tag : NetworkBehaviour
         AdvanceHousePaintStage();
 
         Debug.Log($"[FruitSqueeze] Fruit destroyed (FIFO): {fruit.name}");
+    }
+
+    [ClientRpc]
+    private void PlayPopSfxClientRpc(Vector3 pos)
+    {
+        SfxLib.PlayAt("FruitPop", pos, 0.95f);
     }
 
     private void AdvanceHousePaintStage()
