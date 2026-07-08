@@ -2463,7 +2463,7 @@ MonoBehaviour:
   celebrateSeconds: 1.5
   telegraphSeconds: 1.5
   celebrateVfxPrefab: {fileID: 344340219589855072, guid: 85b062a5517cf8345bb6784ffbed4877, type: 3}
-  telegraphSmokePrefab: {fileID: 1054562835564666262, guid: 8206b722d11501a449d6a278cca2adfa, type: 3}
+  telegraphSmokePrefab: {fileID: 8656522925564163052, guid: e509867be4f82f246a95eca1ee5a2d61, type: 3}
   celebrateSfx: {fileID: 8300000, guid: 8076c415594716241887aef8c0e4e6ac, type: 3}
   victorySfx: {fileID: 8300000, guid: 3f9a1c27b5de48d1a6c40f82e7b91455, type: 3}
   audioSource: {fileID: 1254098480}
