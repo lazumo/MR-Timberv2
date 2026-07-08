@@ -34,10 +34,6 @@ public class FruitTree : NetworkBehaviour
         transform.localScale = Vector3.zero;
         if (!audioSource)
             audioSource = gameObject.AddComponent<AudioSource>();
-
-        // 沒指定生長音效時用內建的（馬力歐變大風）
-        if (!sfxGrow)
-            sfxGrow = SfxLib.Get("GrowUp");
     }
 
     public override void OnNetworkSpawn()
@@ -140,10 +136,11 @@ public class FruitTree : NetworkBehaviour
 
     private void PlayGrowSFX()
     {
+        // prefab 有指定專屬音效才用它；否則一律走 SfxLib（保證出聲）
         if (audioSource && sfxGrow)
             audioSource.PlayOneShot(sfxGrow);
         else
-            SfxLib.PlayAt("GrowUp", transform.position, 1f);   // 保險：欄位缺就直接在樹的位置播
+            SfxLib.PlayAt("GrowUp", transform.position, 1f);
     }
     private IEnumerator DelayedSpawnTree(float delay)
     {
