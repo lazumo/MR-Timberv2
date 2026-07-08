@@ -199,6 +199,7 @@ MonoBehaviour:
     type: 3}
   buildVfxAnchor: {fileID: 0}
   buildVfxLifetime: 3
+  ashesVfxPrefab: {fileID: 4680256143594929972, guid: dcfb1ffefa7997c4491301f917ebaaf6, type: 3}
 --- !u!114 &8623700983161867751
 MonoBehaviour:
   m_ObjectHideFlags: 0

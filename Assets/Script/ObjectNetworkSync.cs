@@ -13,6 +13,10 @@ public class ObjectNetworkSync : NetworkBehaviour
 
     [Header("Build VFX (played when the house is built — assign the tree-vanish VFX prefab)")]
     [SerializeField] private GameObject buildVfxPrefab;
+
+    [Header("Burn-away（失火過場：房子焦黑 + 灰燼飄散後消失）")]
+    [Tooltip("灰燼粒子 prefab（可用 smoke.prefab 的 Ashes 子物件）")]
+    [SerializeField] private GameObject ashesVfxPrefab;
     [Tooltip("Optional spawn point; defaults to this house's transform.")]
     [SerializeField] private Transform buildVfxAnchor;
     [SerializeField] private float buildVfxLifetime = 3f;
@@ -114,6 +118,60 @@ public class ObjectNetworkSync : NetworkBehaviour
                     GameFlowController.Instance.NotifyHouseColored(transform);
                 break;
         }
+    }
+
+    // ============================================================
+    // 失火過場：房子「燒成灰燼」消失（取代 scale shrink）
+    // Server 呼叫 BurnAway(duration)；視覺在每個 client 本地跑。
+    // ============================================================
+
+    /// Server-only：開始燒毀演出，durationseconds 後由呼叫端負責 despawn。
+    public void BurnAway(float duration)
+    {
+        if (!IsServer) return;
+        BurnAwayClientRpc(duration);
+    }
+
+    [ClientRpc]
+    private void BurnAwayClientRpc(float duration)
+    {
+        StartCoroutine(BurnAwayLocal(duration));
+    }
+
+    private IEnumerator BurnAwayLocal(float duration)
+    {
+        // 灰燼粒子：房子中心往上飄
+        if (ashesVfxPrefab != null)
+        {
+            var ashes = Instantiate(ashesVfxPrefab, transform.position, Quaternion.identity);
+            Destroy(ashes, duration + 3f);
+        }
+
+        // 所有 renderer 用 MaterialPropertyBlock 漸暗成焦炭色（不動共享材質）
+        var renderers = GetComponentsInChildren<Renderer>();
+        var block = new MaterialPropertyBlock();
+        Color charcoal = new Color(0.06f, 0.05f, 0.04f, 1f);
+
+        float t = 0f;
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            Color c = Color.Lerp(Color.white, charcoal, Mathf.Clamp01(t / (duration * 0.7f)));
+
+            foreach (var r in renderers)
+            {
+                if (r == null) continue;
+                r.GetPropertyBlock(block);
+                block.SetColor("_BaseColor", c);
+                block.SetColor("_Color", c);      // 涵蓋 URP 與 toon shader 兩種命名
+                r.SetPropertyBlock(block);
+            }
+            yield return null;
+        }
+
+        // 演出結束：把視覺關掉（實際 despawn 由 server 端做）
+        foreach (var r in renderers)
+            if (r != null) r.enabled = false;
     }
 
     // Same effect as the tree-vanish VFX, played at the house when the elf finishes building it.

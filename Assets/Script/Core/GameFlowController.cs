@@ -291,12 +291,23 @@ public class GameFlowController : NetworkBehaviour
             PassthroughDarkener.Instance.Apply(true);
     }
 
-    // 一明一滅的閃爍（加速）→ 定暗，配「有事情要發生」的音效
+    [Header("Warning banner (fire transition)")]
+    [Tooltip("警戒布條顯示秒數（建議 ≥ celebrate 後剩餘的過場長度 + 火起初期）")]
+    [SerializeField] private float bannerLifetime = 12f;
+    [SerializeField] private float bannerHeight = 1.4f;
+    [SerializeField] private float bannerHalfSize = 1.5f;   // 3x3 房間 → 1.5
+
+    // 一明一滅的閃爍（加速）→ 定暗，配警報聲 + 環繞房間的警戒布條
     [ClientRpc]
     private void FlickerDarkenClientRpc(Vector3 pos)
     {
-        SfxLib.PlayAt("OminousAlarm", pos, 1f);
+        SfxLib.Play2D("OminousAlarm", 1f);   // 警報用 2D，全場聽得到
         StartCoroutine(FlickerDarkenLocal());
+
+        // 警戒布條：以房間中心為準（SpawnArea = 虛擬 3x3 房中心）
+        Vector3 center = SpawnArea.Instance != null ? SpawnArea.Instance.transform.position : pos;
+        center.y = 0f;
+        RoomWarningBanner.Spawn(center, bannerHalfSize, bannerHeight, 0.35f, bannerLifetime);
     }
 
     private IEnumerator FlickerDarkenLocal()

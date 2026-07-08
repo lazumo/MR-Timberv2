@@ -224,22 +224,41 @@ public class HouseSpawnerNetworked : NetworkBehaviour
     {
         if (!IsServer) return;
 
+        // factory 維持縮小淡出
         foreach (var f in FindObjectsByType<ColorFactory>(FindObjectsSortMode.None))
         {
             var no = f.GetComponent<NetworkObject>();
             if (no != null && no.IsSpawned) StartCoroutine(FadeAndDespawn(no, duration));
         }
 
+        // 房子改成「燒成灰燼」：焦黑 + 灰燼粒子 → 時間到 despawn
         foreach (var kv in _houseObjectMap)
         {
             var houseObj = kv.Value;
             if (houseObj == null) continue;
             var no = houseObj.GetComponent<NetworkObject>();
-            if (no != null && no.IsSpawned) StartCoroutine(FadeAndDespawn(no, duration));
+            if (no == null || !no.IsSpawned) continue;
+
+            var sync = houseObj.GetComponent<ObjectNetworkSync>();
+            if (sync != null)
+            {
+                sync.BurnAway(duration);
+                StartCoroutine(DespawnAfter(no, duration + 0.2f));
+            }
+            else
+            {
+                StartCoroutine(FadeAndDespawn(no, duration));
+            }
         }
 
         _houseObjectMap.Clear();
         _spawnedHouseData.Clear();
+    }
+
+    private IEnumerator DespawnAfter(NetworkObject no, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (no != null && no.IsSpawned) no.Despawn(true);
     }
 
     private IEnumerator FadeAndDespawn(NetworkObject no, float duration)
