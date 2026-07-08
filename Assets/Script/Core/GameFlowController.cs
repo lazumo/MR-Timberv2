@@ -114,9 +114,14 @@ public class GameFlowController : NetworkBehaviour
         if (restartButton != OVRInput.Button.None && OVRInput.GetDown(restartButton, restartController))
             Restart();
 
-        // Debug 後門：直接跳滅火（模擬器按 F / 或設定的 controller 鈕）
-        if ((debugFireKey != KeyCode.None && Input.GetKeyDown(debugFireKey)) ||
-            (debugFireButton != OVRInput.Button.None && OVRInput.GetDown(debugFireButton)))
+        // Debug 後門：直接跳滅火（F 鍵 / 任一搖桿按下 / 舊式 JoystickButton8,9）
+        bool stickPressed =
+            (debugFireButton != OVRInput.Button.None && OVRInput.GetDown(debugFireButton)) ||
+            OVRInput.GetDown(OVRInput.Button.PrimaryThumbstick) ||
+            Input.GetKeyDown(KeyCode.JoystickButton8) ||
+            Input.GetKeyDown(KeyCode.JoystickButton9);
+
+        if ((debugFireKey != KeyCode.None && Input.GetKeyDown(debugFireKey)) || stickPressed)
             DebugJumpToFirefighting();
     }
 
