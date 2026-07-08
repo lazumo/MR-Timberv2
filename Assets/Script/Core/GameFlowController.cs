@@ -44,6 +44,12 @@ public class GameFlowController : NetworkBehaviour
     [Tooltip("Optional editor/testing shortcut to restart. Leave as None to disable.")]
     [SerializeField] private KeyCode debugRestartKey = KeyCode.None;
 
+    [Header("Debug 後門（測試用；demo 前設為 None 關閉）")]
+    [Tooltip("按此鍵直接跳到滅火階段（Editor/Simulator 用）。")]
+    [SerializeField] private KeyCode debugFireKey = KeyCode.F;
+    [Tooltip("實體 controller 鈕跳到滅火階段（build 上測試用；None=關閉）。")]
+    [SerializeField] private OVRInput.Button debugFireButton = OVRInput.Button.None;
+
     [Header("Victory elf dance (all fires out)")]
     [SerializeField] private int danceElfCount = 10;
     [SerializeField] private float danceRadius = 1f;
@@ -107,6 +113,29 @@ public class GameFlowController : NetworkBehaviour
 
         if (restartButton != OVRInput.Button.None && OVRInput.GetDown(restartButton, restartController))
             Restart();
+
+        // Debug 後門：直接跳滅火（模擬器按 F / 或設定的 controller 鈕）
+        if ((debugFireKey != KeyCode.None && Input.GetKeyDown(debugFireKey)) ||
+            (debugFireButton != OVRInput.Button.None && OVRInput.GetDown(debugFireButton)))
+            DebugJumpToFirefighting();
+    }
+
+    /// 測試用：略過前面流程，直接進滅火（點火 + 換 prop + 變暗都會跟著發生）
+    public void DebugJumpToFirefighting()
+    {
+        if (!IsServer || !_started) return;
+        if (CurrentPhase.Value == GamePhase.Firefighting) return;
+
+        Debug.Log("[GameFlow][DEBUG] Jump to Firefighting.");
+        _bridging = false;
+
+        ManagerFor(CurrentPhase.Value)?.EndPhase();
+        CurrentPhase.Value = GamePhase.Firefighting;
+
+        if (SceneController.Instance != null)
+            SceneController.Instance.CurrentLevel.Value = 2;   // 點燃森林火
+
+        firefightingPhase?.StartPhase();
     }
 
     // =========================
