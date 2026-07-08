@@ -29,6 +29,21 @@ public static class SfxLib
             AudioSource.PlayClipAtPoint(clip, pos, volume);
     }
 
+    /// One-shot 2D sound（不受距離/位置影響，重要回饋用這個保證聽得到）.
+    public static void Play2D(string name, float volume = 1f)
+    {
+        var clip = Get(name);
+        if (clip == null) return;
+
+        var go = new GameObject($"SFX2D_{name}");
+        var src = go.AddComponent<AudioSource>();
+        src.clip = clip;
+        src.spatialBlend = 0f;   // 2D
+        src.volume = volume;
+        src.Play();
+        Object.Destroy(go, clip.length + 0.2f);
+    }
+
     /// Adds a configured looping AudioSource for a clip (caller controls Play/Stop).
     public static AudioSource AddLoop(GameObject go, string name, float volume = 0.5f)
     {

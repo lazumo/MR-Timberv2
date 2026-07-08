@@ -238,7 +238,8 @@ public class FruitSqueezeInContainer_Tag : NetworkBehaviour
     [ClientRpc]
     private void PlayPopSfxClientRpc(Vector3 pos)
     {
-        SfxLib.PlayAt("FruitPop", pos, 0.95f);
+        Debug.Log("[FruitSqueeze] Pop SFX RPC received.");   // adb logcat 可查
+        SfxLib.Play2D("FruitPop", 1f);                        // 2D：保證聽得到
     }
 
     private void AdvanceHousePaintStage()
