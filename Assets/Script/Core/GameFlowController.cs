@@ -105,9 +105,8 @@ public class GameFlowController : NetworkBehaviour
         if (showRoomBoundary)
             RoomBoundaryLine.Spawn(bannerHalfSize);
 
-        // 每個 peer 各自跑合體提示（滅火階段、未合體時每 15s 提示）
-        ExtinguisherMergeHint.Spawn(
-            mergeHintInterval, mergeHintDuration, mergeHintAnchorOffset, mergeHintUiPrefab);
+        // 每個 peer 各自跑合體提示（滅火階段：充能完成 → 光束亮到合體為止）
+        ExtinguisherMergeHint.Spawn(mergeHintAnchorOffset, mergeHintUiPrefab);
 
         // 房間 pose 廣播：host 等虛擬房載好後發布；client 收到就套用（含晚加入）
         if (IsServer)
@@ -478,12 +477,10 @@ public class GameFlowController : NetworkBehaviour
     [Header("Room boundary line (3x3 範圍地板細線)")]
     [SerializeField] private bool showRoomBoundary = true;
 
-    [Header("合體提示（滅火階段每 N 秒：anchor+光束指向隊友，近紅遠黃）")]
-    [SerializeField] private float mergeHintInterval = 15f;
-    [SerializeField] private float mergeHintDuration = 6f;
+    [Header("合體提示（滅火階段：充能完成亮起 anchor+光束指向隊友，近紅遠黃，合體才消失）")]
     [Tooltip("anchor 相對滅火器手的 offset（老師說位置之後可再調）")]
     [SerializeField] private Vector3 mergeHintAnchorOffset = new Vector3(0f, 0.18f, 0f);
-    [Tooltip("組員的動畫 UI prefab（之後拖進來；留空只顯示 anchor 球+光束）")]
+    [Tooltip("組員的動畫 UI prefab（之後拖進來；留空只顯示 anchor+光束）")]
     [SerializeField] private GameObject mergeHintUiPrefab;
 
     // 一明一滅的閃爍（加速）→ 定暗，配警報聲 + 環繞房間的警戒布條
