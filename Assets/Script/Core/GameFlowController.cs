@@ -307,8 +307,22 @@ public class GameFlowController : NetworkBehaviour
     private IEnumerator SpawnNextTreeAfter(float delay)
     {
         yield return new WaitForSeconds(delay);
-        if (CurrentPhase.Value == GamePhase.Logging && TreeSpawnerNetworked.Instance != null)
-            TreeSpawnerNetworked.Instance.SpawnTree(TreeSpawnerNetworked.TreeType.Wood);
+
+        // 倒下的樹幹/木材可能暫時佔住空間 → 失敗就每秒重試，直到長出來或離開砍樹階段
+        for (int i = 0; i < 20; i++)
+        {
+            if (CurrentPhase.Value != GamePhase.Logging || TreeSpawnerNetworked.Instance == null)
+                yield break;
+
+            if (TreeSpawnerNetworked.Instance.SpawnTree(TreeSpawnerNetworked.TreeType.Wood))
+            {
+                Debug.Log("[GameFlow] Next wood tree spawned.");
+                yield break;
+            }
+
+            Debug.LogWarning("[GameFlow] No space for the next wood tree — retrying in 1s...");
+            yield return new WaitForSeconds(1f);
+        }
     }
 
     /// A house finished building → advance when ALL required houses are built.
