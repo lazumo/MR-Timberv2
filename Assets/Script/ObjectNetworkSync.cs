@@ -147,29 +147,72 @@ public class ObjectNetworkSync : NetworkBehaviour
             Destroy(ashes, duration + 3f);
         }
 
-        // 所有 renderer 用 MaterialPropertyBlock 漸暗成焦炭色（不動共享材質）
-        var renderers = GetComponentsInChildren<Renderer>();
+        // 只取「有顯示中」的 renderer（house 有多個 state 物件，關著的不用管）
+        var all = GetComponentsInChildren<Renderer>();
+        var renderers = new System.Collections.Generic.List<Renderer>();
+        foreach (var r in all)
+            if (r != null && r.enabled && r.gameObject.activeInHierarchy) renderers.Add(r);
+
+        // 打散順序 → 碎片會隨機一塊塊飄走
+        for (int i = renderers.Count - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            (renderers[i], renderers[j]) = (renderers[j], renderers[i]);
+        }
+
         var block = new MaterialPropertyBlock();
         Color charcoal = new Color(0.06f, 0.05f, 0.04f, 1f);
+
+        // 每個碎片的「飄走」排程：焦黑期(前40%)之後開始，錯開起飛
+        float scatterStart = duration * 0.4f;
+        float driftTime = Mathf.Min(0.9f, duration * 0.25f);          // 每片飄升時間
+        float lastLaunch = duration - driftTime;                       // 最後一片起飛時間
+        var basePos = new Vector3[renderers.Count];
+        var launchAt = new float[renderers.Count];
+        for (int i = 0; i < renderers.Count; i++)
+        {
+            basePos[i] = renderers[i].transform.localPosition;
+            launchAt[i] = renderers.Count > 1
+                ? Mathf.Lerp(scatterStart, lastLaunch, (float)i / (renderers.Count - 1))
+                : scatterStart;
+        }
 
         float t = 0f;
         while (t < duration)
         {
             t += Time.deltaTime;
-            Color c = Color.Lerp(Color.white, charcoal, Mathf.Clamp01(t / (duration * 0.7f)));
 
-            foreach (var r in renderers)
+            // 焦黑漸變（前 40% 完成）
+            Color c = Color.Lerp(Color.white, charcoal, Mathf.Clamp01(t / (duration * 0.4f)));
+
+            for (int i = 0; i < renderers.Count; i++)
             {
-                if (r == null) continue;
+                var r = renderers[i];
+                if (r == null || !r.enabled) continue;
+
                 r.GetPropertyBlock(block);
                 block.SetColor("_BaseColor", c);
                 block.SetColor("_Color", c);      // 涵蓋 URP 與 toon shader 兩種命名
                 r.SetPropertyBlock(block);
+
+                // 到了自己的起飛時間 → 向上飄 + 搖曳，飄完消失
+                float k = (t - launchAt[i]) / driftTime;
+                if (k > 0f)
+                {
+                    if (k >= 1f)
+                    {
+                        r.enabled = false;
+                        continue;
+                    }
+                    // 上飄 0.5m、輕微左右搖、越飄越快（像灰燼被熱氣帶走）
+                    float rise = k * k * 0.5f;
+                    float sway = Mathf.Sin((t + i) * 6f) * 0.03f * k;
+                    r.transform.localPosition = basePos[i] + new Vector3(sway, rise, sway * 0.7f);
+                }
             }
             yield return null;
         }
 
-        // 演出結束：把視覺關掉（實際 despawn 由 server 端做）
         foreach (var r in renderers)
             if (r != null) r.enabled = false;
     }
