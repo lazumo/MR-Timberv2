@@ -134,6 +134,9 @@ public class HouseSpawnerNetworked : NetworkBehaviour
                 }
             }
         }
+
+        if (successfulSpawns < numberOfHouses)
+            Debug.LogWarning($"[HouseSpawner] Only spawned {successfulSpawns}/{numberOfHouses} houses (no wall space?). GameFlow will lower its goal to match.");
     }
 
     private void SpawnHouseAt(Vector3 pos, Quaternion rot, int color, int id)

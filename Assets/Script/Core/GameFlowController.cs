@@ -144,6 +144,8 @@ public class GameFlowController : NetworkBehaviour
     {
         if (!IsServer || !_started) return;
 
+        Debug.Log($"[GameFlow][DEBUG] Advance pressed — phase={CurrentPhase.Value}, requiredGoals={RequiredGoals}");
+
         switch (CurrentPhase.Value)
         {
             case GamePhase.Logging:
@@ -157,6 +159,10 @@ public class GameFlowController : NetworkBehaviour
                     if (h.CurrentState == HouseState.Unbuilt)
                         h.SetState(HouseState.Built);   // 觸發蓋房VFX+factory+NotifyHouseBuilt→門控→Catching
                 }
+
+                // Debug 保險：就算房子數不足讓門控不放行，也強制進下一階段
+                if (CurrentPhase.Value == GamePhase.Logging)
+                    EnterPhase(GamePhase.Catching);
                 break;
 
             case GamePhase.Catching:
@@ -170,6 +176,13 @@ public class GameFlowController : NetworkBehaviour
                 {
                     if (h.CurrentState != HouseState.Unbuilt && h.CurrentState != HouseState.Colored)
                         h.SetState(HouseState.Colored);  // 最後一棟觸發 NotifyHouseColored → 失火過場
+                }
+
+                // Debug 保險：門控沒放行（例如房子數不足）就強制走失火過場
+                if (CurrentPhase.Value == GamePhase.Juicing && !_bridging)
+                {
+                    Vector3 pos = SpawnArea.Instance != null ? SpawnArea.Instance.GetCenter() : transform.position;
+                    StartCoroutine(FireBridgeRoutine(pos));
                 }
                 break;
 
@@ -256,8 +269,18 @@ public class GameFlowController : NetworkBehaviour
 
     private int _felledTrees;
 
-    private int RequiredGoals =>
-        HouseSpawnerNetworked.Instance != null ? Mathf.Max(1, HouseSpawnerNetworked.Instance.numberOfHouses) : 1;
+    /// 目標數 = 設定值與「實際生出來的房子數」取小——第二棟房找不到空間時流程不會卡死。
+    private int RequiredGoals
+    {
+        get
+        {
+            var hs = HouseSpawnerNetworked.Instance;
+            if (hs == null) return 1;
+            int cfg = Mathf.Max(1, hs.numberOfHouses);
+            int spawned = hs.GetAllHouseData().Count;
+            return spawned > 0 ? Mathf.Min(cfg, spawned) : cfg;
+        }
+    }
 
     private int CountHouses(System.Func<ObjectNetworkSync, bool> pred)
     {
