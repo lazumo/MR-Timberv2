@@ -31,6 +31,8 @@ public class RoomWarningBanner : MonoBehaviour
 
         var root = new GameObject("RoomWarningBanner");
         root.transform.position = center;
+        if (SpawnArea.Instance != null)
+            root.transform.rotation = SpawnArea.Instance.GetRotation();   // 跟虛擬房間的牆對齊
 
         var banner = root.AddComponent<RoomWarningBanner>();
         banner._lifetime = lifetime;

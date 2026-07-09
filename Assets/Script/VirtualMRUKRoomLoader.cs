@@ -68,7 +68,7 @@ public class VirtualMRUKRoomLoader : MonoBehaviour
 
         if (updateSpawnAreaCenter && SpawnArea.Instance != null)
         {
-            SpawnArea.Instance.SetCenter(roomPose.position);
+            SpawnArea.Instance.SetPose(roomPose.position, roomPose.rotation.eulerAngles.y);
         }
 
         Debug.Log($"[VirtualMRUKRoomLoader] Loaded virtual room at {roomPose.position}, yaw={roomPose.rotation.eulerAngles.y}, ceiling={resolvedCeilingHeight}");

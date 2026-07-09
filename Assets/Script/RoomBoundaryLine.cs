@@ -30,6 +30,7 @@ public class RoomBoundaryLine : MonoBehaviour
 
         Vector3 c = SpawnArea.Instance.GetCenter();
         c.y = 0.02f;   // 貼地、避免 z-fighting
+        Quaternion yaw = SpawnArea.Instance.GetRotation();   // 跟虛擬房間的牆對齊
 
         var lr = gameObject.AddComponent<LineRenderer>();
         lr.useWorldSpace = true;
@@ -45,10 +46,10 @@ public class RoomBoundaryLine : MonoBehaviour
         float h = _halfSize;
         lr.SetPositions(new[]
         {
-            c + new Vector3(-h, 0, -h),
-            c + new Vector3(-h, 0,  h),
-            c + new Vector3( h, 0,  h),
-            c + new Vector3( h, 0, -h),
+            c + yaw * new Vector3(-h, 0, -h),
+            c + yaw * new Vector3(-h, 0,  h),
+            c + yaw * new Vector3( h, 0,  h),
+            c + yaw * new Vector3( h, 0, -h),
         });
     }
 }

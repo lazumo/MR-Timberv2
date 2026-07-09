@@ -92,8 +92,8 @@ public class FireGrowServerOnly : NetworkBehaviour
                 Vector3 n = hit.normal.normalized;
                 Vector3 pos = hit.point + n * offsetFromSurface;
 
-                // 蔓延也不能超出 3x3 遊戲範圍
-                if (SpawnArea.Instance != null && !SpawnArea.Instance.IsInside(pos))
+                // 蔓延也不能超出 3x3 遊戲範圍（方形判定：可爬滿整面牆）
+                if (SpawnArea.Instance != null && !SpawnArea.Instance.IsInsideBox(pos))
                     continue;
                 if (TryIgniteHouseAt(pos))
                 {

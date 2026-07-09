@@ -16,6 +16,7 @@ public class SpawnArea : MonoBehaviour
     public bool drawGizmo = true;
 
     private Vector3 _center;
+    private Quaternion _yaw = Quaternion.identity;   // 虛擬房間的朝向（方形判定用）
     public bool IsInitialized { get; private set; }
 
     private void Awake()
@@ -46,6 +47,7 @@ public class SpawnArea : MonoBehaviour
     }
 
     public Vector3 GetCenter() => _center;
+    public Quaternion GetRotation() => _yaw;
 
     public void SetCenter(Vector3 center)
     {
@@ -54,12 +56,28 @@ public class SpawnArea : MonoBehaviour
         Debug.Log($"[SpawnArea] Center overridden to {_center} (radius={radius})");
     }
 
+    /// 虛擬房間載入時一併記下朝向，讓方形判定/邊界線跟房間的牆對齊。
+    public void SetPose(Vector3 center, float yawDegrees)
+    {
+        _yaw = Quaternion.Euler(0f, yawDegrees, 0f);
+        SetCenter(center);
+    }
+
     public bool IsInside(Vector3 worldPos)
     {
         if (!IsInitialized) return false;
         float dx = worldPos.x - _center.x;
         float dz = worldPos.z - _center.z;
         return (dx * dx + dz * dz) <= radius * radius;
+    }
+
+    /// 方形判定（半邊長 = radius，隨房間 yaw 旋轉）。火用這個：可以爬滿整面牆、
+    /// 但不出房間；圓形版留給樹/房（較嚴格，都在玩家伸手範圍內）。
+    public bool IsInsideBox(Vector3 worldPos)
+    {
+        if (!IsInitialized) return false;
+        Vector3 local = Quaternion.Inverse(_yaw) * (worldPos - _center);
+        return Mathf.Abs(local.x) <= radius && Mathf.Abs(local.z) <= radius;
     }
 
     private void OnDrawGizmos()
