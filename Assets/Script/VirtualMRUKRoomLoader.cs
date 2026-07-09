@@ -11,7 +11,8 @@ public class VirtualMRUKRoomLoader : MonoBehaviour
     {
         UseWallReference,
         UseCameraForward,
-        UseMRUKWall
+        UseMRUKWall,
+        WorldAxes   // 房間軸向固定對齊世界(=colocation共享)座標的 X/Z 軸，yaw=0
     }
 
     [Header("Room Size")]
@@ -99,6 +100,14 @@ public class VirtualMRUKRoomLoader : MonoBehaviour
             Vector3 inwardNormal = Vector3.ProjectOnPlane(wallPose.rotation * Vector3.forward, Vector3.up).normalized;
             frontDirection = -inwardNormal;
             frontWallPoint = wallPose.position;
+        }
+        else if (alignmentMode == AlignmentMode.WorldAxes)
+        {
+            // colocation 對齊後兩台共用世界座標 → 房間直接對齊世界 X/Z 軸（yaw=0），
+            // 中心 = 玩家開場位置（只取 XZ）。
+            Transform cam = Camera.main != null ? Camera.main.transform : transform;
+            frontDirection = Vector3.forward;
+            frontWallPoint = cam.position + frontDirection * (roomDepth * 0.5f);
         }
         else if (alignmentMode == AlignmentMode.UseWallReference && wallReference != null)
         {
