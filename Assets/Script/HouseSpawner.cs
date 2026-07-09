@@ -63,17 +63,28 @@ public class HouseSpawnerNetworked : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         if (IsServer)
-        {
-            if (MRUK.Instance && MRUK.Instance.GetCurrentRoom() != null)
-                SpawnHousesLogic();
-            else if (MRUK.Instance)
-                MRUK.Instance.RegisterSceneLoadedCallback(OnSceneLoaded);
-        }
+            StartCoroutine(SpawnWhenRoomReady());
     }
 
-    private void OnSceneLoaded()
+    // 等「虛擬 3x3 房間」載入完成再生房子——host 啟動可能比虛擬房載入早，
+    // 直接生會把房子貼在真實房間的牆上（跑出 3x3）。timeout 後保底照舊生成。
+    private IEnumerator SpawnWhenRoomReady()
     {
-        if (IsServer) SpawnHousesLogic();
+        float t = 0f;
+        while (t < 10f && (!VirtualMRUKRoomLoader.VirtualRoomReady ||
+                           MRUK.Instance == null || MRUK.Instance.GetCurrentRoom() == null))
+        {
+            t += 0.2f;
+            yield return new WaitForSeconds(0.2f);
+        }
+
+        if (!VirtualMRUKRoomLoader.VirtualRoomReady)
+            Debug.LogWarning("[HouseSpawner] Virtual room not ready after 10s — spawning against the current MRUK room.");
+
+        if (MRUK.Instance != null && MRUK.Instance.GetCurrentRoom() != null)
+            SpawnHousesLogic();
+        else
+            Debug.LogError("[HouseSpawner] No MRUK room available — no houses spawned.");
     }
 
     private void SpawnHousesLogic()
@@ -111,7 +122,9 @@ public class HouseSpawnerNetworked : NetworkBehaviour
             {
                 if (pos.y < minWallHeight || pos.y > maxWallHeight)
                     continue;
-                if (SpawnArea.Instance != null && !SpawnArea.Instance.IsInside(pos))
+                // 房子掛在牆上：牆面距中心正好 = radius，圓形判定會把整面牆判在外面
+                // （相切），改用方形判定 + 容差
+                if (SpawnArea.Instance != null && !SpawnArea.Instance.IsInsideBox(pos, 0.1f))
                     continue;
                 // --- 以下是原本的旋轉與生成邏輯 (保持不變) ---
                 Quaternion rot = Quaternion.FromToRotation(Vector3.up, normal);

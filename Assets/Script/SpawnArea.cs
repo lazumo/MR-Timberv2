@@ -71,13 +71,15 @@ public class SpawnArea : MonoBehaviour
         return (dx * dx + dz * dz) <= radius * radius;
     }
 
-    /// 方形判定（半邊長 = radius，隨房間 yaw 旋轉）。火用這個：可以爬滿整面牆、
-    /// 但不出房間；圓形版留給樹/房（較嚴格，都在玩家伸手範圍內）。
-    public bool IsInsideBox(Vector3 worldPos)
+    /// 方形判定（半邊長 = radius，隨房間 yaw 旋轉）。火/房子用這個。
+    /// margin：容差——牆面剛好在邊界上（距離=radius），浮點誤差會誤判成外面，
+    /// 牆掛物件（房子）請帶一點 margin。
+    public bool IsInsideBox(Vector3 worldPos, float margin = 0f)
     {
         if (!IsInitialized) return false;
         Vector3 local = Quaternion.Inverse(_yaw) * (worldPos - _center);
-        return Mathf.Abs(local.x) <= radius && Mathf.Abs(local.z) <= radius;
+        float limit = radius + margin;
+        return Mathf.Abs(local.x) <= limit && Mathf.Abs(local.z) <= limit;
     }
 
     private void OnDrawGizmos()

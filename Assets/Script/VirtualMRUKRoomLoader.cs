@@ -32,6 +32,10 @@ public class VirtualMRUKRoomLoader : MonoBehaviour
     [SerializeField] private bool loadOnStart = true;
     [SerializeField] private bool updateSpawnAreaCenter = true;
 
+    /// true = 虛擬 3x3 房間已載入完成（HouseSpawner 等這個旗標才生房子，
+    /// 避免 host 啟動搶在虛擬房之前、把房子生在「真實房間」的牆上）。
+    public static bool VirtualRoomReady { get; private set; }
+
     private const string RoomUuid = "11111111111141118111111111111111";
     private const string FloorUuid = "22222222222242228222222222222222";
     private const string CeilingUuid = "33333333333343338333333333333333";
@@ -70,6 +74,8 @@ public class VirtualMRUKRoomLoader : MonoBehaviour
         {
             SpawnArea.Instance.SetPose(roomPose.position, roomPose.rotation.eulerAngles.y);
         }
+
+        VirtualRoomReady = true;
 
         Debug.Log($"[VirtualMRUKRoomLoader] Loaded virtual room at {roomPose.position}, yaw={roomPose.rotation.eulerAngles.y}, ceiling={resolvedCeilingHeight}");
     }
