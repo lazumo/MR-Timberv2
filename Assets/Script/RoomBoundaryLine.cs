@@ -28,10 +28,6 @@ public class RoomBoundaryLine : MonoBehaviour
         while (SpawnArea.Instance == null || !SpawnArea.Instance.IsInitialized)
             yield return null;
 
-        Vector3 c = SpawnArea.Instance.GetCenter();
-        c.y = 0.02f;   // 貼地、避免 z-fighting
-        Quaternion yaw = SpawnArea.Instance.GetRotation();   // 跟虛擬房間的牆對齊
-
         var lr = gameObject.AddComponent<LineRenderer>();
         lr.useWorldSpace = true;
         lr.loop = true;
@@ -43,13 +39,24 @@ public class RoomBoundaryLine : MonoBehaviour
         var mat = Resources.Load<Material>("VFX/RoomLineMat");
         if (mat != null) lr.sharedMaterial = mat;
 
-        float h = _halfSize;
-        lr.SetPositions(new[]
+        // 持續跟隨：SpawnArea 的 pose 之後還會被修正
+        // （host：虛擬房 SetPose；client：收到 host 廣播的權威 pose），線跟著更新。
+        while (true)
         {
-            c + yaw * new Vector3(-h, 0, -h),
-            c + yaw * new Vector3(-h, 0,  h),
-            c + yaw * new Vector3( h, 0,  h),
-            c + yaw * new Vector3( h, 0, -h),
-        });
+            Vector3 c = SpawnArea.Instance.GetCenter();
+            c.y = 0.02f;   // 貼地、避免 z-fighting
+            Quaternion yaw = SpawnArea.Instance.GetRotation();
+
+            float h = _halfSize;
+            lr.SetPositions(new[]
+            {
+                c + yaw * new Vector3(-h, 0, -h),
+                c + yaw * new Vector3(-h, 0,  h),
+                c + yaw * new Vector3( h, 0,  h),
+                c + yaw * new Vector3( h, 0, -h),
+            });
+
+            yield return new WaitForSeconds(0.5f);
+        }
     }
 }

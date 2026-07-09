@@ -77,6 +77,15 @@ public class GameFlowController : NetworkBehaviour
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server);
 
+    // ===== 房間 pose 廣播：host 的虛擬 3x3 pose 為權威，client 套用後
+    // 邊界線/布條/方形判定兩台才會畫在同一個地方（colocation 共享座標系）=====
+    public NetworkVariable<Vector3> RoomCenter = new NetworkVariable<Vector3>(
+        Vector3.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<float> RoomYawDeg = new NetworkVariable<float>(
+        0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<bool> RoomPoseReady = new NetworkVariable<bool>(
+        false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
     private bool _started;     // game has begun
     private bool _bridging;    // fire bridge in progress (guards against double-trigger)
 
@@ -100,8 +109,41 @@ public class GameFlowController : NetworkBehaviour
         ExtinguisherMergeHint.Spawn(
             mergeHintInterval, mergeHintDuration, mergeHintAnchorOffset, mergeHintUiPrefab);
 
+        // 房間 pose 廣播：host 等虛擬房載好後發布；client 收到就套用（含晚加入）
+        if (IsServer)
+            StartCoroutine(PublishRoomPoseWhenReady());
+        else
+            StartCoroutine(AdoptRoomPoseWhenReady());
+
         if (IsServer && autoStartOnSpawn)
             StartCoroutine(StartGameDelayed());
+    }
+
+    private IEnumerator PublishRoomPoseWhenReady()
+    {
+        // 等虛擬房載入 + SpawnArea 定位（timeout 後用當下值保底）
+        float t = 0f;
+        while (t < 15f && (!VirtualMRUKRoomLoader.VirtualRoomReady ||
+                           SpawnArea.Instance == null || !SpawnArea.Instance.IsInitialized))
+        {
+            t += 0.2f;
+            yield return new WaitForSeconds(0.2f);
+        }
+
+        if (SpawnArea.Instance == null || !SpawnArea.Instance.IsInitialized) yield break;
+
+        RoomCenter.Value = SpawnArea.Instance.GetCenter();
+        RoomYawDeg.Value = SpawnArea.Instance.GetRotation().eulerAngles.y;
+        RoomPoseReady.Value = true;
+        Debug.Log($"[GameFlow] Room pose published: {RoomCenter.Value}, yaw={RoomYawDeg.Value}");
+    }
+
+    private IEnumerator AdoptRoomPoseWhenReady()
+    {
+        while (!RoomPoseReady.Value) yield return null;
+
+        if (SpawnArea.Instance != null)
+            SpawnArea.Instance.SetPoseFromNetwork(RoomCenter.Value, RoomYawDeg.Value);
     }
 
     private IEnumerator StartGameDelayed()
@@ -451,8 +493,9 @@ public class GameFlowController : NetworkBehaviour
         SfxLib.Play2D("OminousAlarm", 1f);   // 警報用 2D，全場聽得到
         StartCoroutine(FlickerDarkenLocal());
 
-        // 警戒布條：以房間中心為準（SpawnArea = 虛擬 3x3 房中心）
-        Vector3 center = SpawnArea.Instance != null ? SpawnArea.Instance.transform.position : pos;
+        // 警戒布條：以房間中心為準（GetCenter = loader 算出的虛擬房中心，
+        // 不是 SpawnArea 物件自己的 transform——之前用錯造成布條跟綠框錯位）
+        Vector3 center = SpawnArea.Instance != null ? SpawnArea.Instance.GetCenter() : pos;
         center.y = 0f;
         RoomWarningBanner.Spawn(center, bannerHalfSize, bannerHeight, 0.35f, bannerLifetime);
     }

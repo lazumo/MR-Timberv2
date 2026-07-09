@@ -56,11 +56,26 @@ public class SpawnArea : MonoBehaviour
         Debug.Log($"[SpawnArea] Center overridden to {_center} (radius={radius})");
     }
 
+    // client 收到 host 廣播的房間 pose 後鎖定，本機 loader 之後的 SetPose 不再覆寫
+    // （colocation 對齊後兩台共用世界座標，以 host 的房間 pose 為準才會兩台一致）。
+    private bool _lockedByNetwork;
+
     /// 虛擬房間載入時一併記下朝向，讓方形判定/邊界線跟房間的牆對齊。
     public void SetPose(Vector3 center, float yawDegrees)
     {
+        if (_lockedByNetwork) return;
         _yaw = Quaternion.Euler(0f, yawDegrees, 0f);
         SetCenter(center);
+    }
+
+    /// host 廣播的權威房間 pose（client 用這個，並鎖定不被本機 loader 覆寫）。
+    public void SetPoseFromNetwork(Vector3 center, float yawDegrees)
+    {
+        _lockedByNetwork = true;
+        _yaw = Quaternion.Euler(0f, yawDegrees, 0f);
+        _center = center;
+        IsInitialized = true;
+        Debug.Log($"[SpawnArea] Pose locked from network: {center}, yaw={yawDegrees}");
     }
 
     public bool IsInside(Vector3 worldPos)
