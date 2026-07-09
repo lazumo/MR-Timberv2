@@ -300,8 +300,10 @@ public class GameFlowController : NetworkBehaviour
         FlickerDarkenClientRpc(housePos);
         yield return new WaitForSeconds(1.2f);   // flicker length
 
-        // 3) …才開始冒煙，預告失火。
+        // 3) 冒煙 + 房子同步開始「燒成灰燼」——焦黑漸變橫跨整個預告期，燒完剛好起火。
         PlayTelegraphClientRpc(housePos);
+        if (HouseSpawnerNetworked.Instance != null)
+            HouseSpawnerNetworked.Instance.FadeOutAllHouses(telegraphSeconds);
         yield return new WaitForSeconds(telegraphSeconds);
 
         // 3) Enter firefighting: phase flip drives prop→extinguisher + passthrough darken.
