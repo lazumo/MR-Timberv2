@@ -36,6 +36,10 @@ public class ProximitySwitchManager : NetworkBehaviour
     // 合體狀態同步版：client 也讀得到（Buff 充能特效的重置要用這個）
     public NetworkVariable<bool> IsMergedNet = new(false);
 
+    // 充能完成同步版（server 權威）：叮聲 / 震動 / 合體光束全部吃這個旗標，
+    // 保證三者同一幀出現、且跟「實際可以合體」完全一致。
+    public NetworkVariable<bool> IsChargedNet = new(false);
+
     // ⚠️ server-only：client 上永遠 false，勿用於視覺判斷（視覺請用 IsMergedNet）
     public bool IsMerged => isClose && pipeInstance != null;
 
@@ -80,6 +84,8 @@ public class ProximitySwitchManager : NetworkBehaviour
         // 2.5) Buff 充能：分離狀態累積時間（跟 ExtinguisherChargeParticle 的視覺同步）
         if (!isClose)
             _separatedTime += Time.deltaTime;
+
+        IsChargedNet.Value = !isClose && _separatedTime >= extinguisherGlowAfter;
 
         // 3) 合體 / 分開狀態機
         if (!isClose)

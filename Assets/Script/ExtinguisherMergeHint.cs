@@ -30,9 +30,6 @@ public class ExtinguisherMergeHint : MonoBehaviour
     public float pulseSpeed = 5f;      // 寬度脈動頻率
     public float scrollSpeed = 1.2f;   // 流光速度
 
-    [Header("充能秒數（找不到 ProximitySwitchManager 時的 fallback）")]
-    public float chargeSecondsFallback = 10f;
-
     [Header("小動畫 UI（組員的 prefab；上方浮出）")]
     public GameObject uiPrefab;
     public float uiHeight = 0.12f;     // UI 在 anchor 上方多高
@@ -55,7 +52,6 @@ public class ExtinguisherMergeHint : MonoBehaviour
     private HandFollower _myHand, _partnerHand;
     private float _nextHandFind;
 
-    private float _separatedTime;      // 分離累積（跟充能音效同一條時間軸）
     private bool _showing;
 
     // runtime visuals
@@ -65,23 +61,21 @@ public class ExtinguisherMergeHint : MonoBehaviour
     private Texture2D _beamTex;
     private readonly List<GameObject> _uiInstances = new();
 
-    private float ChargeSeconds => _psm != null ? _psm.extinguisherGlowAfter : chargeSecondsFallback;
-
     private void Update()
     {
         if (!ConditionsMet())
         {
-            // 合體 / 離開滅火階段 / 手不見了 → 收掉並重置（下次分離重新充能）
+            // 合體 / 離開滅火階段 / 手不見了 → 收掉（重新充能後 IsChargedNet 會再亮）
             if (_showing) HideHint();
-            _separatedTime = 0f;
             return;
         }
 
-        // 分離狀態累積充能；完成的那刻（= 叮聲響起）亮起，直到合體才收
-        _separatedTime += Time.deltaTime;
+        // 充能狀態直接讀 server 同步的 IsChargedNet —— 跟 ChargeReady 叮聲、
+        // 震動同一幀出現，直到合體（或充能被重置）才收
+        bool charged = _psm.IsChargedNet.Value;
 
-        if (!_showing && _separatedTime >= ChargeSeconds)
-            ShowHint();
+        if (charged && !_showing) ShowHint();
+        else if (!charged && _showing) HideHint();
 
         if (_showing)
             UpdateHintVisuals();

@@ -25,7 +25,6 @@ public class ExtinguisherChargeParticle : MonoBehaviour
 
     private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
 
-    private float separatedTime = 0f;
     private bool played = false;
 
     private bool flashing = false;
@@ -66,22 +65,22 @@ public class ExtinguisherChargeParticle : MonoBehaviour
 
         if (chargeVfx == null) return;
 
-        // 合體狀態：立刻重置（用同步版 IsMergedNet — 舊的 IsMerged 在 client 永遠 false，
-        // 會導致 client 的 played 旗標從不重置、第二次充能後看不到 buff）
-        if (manager.IsMergedNet.Value)
+        // 充能狀態直接讀 server 同步的 IsChargedNet（叮聲/震動/合體光束同一幀出現，
+        // 且跟「實際可以合體」完全一致；合體或重新計時都會自動變 false）
+        bool charged = manager.IsChargedNet.Value && !manager.IsMergedNet.Value;
+        if (!charged)
         {
-            separatedTime = 0f;
-            played = false;
-            StopAndClear();
-            StopFlash();
+            if (played)
+            {
+                played = false;
+                StopAndClear();
+                StopFlash();
+            }
             return;
         }
 
-        // 分離狀態：累積時間
-        separatedTime += Time.deltaTime;
-
         // 充能完成：播放粒子 + 觸發閃光 + 提示音
-        if (!played && separatedTime >= manager.extinguisherGlowAfter)
+        if (!played)
         {
             played = true;
 
