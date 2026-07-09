@@ -2403,7 +2403,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   keepFruitTrees: 1
-  houseFadeDuration: 1.5
+  houseFadeDuration: 4
 --- !u!114 &1254098476
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2460,8 +2460,8 @@ MonoBehaviour:
   catchingPhase: {fileID: 1254098474}
   juicingPhase: {fileID: 1254098476}
   firefightingPhase: {fileID: 1254098475}
-  celebrateSeconds: 1.5
-  telegraphSeconds: 1.5
+  celebrateSeconds: 2.5
+  telegraphSeconds: 5
   celebrateVfxPrefab: {fileID: 344340219589855072, guid: 85b062a5517cf8345bb6784ffbed4877,
     type: 3}
   telegraphSmokePrefab: {fileID: 3808233299492857980, guid: dcfb1ffefa7997c4491301f917ebaaf6,
@@ -2473,6 +2473,8 @@ MonoBehaviour:
   autoStartOnSpawn: 1
   startupDelay: 0.5
   debugRestartKey: 0
+  debugFireKey: 102
+  debugFireButton: 8388608
   danceElfCount: 10
   danceRadius: 1
   danceOrbitSpeed: 60
@@ -2483,6 +2485,9 @@ MonoBehaviour:
     m_InternalValue: 0
   VictoryReached:
     m_InternalValue: 0
+  bannerLifetime: 12
+  bannerHeight: 1.4
+  bannerHalfSize: 1.5
 --- !u!82 &1254098480
 AudioSource:
   m_ObjectHideFlags: 0

@@ -122,13 +122,66 @@ public class GameFlowController : NetworkBehaviour
 
         if ((debugFireKey != KeyCode.None && Input.GetKeyDown(debugFireKey)) || stickPressed)
         {
-            if (IsServer) DebugJumpToFirefighting();
-            else          DebugFireServerRpc();
+            if (IsServer) DebugAdvanceStage();
+            else          DebugAdvanceServerRpc();
         }
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void DebugFireServerRpc() => DebugJumpToFirefighting();
+    private void DebugAdvanceServerRpc() => DebugAdvanceStage();
+
+    /// 測試後門：每按一次 = 自動完成「當前階段的目標」，走正規事件鏈進入下一階段。
+    /// Logging→蓋好房子 / Catching→視為集滿果子 / Juicing→房子上色完成(觸發完整失火過場)
+    /// / Firefighting→撲滅所有火(勝利)。單人即可預覽全流程。
+    public void DebugAdvanceStage()
+    {
+        if (!IsServer || !_started) return;
+
+        switch (CurrentPhase.Value)
+        {
+            case GamePhase.Logging:
+                Debug.Log("[GameFlow][DEBUG] Simulate: tree felled → build house.");
+                if (TreeSpawnerNetworked.Instance != null)
+                    TreeSpawnerNetworked.Instance.StopWoodLogging(despawnExisting: true);   // 視為砍倒
+
+                foreach (var h in FindObjectsByType<ObjectNetworkSync>(FindObjectsSortMode.None))
+                {
+                    if (h.CurrentState == HouseState.Unbuilt)
+                    {
+                        h.SetState(HouseState.Built);   // 觸發蓋房VFX+factory+NotifyHouseBuilt→Catching
+                        break;
+                    }
+                }
+                break;
+
+            case GamePhase.Catching:
+                Debug.Log("[GameFlow][DEBUG] Simulate: 3 matching fruits collected.");
+                NotifyFruitsReady();                     // → Juicing
+                break;
+
+            case GamePhase.Juicing:
+                Debug.Log("[GameFlow][DEBUG] Simulate: house fully coloured → fire bridge.");
+                foreach (var h in FindObjectsByType<ObjectNetworkSync>(FindObjectsSortMode.None))
+                {
+                    if (h.CurrentState != HouseState.Unbuilt && h.CurrentState != HouseState.Colored)
+                    {
+                        h.SetState(HouseState.Colored);  // 觸發 NotifyHouseColored → 完整失火過場
+                        break;
+                    }
+                }
+                break;
+
+            case GamePhase.Firefighting:
+                Debug.Log("[GameFlow][DEBUG] Simulate: all fires extinguished.");
+                foreach (var fire in FindObjectsByType<FireGrowServerOnly>(FindObjectsSortMode.None))
+                {
+                    var no = fire.GetComponent<Unity.Netcode.NetworkObject>();
+                    if (no != null && no.IsSpawned) no.Despawn(true);
+                }
+                // FireSpawner 的迴圈偵測到 0 → 自動走勝利（亮回+音效+小精靈舞）
+                break;
+        }
+    }
 
     /// 測試用：略過前面流程，直接進滅火（點火 + 換 prop + 變暗都會跟著發生）
     public void DebugJumpToFirefighting()
