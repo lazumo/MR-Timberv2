@@ -165,12 +165,14 @@ public class ExtinguisherMergeHint : MonoBehaviour
         UpdateHintVisuals();
     }
 
+    // 橫躺的小圓柱（長軸水平、朝向隊友方向；Unity 圓柱軸向是 Y，靠旋轉放倒）
     private GameObject MakeAnchor(string name)
     {
-        var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        var go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
         go.name = name;
         go.transform.SetParent(transform, false);
-        go.transform.localScale = Vector3.one * anchorScale;
+        // 圓柱原始高度 2、直徑 1 → 直徑 anchorScale*0.5、長度 anchorScale
+        go.transform.localScale = Vector3.one * (anchorScale * 0.5f);
         Destroy(go.GetComponent<Collider>());
         go.GetComponent<Renderer>().sharedMaterial = _mat;
         return go;
@@ -183,8 +185,23 @@ public class ExtinguisherMergeHint : MonoBehaviour
         Vector3 a = _myHand.transform.position + anchorOffset;
         Vector3 b = _partnerHand.transform.position + anchorOffset;
 
-        if (_myAnchor != null) _myAnchor.transform.position = a;
-        if (_partnerAnchor != null) _partnerAnchor.transform.position = b;
+        // 圓柱橫躺：長軸保持水平、對齊兩人連線的方向
+        Vector3 flat = b - a;
+        flat.y = 0f;
+        Quaternion lie = flat.sqrMagnitude > 0.0001f
+            ? Quaternion.FromToRotation(Vector3.up, flat.normalized)
+            : Quaternion.Euler(0f, 0f, 90f);
+
+        if (_myAnchor != null)
+        {
+            _myAnchor.transform.position = a;
+            _myAnchor.transform.rotation = lie;
+        }
+        if (_partnerAnchor != null)
+        {
+            _partnerAnchor.transform.position = b;
+            _partnerAnchor.transform.rotation = lie;
+        }
 
         if (_beam != null)
         {
