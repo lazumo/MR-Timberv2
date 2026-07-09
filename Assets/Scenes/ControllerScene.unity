@@ -1205,7 +1205,8 @@ MonoBehaviour:
     <TrackableRemoved>k__BackingField:
       m_PersistentCalls:
         m_Calls: []
-  _immersiveSceneDebuggerPrefab: {fileID: 0}
+  _immersiveSceneDebuggerPrefab: {fileID: 7641788235762528044, guid: 950d12aea00a70449b5b7b746f142acf,
+    type: 3}
 --- !u!114 &646280986
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1920,17 +1921,17 @@ PrefabInstance:
     - target: {fileID: 7164615428790912599, guid: 862e4b767a0283742a2b9e41d51781ad,
         type: 3}
       propertyPath: numberOfHouses
-      value: 1
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 7164615428790912599, guid: 862e4b767a0283742a2b9e41d51781ad,
         type: 3}
       propertyPath: collisionCheckSize.x
-      value: 3
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 7164615428790912599, guid: 862e4b767a0283742a2b9e41d51781ad,
         type: 3}
       propertyPath: collisionCheckSize.z
-      value: 3
+      value: 0.5
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2485,9 +2486,20 @@ MonoBehaviour:
     m_InternalValue: 0
   VictoryReached:
     m_InternalValue: 0
+  RoomCenter:
+    m_InternalValue: {x: 0, y: 0, z: 0}
+  RoomYawDeg:
+    m_InternalValue: 0
+  RoomPoseReady:
+    m_InternalValue: 0
   bannerLifetime: 12
   bannerHeight: 1.4
   bannerHalfSize: 1.5
+  showRoomBoundary: 1
+  mergeHintInterval: 15
+  mergeHintDuration: 6
+  mergeHintAnchorOffset: {x: 0, y: 0.18, z: 0}
+  mergeHintUiPrefab: {fileID: 0}
 --- !u!82 &1254098480
 AudioSource:
   m_ObjectHideFlags: 0
