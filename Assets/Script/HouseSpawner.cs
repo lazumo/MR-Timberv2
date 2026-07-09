@@ -31,6 +31,7 @@ public class HouseSpawnerNetworked : NetworkBehaviour
     public int numberOfHouses = 1;
 
     public int SpawnedHouseColorIndex { get; private set; } = -1;
+    private int _baseColorIndex;
     public bool HasSpawnedHouse => SpawnedHouseColorIndex >= 0;
     [SerializeField] private float minWallHeight = 1.0f;  // 離地 50 cm
     [SerializeField] private float maxWallHeight = 2.5f;  // 離地 180 cm
@@ -120,11 +121,15 @@ public class HouseSpawnerNetworked : NetworkBehaviour
 
                 if (IsSpaceEmpty(pos, rot))
                 {
-                    int randomColor = Random.Range(0, ColorTable.Count);
-                    SpawnHouseAt(pos, rot, randomColor, successfulSpawns);
+                    // 第一棟隨機，其後每棟 +1 → 顏色保證互不相同，
+                    // 且與果樹配色規則 (houseColor + i) 一一對應。
+                    if (successfulSpawns == 0)
+                        _baseColorIndex = Random.Range(0, ColorTable.Count);
+                    int color = (_baseColorIndex + successfulSpawns) % ColorTable.Count;
+                    SpawnHouseAt(pos, rot, color, successfulSpawns);
 
                     // remember first-run layout for restart replay
-                    _initialLayout.Add(new HouseLayout { pos = pos, rot = rot, color = randomColor });
+                    _initialLayout.Add(new HouseLayout { pos = pos, rot = rot, color = color });
                     successfulSpawns++;
                 }
             }

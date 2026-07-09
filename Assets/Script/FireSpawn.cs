@@ -191,6 +191,9 @@ public class FireSpawnerIgnitionPointsNetworked : NetworkBehaviour
                 Vector3 n = normal.normalized;
                 Vector3 finalPos = pos + n * offsetFromSurface;
 
+                // 火必須落在 3x3 遊戲範圍內（同樹/房的限制）
+                if (SpawnArea.Instance != null && !SpawnArea.Instance.IsInside(finalPos)) continue;
+
                 if (enableSpaceCheck && !IsSpaceEmpty(finalPos)) return false;
 
                 // 照你的要求：火的 Y 軸永遠是世界的 UP

@@ -57,7 +57,6 @@ public class GameFlowController : NetworkBehaviour
     [Tooltip("Optional dance-circle center; falls back to SpawnArea, then world origin.")]
     [SerializeField] private Transform danceCenter;
 
-    private readonly System.Collections.Generic.List<NetworkObject> _danceElves = new();
 
     [Header("Restart Input (physical controller)")]
     [SerializeField] private OVRInput.Button restartButton = OVRInput.Button.Two; // B / Y
@@ -93,6 +92,14 @@ public class GameFlowController : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        // 每個 peer 各自畫 3x3 邊界細線（純本地視覺，零接線）
+        if (showRoomBoundary)
+            RoomBoundaryLine.Spawn(bannerHalfSize);
+
+        // 每個 peer 各自跑合體提示（滅火階段、未合體時每 15s 提示）
+        ExtinguisherMergeHint.Spawn(
+            mergeHintInterval, mergeHintDuration, mergeHintAnchorOffset, mergeHintUiPrefab);
+
         if (IsServer && autoStartOnSpawn)
             StartCoroutine(StartGameDelayed());
     }
@@ -140,34 +147,29 @@ public class GameFlowController : NetworkBehaviour
         switch (CurrentPhase.Value)
         {
             case GamePhase.Logging:
-                Debug.Log("[GameFlow][DEBUG] Simulate: tree felled → build house.");
+                Debug.Log("[GameFlow][DEBUG] Simulate: all trees felled → build all houses.");
+                _felledTrees = RequiredGoals;            // 不再補生下一棵樹
                 if (TreeSpawnerNetworked.Instance != null)
                     TreeSpawnerNetworked.Instance.StopWoodLogging(despawnExisting: true);   // 視為砍倒
 
                 foreach (var h in FindObjectsByType<ObjectNetworkSync>(FindObjectsSortMode.None))
                 {
                     if (h.CurrentState == HouseState.Unbuilt)
-                    {
-                        h.SetState(HouseState.Built);   // 觸發蓋房VFX+factory+NotifyHouseBuilt→Catching
-                        break;
-                    }
+                        h.SetState(HouseState.Built);   // 觸發蓋房VFX+factory+NotifyHouseBuilt→門控→Catching
                 }
                 break;
 
             case GamePhase.Catching:
-                Debug.Log("[GameFlow][DEBUG] Simulate: 3 matching fruits collected.");
-                NotifyFruitsReady();                     // → Juicing
+                Debug.Log("[GameFlow][DEBUG] Simulate: all factories filled.");
+                EnterPhase(GamePhase.Juicing);           // factory 沒真的裝滿，直接跳過門控
                 break;
 
             case GamePhase.Juicing:
-                Debug.Log("[GameFlow][DEBUG] Simulate: house fully coloured → fire bridge.");
+                Debug.Log("[GameFlow][DEBUG] Simulate: all houses coloured → fire bridge.");
                 foreach (var h in FindObjectsByType<ObjectNetworkSync>(FindObjectsSortMode.None))
                 {
                     if (h.CurrentState != HouseState.Unbuilt && h.CurrentState != HouseState.Colored)
-                    {
-                        h.SetState(HouseState.Colored);  // 觸發 NotifyHouseColored → 完整失火過場
-                        break;
-                    }
+                        h.SetState(HouseState.Colored);  // 最後一棟觸發 NotifyHouseColored → 失火過場
                 }
                 break;
 
@@ -227,6 +229,7 @@ public class GameFlowController : NetworkBehaviour
 
         _started = true;
         _bridging = false;
+        _felledTrees = 0;
         VictoryReached.Value = false;
         EnterPhase(GamePhase.Logging);
     }
@@ -246,43 +249,84 @@ public class GameFlowController : NetworkBehaviour
     // Gameplay event hooks (called by Layer-3 systems on the server)
     // =========================
 
-    /// The one logging tree was felled. We do NOT advance yet — the elf still has to carry
-    /// the wood over and build the house (takes a few seconds). We wait for NotifyHouseBuilt
-    /// so Catching never starts before the house actually exists.
+    // ============================================================
+    // Pipeline ×N 門控：目標數 = HouseSpawner 的房子數（老師版 = 2）
+    // 砍 N 棵樹 → N 棟房 → N 個 factory 都集滿 → N 棟房都上色完 → 失火
+    // ============================================================
+
+    private int _felledTrees;
+
+    private int RequiredGoals =>
+        HouseSpawnerNetworked.Instance != null ? Mathf.Max(1, HouseSpawnerNetworked.Instance.numberOfHouses) : 1;
+
+    private int CountHouses(System.Func<ObjectNetworkSync, bool> pred)
+    {
+        int n = 0;
+        foreach (var h in FindObjectsByType<ObjectNetworkSync>(FindObjectsSortMode.None))
+            if (pred(h)) n++;
+        return n;
+    }
+
+    /// A logging tree was felled. If more trees are still needed, grow the next one;
+    /// advancing to Catching waits for NotifyHouseBuilt (elf must finish building).
     public void NotifyWoodFelled()
     {
         if (!IsServer || !_started) return;
         if (CurrentPhase.Value != GamePhase.Logging) return;
 
-        Debug.Log("[GameFlow] Wood felled — waiting for the elf to build the house before Catching.");
+        _felledTrees++;
+        Debug.Log($"[GameFlow] Wood felled ({_felledTrees}/{RequiredGoals}).");
+
+        if (_felledTrees < RequiredGoals)
+            StartCoroutine(SpawnNextTreeAfter(2f));   // 留點空間給倒下的樹
     }
 
-    /// The elf finished delivering the wood and the house is built → move to Catching.
+    private IEnumerator SpawnNextTreeAfter(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (CurrentPhase.Value == GamePhase.Logging && TreeSpawnerNetworked.Instance != null)
+            TreeSpawnerNetworked.Instance.SpawnTree(TreeSpawnerNetworked.TreeType.Wood);
+    }
+
+    /// A house finished building → advance when ALL required houses are built.
     public void NotifyHouseBuilt()
     {
         if (!IsServer || !_started) return;
         if (CurrentPhase.Value != GamePhase.Logging) return;
 
-        Debug.Log("[GameFlow] House built → Catching.");
-        EnterPhase(GamePhase.Catching);
+        int built = CountHouses(h => h.CurrentState != HouseState.Unbuilt);
+        Debug.Log($"[GameFlow] House built ({built}/{RequiredGoals}).");
+
+        if (built >= RequiredGoals)
+            EnterPhase(GamePhase.Catching);
     }
 
-    /// A color factory now holds ≥3 matching fruits → move to juicing (box prop disappears).
+    /// A color factory reached ≥3 matching fruits → advance when ALL factories are ready.
     public void NotifyFruitsReady()
     {
         if (!IsServer || !_started) return;
         if (CurrentPhase.Value != GamePhase.Catching) return;
 
-        Debug.Log("[GameFlow] Enough fruits → Juicing.");
-        EnterPhase(GamePhase.Juicing);
+        int ready = 0;
+        foreach (var bar in FindObjectsByType<BarShowWhenEnoughMatchingFruits>(FindObjectsSortMode.None))
+            if (bar.IsRequirementMet()) ready++;
+
+        Debug.Log($"[GameFlow] Factory ready ({ready}/{RequiredGoals}).");
+
+        if (ready >= RequiredGoals)
+            EnterPhase(GamePhase.Juicing);
     }
 
-    /// The house finished colouring (goal). Play the bridge, then start firefighting.
+    /// A house finished colouring → fire bridge only when ALL houses are fully coloured.
     public void NotifyHouseColored(Transform houseAnchor)
     {
         if (!IsServer || !_started) return;
         if (_bridging) return;
         if (CurrentPhase.Value != GamePhase.Juicing && CurrentPhase.Value != GamePhase.Catching) return;
+
+        int colored = CountHouses(h => h.CurrentState == HouseState.Colored);
+        Debug.Log($"[GameFlow] House coloured ({colored}/{RequiredGoals}).");
+        if (colored < RequiredGoals) return;
 
         StartCoroutine(FireBridgeRoutine(houseAnchor != null ? houseAnchor.position : transform.position));
     }
@@ -352,6 +396,17 @@ public class GameFlowController : NetworkBehaviour
     [SerializeField] private float bannerHeight = 1.4f;
     [SerializeField] private float bannerHalfSize = 1.5f;   // 3x3 房間 → 1.5
 
+    [Header("Room boundary line (3x3 範圍地板細線)")]
+    [SerializeField] private bool showRoomBoundary = true;
+
+    [Header("合體提示（滅火階段每 N 秒：anchor+光束指向隊友，近紅遠黃）")]
+    [SerializeField] private float mergeHintInterval = 15f;
+    [SerializeField] private float mergeHintDuration = 6f;
+    [Tooltip("anchor 相對滅火器手的 offset（老師說位置之後可再調）")]
+    [SerializeField] private Vector3 mergeHintAnchorOffset = new Vector3(0f, 0.18f, 0f);
+    [Tooltip("組員的動畫 UI prefab（之後拖進來；留空只顯示 anchor 球+光束）")]
+    [SerializeField] private GameObject mergeHintUiPrefab;
+
     // 一明一滅的閃爍（加速）→ 定暗，配警報聲 + 環繞房間的警戒布條
     [ClientRpc]
     private void FlickerDarkenClientRpc(Vector3 pos)
@@ -392,16 +447,8 @@ public class GameFlowController : NetworkBehaviour
         Debug.Log("[GameFlow] All fires extinguished — victory!");
         VictoryReached.Value = true;   // PhaseBGM 切成勝利背景音樂
         PlayVictoryClientRpc();
-        StartCoroutine(VictoryElfDance());
-    }
 
-    // 10 elves circle the room center (radius 1 m), bobbing and swaying, then vanish.
-    private IEnumerator VictoryElfDance()
-    {
-        var mgr = ResourceManager.Instance;
-        if (mgr == null || mgr.resourcePrefab == null) yield break;
-
-        // 圓心 = 當下玩家位置中心（用兩人手上的滅火器平均位置），退而求其次才用固定點
+        // 圓心 = 當下玩家位置中心（兩人滅火器的平均位置），server 算好、廣播給所有 client
         Vector3 center;
         var exts = FindObjectsByType<NetworkExtinguisherController>(FindObjectsSortMode.None);
         if (exts.Length > 0)
@@ -418,29 +465,63 @@ public class GameFlowController : NetworkBehaviour
             center.y += 1.0f;
         }
 
-        DespawnDanceElves();
+        PlayElfDanceClientRpc(center);
+    }
+
+    // ⭐ 舞蹈改成「每台 client 本地播」：只廣播一次起始點，之後各自 60fps 動畫
+    //    （之前 server 每幀搬 networked 小精靈 → client 只有網路頻率的內插，看起來卡卡的）
+    [ClientRpc]
+    private void PlayElfDanceClientRpc(Vector3 center)
+    {
+        StopLocalElfDance();
+        _localDance = StartCoroutine(LocalElfDance(center));
+    }
+
+    [ClientRpc]
+    private void StopElfDanceClientRpc() => StopLocalElfDance();
+
+    private Coroutine _localDance;
+    private readonly System.Collections.Generic.List<GameObject> _localElves = new();
+
+    private void StopLocalElfDance()
+    {
+        if (_localDance != null) { StopCoroutine(_localDance); _localDance = null; }
+        foreach (var go in _localElves)
+            if (go != null) Destroy(go);
+        _localElves.Clear();
+    }
+
+    private IEnumerator LocalElfDance(Vector3 center)
+    {
+        var mgr = ResourceManager.Instance;
+        if (mgr == null || mgr.resourcePrefab == null) yield break;
+
         for (int i = 0; i < danceElfCount; i++)
         {
             float a = i * Mathf.PI * 2f / danceElfCount;
             Vector3 pos = center + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * danceRadius;
             var go = Instantiate(mgr.resourcePrefab, pos, Quaternion.identity);
-            var no = go.GetComponent<NetworkObject>();
-            if (no == null) { Destroy(go); yield break; }
-            no.Spawn(true);
-            _danceElves.Add(no);
+
+            // 拆掉網路元件 → 純本地視覺（沒 spawn 的 NetworkObject 會干擾，全部移除）
+            foreach (var nb in go.GetComponentsInChildren<NetworkBehaviour>(true))
+                Destroy(nb);
+            var netObj = go.GetComponent<NetworkObject>();
+            if (netObj != null) Destroy(netObj);
+
+            _localElves.Add(go);
         }
 
-        // 一直跳到 Restart 為止（ResetWorld 會清掉舞者）
+        // 一直跳到 Restart（StopElfDanceClientRpc / StopLocalElfDance 清掉）
         float t = 0f;
         while (true)
         {
             t += Time.deltaTime;
             float orbit = t * danceOrbitSpeed * Mathf.Deg2Rad;
 
-            for (int i = 0; i < _danceElves.Count; i++)
+            for (int i = 0; i < _localElves.Count; i++)
             {
-                var no = _danceElves[i];
-                if (no == null) continue;
+                var go = _localElves[i];
+                if (go == null) continue;
 
                 float a = orbit + i * Mathf.PI * 2f / danceElfCount;
                 Vector3 pos = center + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * danceRadius;
@@ -450,18 +531,10 @@ public class GameFlowController : NetworkBehaviour
                 Quaternion rot = Quaternion.LookRotation(tangent, Vector3.up)
                                * Quaternion.Euler(Mathf.Sin(t * 8f + i) * 15f, 0f, Mathf.Sin(t * 7f + i * 2f) * 12f); // 手舞足蹈搖擺
 
-                no.transform.SetPositionAndRotation(pos, rot);
+                go.transform.SetPositionAndRotation(pos, rot);
             }
             yield return null;
         }
-        // unreachable — dancers are cleared by ResetWorld (StopAllCoroutines + DespawnDanceElves)
-    }
-
-    private void DespawnDanceElves()
-    {
-        foreach (var no in _danceElves)
-            if (no != null && no.IsSpawned) no.Despawn(true);
-        _danceElves.Clear();
     }
 
     [ClientRpc]
@@ -514,7 +587,8 @@ public class GameFlowController : NetworkBehaviour
     // Clear leftovers so Logging starts fresh. Prop + passthrough reset via CurrentPhase.
     private void ResetWorld()
     {
-        DespawnDanceElves();   // victory dancers, if any
+        StopLocalElfDance();          // 本地舞者（host 自己）
+        StopElfDanceClientRpc();      // 通知所有 client 清掉本地舞者
         if (TreeSpawnerNetworked.Instance != null)
         {
             TreeSpawnerNetworked.Instance.StopWoodLogging(despawnExisting: true);

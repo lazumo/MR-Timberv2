@@ -10,6 +10,10 @@ public class ExtinguisherChargeParticle : MonoBehaviour
     [Header("Auto-find ProximitySwitchManager")]
     [SerializeField] private ProximitySwitchManager manager;
 
+    [Header("視覺開關（老師 feedback 2026-07-09：拿掉藍色 buff 視覺，改用合體提示光束）")]
+    [Tooltip("false = 不播充能粒子與白光閃爍，只保留提示音+震動。")]
+    [SerializeField] private bool showChargeVisual = false;
+
     [Header("充能粒子（留空會自動抓子物件的 ParticleSystem）")]
     [SerializeField] private ParticleSystem chargeVfx;
 
@@ -81,12 +85,15 @@ public class ExtinguisherChargeParticle : MonoBehaviour
         {
             played = true;
 
-            // Play() 對 inactive 物件無效，先啟用
-            if (!chargeVfx.gameObject.activeInHierarchy)
-                chargeVfx.gameObject.SetActive(true);
+            if (showChargeVisual)
+            {
+                // Play() 對 inactive 物件無效，先啟用
+                if (!chargeVfx.gameObject.activeInHierarchy)
+                    chargeVfx.gameObject.SetActive(true);
 
-            chargeVfx.Play(true);
-            StartFlash();
+                chargeVfx.Play(true);
+                StartFlash();
+            }
             SfxLib.PlayAt("ChargeReady", transform.position, 0.9f);
 
             // 充能完成：自己的滅火器 → 握滅火器那隻手短震一下（Host=右手、Client=左手）
