@@ -156,7 +156,7 @@ public class ObjectNetworkSync : NetworkBehaviour
         // 打散順序 → 碎片會隨機一塊塊飄走
         for (int i = renderers.Count - 1; i > 0; i--)
         {
-            int j = Random.Range(0, i + 1);
+            int j = UnityEngine.Random.Range(0, i + 1);
             (renderers[i], renderers[j]) = (renderers[j], renderers[i]);
         }
 
