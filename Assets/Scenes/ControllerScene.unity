@@ -2139,7 +2139,7 @@ MonoBehaviour:
   ceilingHeight: 5
   floorY: 0
   useRealCeilingHeightWhenLower: 1
-  alignmentMode: 2
+  alignmentMode: 3
   wallReference: {fileID: 0}
   cameraForwardWallDistance: 1.5
   loadRealRoomFromDeviceFirst: 0
@@ -2496,8 +2496,6 @@ MonoBehaviour:
   bannerHeight: 1.4
   bannerHalfSize: 1.5
   showRoomBoundary: 1
-  mergeHintInterval: 15
-  mergeHintDuration: 6
   mergeHintAnchorOffset: {x: 0, y: 0.18, z: 0}
   mergeHintUiPrefab: {fileID: 0}
 --- !u!82 &1254098480
