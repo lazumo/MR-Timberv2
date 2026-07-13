@@ -33,6 +33,12 @@ public class ExtinguisherMergeHint : MonoBehaviour
     [Header("小動畫 UI（組員的 prefab；上方浮出）")]
     public GameObject uiPrefab;
     public float uiHeight = 0.12f;     // UI 在 anchor 上方多高
+    [Tooltip("true = 只在兩人中間生一個（適合已同時畫左右的教學面板）；false = 兩個 anchor 上各生一個")]
+    public bool uiSingleAtMidpoint = true;
+    [Tooltip("生成後乘上的縮放（教學 prefab 內建 scale 很大，通常要縮小很多）")]
+    public float uiScale = 0.02f;
+    [Tooltip("面板背對你時勾這個轉 180°")]
+    public bool uiFlip180 = false;
 
     public static ExtinguisherMergeHint Spawn(Vector3 offset, GameObject ui)
     {
@@ -142,8 +148,13 @@ public class ExtinguisherMergeHint : MonoBehaviour
 
         if (uiPrefab != null)
         {
-            _uiInstances.Add(Instantiate(uiPrefab, transform));
-            _uiInstances.Add(Instantiate(uiPrefab, transform));
+            int count = uiSingleAtMidpoint ? 1 : 2;
+            for (int i = 0; i < count; i++)
+            {
+                var ui = Instantiate(uiPrefab, transform);
+                ui.transform.localScale = uiPrefab.transform.localScale * uiScale;
+                _uiInstances.Add(ui);
+            }
         }
 
         UpdateHintVisuals();
@@ -296,15 +307,23 @@ public class ExtinguisherMergeHint : MonoBehaviour
         if (_anchorMat != null)
             _anchorMat.SetColor("_BaseColor", c);
 
-        // UI 浮在兩個 anchor 上方，面向自己的頭
+        // UI 浮出（單一置中 = 兩人中間；否則兩個 anchor 上各一個），面向自己的頭
         var cam = Camera.main;
+        Vector3 mid = (a + b) * 0.5f;
         for (int i = 0; i < _uiInstances.Count; i++)
         {
             var ui = _uiInstances[i];
             if (ui == null) continue;
-            ui.transform.position = (i == 0 ? a : b) + Vector3.up * uiHeight;
+
+            Vector3 basePos = uiSingleAtMidpoint ? mid : (i == 0 ? a : b);
+            ui.transform.position = basePos + Vector3.up * uiHeight;
+
             if (cam != null)
-                ui.transform.rotation = Quaternion.LookRotation(ui.transform.position - cam.transform.position);
+            {
+                Quaternion look = Quaternion.LookRotation(ui.transform.position - cam.transform.position);
+                if (uiFlip180) look *= Quaternion.Euler(0f, 180f, 0f);
+                ui.transform.rotation = look;
+            }
         }
     }
 
