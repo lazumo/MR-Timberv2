@@ -12,7 +12,8 @@ public class VirtualMRUKRoomLoader : MonoBehaviour
         UseWallReference,
         UseCameraForward,
         UseMRUKWall,
-        WorldAxes   // 房間軸向固定對齊世界(=colocation共享)座標的 X/Z 軸，yaw=0
+        WorldAxes,        // 房間軸向對齊世界座標 X/Z 軸（yaw=0）——但 recenter 會讓世界軸偏離 anchor
+        ColocationAnchor  // 房間軸向直接對齊 colocation alignment anchor 的軸（推薦，與 anchor 視覺永遠平行）
     }
 
     [Header("Room Size")]
@@ -32,6 +33,12 @@ public class VirtualMRUKRoomLoader : MonoBehaviour
     [Header("Startup")]
     [SerializeField] private bool loadOnStart = true;
     [SerializeField] private bool updateSpawnAreaCenter = true;
+
+    [Header("ColocationAnchor 模式")]
+    [Tooltip("等待 colocation alignment anchor 出現的秒數（host 按 create room 後幾秒內會建立）；逾時退回世界軸。")]
+    [SerializeField] private float anchorWaitTimeout = 120f;
+    [Tooltip("Editor / 單機測試沒有 colocation，等這麼久就放棄改用世界軸。")]
+    [SerializeField] private float anchorWaitTimeoutEditor = 5f;
 
     /// true = 虛擬 3x3 房間已載入完成（HouseSpawner 等這個旗標才生房子，
     /// 避免 host 啟動搶在虛擬房之前、把房子生在「真實房間」的牆上）。
@@ -109,6 +116,28 @@ public class VirtualMRUKRoomLoader : MonoBehaviour
             frontDirection = Vector3.forward;
             frontWallPoint = cam.position + frontDirection * (roomDepth * 0.5f);
         }
+        else if (alignmentMode == AlignmentMode.ColocationAnchor)
+        {
+            // 直接對齊 colocation alignment anchor 的軸向：anchor 鎖在物理位置，
+            // 不受 recenter / tracking 漂移影響 → 房間框永遠跟 anchor 視覺平行。
+            OVRSpatialAnchor anchor = await WaitForAlignmentAnchor();
+            Transform cam = Camera.main != null ? Camera.main.transform : transform;
+
+            if (anchor != null)
+            {
+                Vector3 fwd = Vector3.ProjectOnPlane(anchor.transform.forward, Vector3.up).normalized;
+                if (fwd.sqrMagnitude < 0.0001f) fwd = Vector3.forward;
+                frontDirection = fwd;
+                Debug.Log($"[VirtualMRUKRoomLoader] Aligning room to colocation anchor (yaw={anchor.transform.eulerAngles.y:F1}).");
+            }
+            else
+            {
+                Debug.LogWarning("[VirtualMRUKRoomLoader] No colocation anchor appeared in time — falling back to world axes.");
+                frontDirection = Vector3.forward;
+            }
+
+            frontWallPoint = cam.position + frontDirection * (roomDepth * 0.5f);
+        }
         else if (alignmentMode == AlignmentMode.UseWallReference && wallReference != null)
         {
             Vector3 inwardNormal = Vector3.ProjectOnPlane(wallReference.forward, Vector3.up).normalized;
@@ -137,6 +166,24 @@ public class VirtualMRUKRoomLoader : MonoBehaviour
 
         float yaw = Mathf.Atan2(frontDirection.x, frontDirection.z) * Mathf.Rad2Deg;
         return new Pose(center, Quaternion.Euler(0f, yaw, 0f));
+    }
+
+    // 等 colocation alignment anchor 出現（host: 建立 room 後幾秒；guest: 對齊完成後）。
+    // Editor / 單機沒有 colocation → 短逾時後回 null（改用世界軸）。
+    private async Task<OVRSpatialAnchor> WaitForAlignmentAnchor()
+    {
+        float timeout = Application.isEditor ? anchorWaitTimeoutEditor : anchorWaitTimeout;
+        float start = Time.realtimeSinceStartup;
+
+        while (Time.realtimeSinceStartup - start < timeout)
+        {
+            var anchor = FindAnyObjectByType<OVRSpatialAnchor>();
+            if (anchor != null && anchor.Created)
+                return anchor;
+
+            await Task.Delay(250);
+        }
+        return null;
     }
 
     private async Task<(bool found, Pose pose)> TryGetMrukWallPose()

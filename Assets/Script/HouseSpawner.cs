@@ -71,7 +71,7 @@ public class HouseSpawnerNetworked : NetworkBehaviour
     private IEnumerator SpawnWhenRoomReady()
     {
         float t = 0f;
-        while (t < 10f && (!VirtualMRUKRoomLoader.VirtualRoomReady ||
+        while (t < 20f && (!VirtualMRUKRoomLoader.VirtualRoomReady ||
                            MRUK.Instance == null || MRUK.Instance.GetCurrentRoom() == null))
         {
             t += 0.2f;
@@ -79,7 +79,7 @@ public class HouseSpawnerNetworked : NetworkBehaviour
         }
 
         if (!VirtualMRUKRoomLoader.VirtualRoomReady)
-            Debug.LogWarning("[HouseSpawner] Virtual room not ready after 10s — spawning against the current MRUK room.");
+            Debug.LogWarning("[HouseSpawner] Virtual room not ready after 20s — spawning against the current MRUK room.");
 
         if (MRUK.Instance != null && MRUK.Instance.GetCurrentRoom() != null)
             SpawnHousesLogic();

@@ -122,7 +122,7 @@ public class GameFlowController : NetworkBehaviour
     {
         // 等虛擬房載入 + SpawnArea 定位（timeout 後用當下值保底）
         float t = 0f;
-        while (t < 15f && (!VirtualMRUKRoomLoader.VirtualRoomReady ||
+        while (t < 30f && (!VirtualMRUKRoomLoader.VirtualRoomReady ||
                            SpawnArea.Instance == null || !SpawnArea.Instance.IsInitialized))
         {
             t += 0.2f;
