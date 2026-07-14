@@ -142,18 +142,13 @@ public class BarShowWhenEnoughMatchingFruits : NetworkBehaviour
         bool met = (match + consumedMatch.Value >= requiredCount);
         shouldShowBars.Value = met;
 
-        // 集滿 → 通知 director 檢查「所有 factory 是否同時滿」。
-        // 閂可重置：滿→不滿→再滿 會再次通知（一次性閂曾造成死鎖：
-        // A 滿時 B 未滿、B 滿時 A 剛好掉到 2/3，之後 A 補滿卻再也不通知）。
+        // First time we have enough matching fruits → advance the flow (box prop disappears,
+        // juice UI shows). Latched so it only fires once.
         if (met && !_notifiedReady)
         {
             _notifiedReady = true;
             if (GameFlowController.Instance != null)
                 GameFlowController.Instance.NotifyFruitsReady();
-        }
-        else if (!met)
-        {
-            _notifiedReady = false;
         }
     }
 
