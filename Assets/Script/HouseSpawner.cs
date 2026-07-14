@@ -29,6 +29,8 @@ public class HouseSpawnerNetworked : NetworkBehaviour
     [Header("Settings")]
     public GameObject housePrefab;
     public int numberOfHouses = 1;
+    [Tooltip("true = 用 3x3 四面牆中點當固定生成位（保證生滿）；false = 純隨機取樣")]
+    public bool useFixedWallSlots = true;
 
     public int SpawnedHouseColorIndex { get; private set; } = -1;
     private int _baseColorIndex;
@@ -112,6 +114,48 @@ public class HouseSpawnerNetworked : NetworkBehaviour
             {
                 forbiddenAnchors.Add(anchor);
             }
+        }
+
+        // ⭐ 確定性生成：3x3 虛擬房的四面牆「中點」當候選位置（隨機順序取 numberOfHouses 面），
+        // 保證兩棟一定生得出來、且必在房間內。隨機取樣在小房間會機率性失敗
+        // （高度帶 + 邊界 + 柱狀檢查疊起來），曾造成 Only spawned 1/2 → pipeline 退化成 ×1。
+        if (useFixedWallSlots && SpawnArea.Instance != null && SpawnArea.Instance.IsInitialized)
+        {
+            Vector3 c = SpawnArea.Instance.GetCenter();
+            Quaternion yawRot = SpawnArea.Instance.GetRotation();
+            float half = SpawnArea.Instance.radius;                    // 3x3 → 1.5 = 到牆距離
+            float wallY = (minWallHeight + maxWallHeight) * 0.5f;
+
+            // 四面牆的內法線（由牆指向房間中心），洗牌讓每局牆面不同
+            Vector3[] inward = { yawRot * Vector3.forward, yawRot * Vector3.back, yawRot * Vector3.left, yawRot * Vector3.right };
+            for (int i = inward.Length - 1; i > 0; i--)
+            {
+                int j = Random.Range(0, i + 1);
+                (inward[i], inward[j]) = (inward[j], inward[i]);
+            }
+
+            foreach (var n in inward)
+            {
+                if (successfulSpawns >= numberOfHouses) break;
+
+                Vector3 slotPos = c - n * half;                        // 牆面中點
+                slotPos.y = wallY;
+
+                Quaternion slotRot = Quaternion.FromToRotation(Vector3.up, n);   // 同隨機路徑：up 對牆內法線
+                float slotAngle = NormalAxisRotations[Random.Range(0, NormalAxisRotations.Length)];
+                slotRot = Quaternion.AngleAxis(slotAngle, n) * slotRot;
+
+                if (!IsSpaceEmpty(slotPos, slotRot)) continue;
+
+                if (successfulSpawns == 0)
+                    _baseColorIndex = Random.Range(0, ColorTable.Count);
+                int slotColor = (_baseColorIndex + successfulSpawns) % ColorTable.Count;
+                SpawnHouseAt(slotPos, slotRot, slotColor, successfulSpawns);
+                _initialLayout.Add(new HouseLayout { pos = slotPos, rot = slotRot, color = slotColor });
+                successfulSpawns++;
+            }
+
+            Debug.Log($"[HouseSpawner] Fixed wall slots: spawned {successfulSpawns}/{numberOfHouses}.");
         }
 
         while (successfulSpawns < numberOfHouses && attempts < 1000)
