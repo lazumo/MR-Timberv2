@@ -207,16 +207,22 @@ public class ExtinguisherMergeHint : MonoBehaviour
             // Tile + 捲動 = 一串發光彗星。彗星頭肥尾細會讓單向那層「一頭重」，
             // 所以跑兩層方向相反的流（我→隊友 + 隊友→我），亮度對稱、雙向靠攏。
             _coreMat = new Material(baseMat);
-            _coreMat.mainTextureScale = new Vector2(2f, 1f);    // 約每 0.5m 一顆彗星
-
             _core2Mat = new Material(baseMat);
-            _core2Mat.mainTextureScale = new Vector2(-2f, 1f);  // 鏡像 → 彗星朝反方向
 
-            // 使用者挑的貼圖（GameFlow Inspector 拖入）覆寫亮芯
             if (coreTextureOverride != null)
             {
+                // 使用者挑的無縫能量紋：均勻紋理靠「視差」才有流動感——
+                // 兩層同方向、不同縮放與速度（大紋慢、小紋快），見 UpdateHintVisuals。
                 _coreMat.mainTexture = coreTextureOverride;
                 _core2Mat.mainTexture = coreTextureOverride;
+                _coreMat.mainTextureScale = new Vector2(0.7f, 1f);    // 大紋層
+                _core2Mat.mainTextureScale = new Vector2(-1.4f, 1f);  // 小紋層（鏡像避免重影）
+            }
+            else
+            {
+                // Hovl Trail67 彗星：形狀有方向性，跑兩層反向流（亮度對稱、雙向靠攏）
+                _coreMat.mainTextureScale = new Vector2(2f, 1f);      // 約每 0.5m 一顆彗星
+                _core2Mat.mainTextureScale = new Vector2(-2f, 1f);    // 鏡像 → 反方向
             }
         }
 
@@ -362,16 +368,34 @@ public class ExtinguisherMergeHint : MonoBehaviour
             // 不染色模式 = 貼圖原色（綠/藍系貼圖乘紅黃會變髒）
             var cc = tintCoreByDistance ? Color.Lerp(c, Color.white, 0.65f) : Color.white;
             cc.a = 0.55f;
-            if (_coreMat != null)
+            float s = Time.time * scrollSpeed;
+            if (coreTextureOverride != null)
             {
-                _coreMat.color = cc;
-                _coreMat.mainTextureOffset = new Vector2(-Time.time * scrollSpeed * 1.8f, 0f);
+                // 視差流動：兩層同向不同速（大紋 0.5x、小紋 1.6x）+ 小紋微幅縱向漂移（沸騰感）
+                if (_coreMat != null)
+                {
+                    _coreMat.color = cc;
+                    _coreMat.mainTextureOffset = new Vector2(-s * 0.5f, 0f);
+                }
+                if (_core2Mat != null)
+                {
+                    _core2Mat.color = cc;
+                    _core2Mat.mainTextureOffset = new Vector2(-s * 1.6f, Time.time * 0.06f);
+                }
             }
-            if (_core2Mat != null)
+            else
             {
-                _core2Mat.color = cc;
-                // 反向捲動：另一串彗星從隊友那端流回來（雙向靠攏）
-                _core2Mat.mainTextureOffset = new Vector2(Time.time * scrollSpeed * 1.8f, 0f);
+                // Trail67 彗星：兩層反向（雙向靠攏）
+                if (_coreMat != null)
+                {
+                    _coreMat.color = cc;
+                    _coreMat.mainTextureOffset = new Vector2(-s * 1.8f, 0f);
+                }
+                if (_core2Mat != null)
+                {
+                    _core2Mat.color = cc;
+                    _core2Mat.mainTextureOffset = new Vector2(s * 1.8f, 0f);
+                }
             }
         }
         if (_anchorMat != null)
