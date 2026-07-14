@@ -11,10 +11,10 @@ using UnityEngine;
 public class RoomBoundaryLine : MonoBehaviour
 {
     [Header("落葉散佈")]
-    [Tooltip("整圈邊界的葉子總數（不用太密集）")]
-    public int leafCount = 44;
-    [Tooltip("落葉帶寬度：從邊界往內延伸幾公尺")]
-    public float bandWidth = 0.35f;
+    [Tooltip("整個範圍內的葉子總數（不用太密集）")]
+    public int leafCount = 50;
+    [Tooltip("離邊界至少留這個距離（公尺），避免葉子壓在界線外")]
+    public float edgeMargin = 0.05f;
     [Tooltip("葉片長度範圍（公尺）")]
     public Vector2 leafLength = new Vector2(0.06f, 0.11f);
 
@@ -83,20 +83,11 @@ public class RoomBoundaryLine : MonoBehaviour
         var rng = new System.Random(RandomSeed);
         float Next(float min, float max) => min + (float)rng.NextDouble() * (max - min);
 
+        float range = _halfSize - edgeMargin;
         for (int i = 0; i < leafCount; i++)
         {
-            // 平均分給四條邊，沿邊隨機、往內隨機縮進（帶狀散佈、角落自然重疊）
-            int edge = i % 4;
-            float along = Next(-_halfSize, _halfSize);
-            float inset = _halfSize - Next(0.03f, bandWidth);
-
-            Vector3 local = edge switch
-            {
-                0 => new Vector3(along, 0f, inset),    // 前
-                1 => new Vector3(along, 0f, -inset),   // 後
-                2 => new Vector3(inset, 0f, along),    // 右
-                _ => new Vector3(-inset, 0f, along),   // 左
-            };
+            // 整個正方形內均勻散落（只留一點邊界 margin，葉子不壓線外）
+            var local = new Vector3(Next(-range, range), 0f, Next(-range, range));
             local.y = 0.006f + 0.006f * (i % 3);   // 貼地 + 微錯層避免 z-fighting
 
             var leaf = new GameObject($"Leaf_{i}");
