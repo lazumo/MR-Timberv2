@@ -42,6 +42,11 @@ public class ColorFactoryNetDriver : NetworkBehaviour
     // Remote client 右手 controller（client only，用來送）
     private Transform localRightController;
 
+    // server-only：本次啟用後是否已收到 client 的「新鮮」右手位置。
+    // 啟用瞬間 clientRightPos 可能還是舊值/原點（client 要晚 1-2 個 tick 才開始送），
+    // 直接拿去算會把垃圾距離鎖進 HandDistanceBase → 第一次擠壓動畫抽搐。
+    private bool _rightPosFresh;
+
     // Meta Building Blocks rig
     private const string RigName = "[BuildingBlock] Camera Rig";
     private const string LeftPath = "TrackingSpace/LeftHandAnchor/LeftControllerAnchor";
@@ -157,6 +162,7 @@ public class ColorFactoryNetDriver : NetworkBehaviour
         // ✅ 只有 Server 做旋轉與距離計算
         if (!IsServer) return;
         if (!IsActive.Value) return;
+        if (!_rightPosFresh) return;   // 等 client 送來本次啟用後的真實右手位置再開算
 
         TryBindServerLeft();
         if (serverLeftController == null || factoryTransform == null) return;
@@ -192,6 +198,7 @@ public class ColorFactoryNetDriver : NetworkBehaviour
         IsActive.Value = true;
         HandDistance.Value = 0f;
         HandDistanceBase.Value = 0f;
+        _rightPosFresh = false;   // 基準值等新鮮手位到貨才鎖
     }
 
     private void OnTriggerExit(Collider other)
@@ -211,5 +218,6 @@ public class ColorFactoryNetDriver : NetworkBehaviour
         if (rpcParams.Receive.SenderClientId != TrackedClientId.Value) return;
 
         clientRightPos.Value = pos;
+        _rightPosFresh = true;
     }
 }
