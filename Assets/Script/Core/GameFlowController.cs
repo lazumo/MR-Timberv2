@@ -181,7 +181,17 @@ public class GameFlowController : NetworkBehaviour
             if (IsServer) DebugAdvanceStage();
             else          DebugAdvanceServerRpc();
         }
+
+        // 接果子門控保險輪詢：兩座 factory「同時滿」的狀態存在就放行，
+        // 不依賴 factory 事件的觸發時序（事件在臨界時刻錯過會死鎖）
+        if (IsServer && _started && CurrentPhase.Value == GamePhase.Catching && Time.time >= _nextCatchingPoll)
+        {
+            _nextCatchingPoll = Time.time + 0.5f;
+            NotifyFruitsReady();
+        }
     }
+
+    private float _nextCatchingPoll;
 
     [ServerRpc(RequireOwnership = false)]
     private void DebugAdvanceServerRpc() => DebugAdvanceStage();
@@ -388,7 +398,10 @@ public class GameFlowController : NetworkBehaviour
             EnterPhase(GamePhase.Catching);
     }
 
+    private int _lastFactoryReadyLogged = -1;
+
     /// A color factory reached ≥3 matching fruits → advance when ALL factories are ready.
+    /// （事件觸發之外，Update 在 Catching 階段每 0.5s 也會輪詢一次——事件時序漏掉也保證放行）
     public void NotifyFruitsReady()
     {
         if (!IsServer || !_started) return;
@@ -398,7 +411,11 @@ public class GameFlowController : NetworkBehaviour
         foreach (var bar in FindObjectsByType<BarShowWhenEnoughMatchingFruits>(FindObjectsSortMode.None))
             if (bar.IsRequirementMet()) ready++;
 
-        Debug.Log($"[GameFlow] Factory ready ({ready}/{RequiredGoals}).");
+        if (ready != _lastFactoryReadyLogged)
+        {
+            _lastFactoryReadyLogged = ready;
+            Debug.Log($"[GameFlow] Factory ready ({ready}/{RequiredGoals}).");
+        }
 
         if (ready >= RequiredGoals)
             EnterPhase(GamePhase.Juicing);
