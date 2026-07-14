@@ -42,7 +42,9 @@ public class ExtinguisherMergeHint : MonoBehaviour
     public float uiHeight = 0.12f;     // UI 在 anchor 上方多高
     [Tooltip("true = 只在兩人中間生一個（適合已同時畫左右的教學面板）；false = 兩個 anchor 上各生一個")]
     public bool uiSingleAtMidpoint = true;
-    [Tooltip("生成後乘上的縮放（教學 prefab 內建 scale 很大，通常要縮小很多）")]
+    [Tooltip("自動縮放後的面板高度（公尺）。生成時量 renderer bounds 自動置中+縮放，pivot 亂掉的 prefab 也能正確顯示")]
+    public float uiTargetHeight = 0.3f;
+    [Tooltip("備用手動縮放（prefab 沒有任何 Renderer 可量時才用）")]
     public float uiScale = 0.02f;
     [Tooltip("面板背對你時勾這個轉 180°")]
     public bool uiFlip180 = false;
@@ -176,11 +178,7 @@ public class ExtinguisherMergeHint : MonoBehaviour
         {
             int count = uiSingleAtMidpoint ? 1 : 2;
             for (int i = 0; i < count; i++)
-            {
-                var ui = Instantiate(uiPrefab, transform);
-                ui.transform.localScale = uiPrefab.transform.localScale * uiScale;
-                _uiInstances.Add(ui);
-            }
+                _uiInstances.Add(MakeUiInstance());
         }
 
         UpdateHintVisuals();
@@ -278,6 +276,43 @@ public class ExtinguisherMergeHint : MonoBehaviour
         lr.receiveShadows = false;
         lr.sharedMaterial = mat;
         return lr;
+    }
+
+    // 生成 UI 面板：外層 pivot 由我們控制位置/朝向/縮放；prefab 實例掛在裡面。
+    // 組員 prefab 的 pivot 與內部縮放常不在原點（例如 55x 縮放節點 + 測試場座標），
+    // 所以生成後實測 renderer bounds：把「視覺中心」平移到 pivot、高度縮到 uiTargetHeight。
+    private GameObject MakeUiInstance()
+    {
+        var pivot = new GameObject("MergeHintUI");
+        pivot.transform.SetParent(transform, false);
+
+        var inst = Instantiate(uiPrefab, pivot.transform);
+        inst.transform.localPosition = Vector3.zero;
+        inst.transform.localRotation = Quaternion.identity;
+
+        var renderers = inst.GetComponentsInChildren<Renderer>();
+        Bounds b = default;
+        bool has = false;
+        foreach (var r in renderers)
+        {
+            if (r is ParticleSystemRenderer) continue;   // 粒子包圍盒不可靠，跳過
+            if (!has) { b = r.bounds; has = true; }
+            else b.Encapsulate(r.bounds);
+        }
+
+        if (has && b.size.y > 0.0001f)
+        {
+            inst.transform.position += pivot.transform.position - b.center;   // 視覺中心對到 pivot
+            pivot.transform.localScale = Vector3.one * (uiTargetHeight / b.size.y);
+            Debug.Log($"[MergeHint] UI auto-fit: bounds={b.size}, scale={uiTargetHeight / b.size.y:F4}");
+        }
+        else
+        {
+            pivot.transform.localScale = Vector3.one * uiScale;   // 量不到就退回手動縮放
+            Debug.LogWarning("[MergeHint] UI prefab has no measurable renderers — using manual uiScale.");
+        }
+
+        return pivot;
     }
 
     // 橫躺的小圓柱（長軸水平、朝向隊友方向；Unity 圓柱軸向是 Y，靠旋轉放倒）
