@@ -106,7 +106,7 @@ public class GameFlowController : NetworkBehaviour
             RoomBoundaryLine.Spawn(bannerHalfSize);
 
         // 每個 peer 各自跑合體提示（滅火階段：充能完成 → 光束亮到合體為止）
-        ExtinguisherMergeHint.Spawn(mergeHintUiPrefab, mergeBeamTexture, mergeBeamTintCore);
+        ExtinguisherMergeHint.Spawn(mergeArrowPrefab, mergeBeamTexture, mergeBeamTintCore);
 
         // host 持續對齊 colocation anchor（guest 由 Meta BB 對齊；沒這個 host 一
         // recenter/漂移，房間與綠框就會偏離 anchor 軸）
@@ -483,8 +483,8 @@ public class GameFlowController : NetworkBehaviour
 
     [Header("合體提示（滅火階段：充能完成亮起 anchor+光束指向隊友，近紅遠黃，合體才消失）")]
     // anchor 位置 = FireExtinguisher.prefab 裡的 MergeAnchor_L / MergeAnchor_R 子物件（唯一設定源）
-    [Tooltip("組員的動畫 UI prefab（之後拖進來；留空只顯示 anchor+光束）")]
-    [SerializeField] private GameObject mergeHintUiPrefab;
+    [Tooltip("指向隊友的箭頭 prefab（例如 HQP Arrow_3D_Icon_02；浮在自己的 anchor 上方、每幀指向對方 anchor）")]
+    [SerializeField] private GameObject mergeArrowPrefab;
     [Tooltip("光束亮芯貼圖（拖 seamless 的 _Emission 貼圖；留空 = Hovl Trail67 彗星）")]
     [SerializeField] private Texture2D mergeBeamTexture;
     [Tooltip("false = 亮芯用貼圖原色（綠/藍系貼圖請關掉，避免被紅黃染髒）；距離紅黃訊號仍在柔光+anchor")]

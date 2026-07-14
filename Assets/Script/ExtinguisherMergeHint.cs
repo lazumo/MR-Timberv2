@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -41,27 +40,23 @@ public class ExtinguisherMergeHint : MonoBehaviour
     [Header("Editor 預覽（Play Mode 按此鍵在面前生一條假光束，不用雙人）")]
     public KeyCode editorPreviewKey = KeyCode.B;
 
-    [Header("小動畫 UI（組員的 prefab；上方浮出）")]
-    public GameObject uiPrefab;
-    public float uiHeight = 0.12f;     // UI 在 anchor 上方多高
-    [Tooltip("自動縮放後的面板高度（公尺）。生成時量 renderer bounds 自動置中+縮放，pivot 亂掉的 prefab 也能正確顯示")]
-    public float uiTargetHeight = 0.3f;
-    [Tooltip("備用手動縮放（prefab 沒有任何 Renderer 可量時才用）")]
-    public float uiScale = 0.02f;
-    [Tooltip("面板背對你時勾這個轉 180°")]
-    public bool uiFlip180 = false;
-    [Tooltip("面板朝向修正（billboard 之後再加的旋轉；fbx 出廠朝向歪掉用這個補，例如 Y=90）")]
-    public Vector3 uiRotationOffset = new Vector3(0f, 90f, 0f);
+    [Header("指向隊友的箭頭（浮在自己的 anchor 上方，每幀指向對方的 anchor）")]
+    public GameObject arrowPrefab;
+    public float arrowHeight = 0.1f;       // 箭頭在 anchor 上方多高
+    [Tooltip("自動縮放後的箭頭尺寸（最長邊，公尺）。生成時量 renderer bounds 自動置中+縮放")]
+    public float arrowTargetSize = 0.15f;
+    [Tooltip("箭頭 mesh 出廠軸向修正（LookRotation 之後再加；箭頭沒指對方向就調這個，例如 Y=90 或 X=90）")]
+    public Vector3 arrowRotationOffset = Vector3.zero;
 
     public static ExtinguisherMergeHint Spawn(
-        GameObject ui, Texture2D beamTexture = null, bool tintCore = true)
+        GameObject arrow, Texture2D beamTexture = null, bool tintCore = true)
     {
         var existing = FindAnyObjectByType<ExtinguisherMergeHint>();
         if (existing != null) return existing;
 
         var go = new GameObject("ExtinguisherMergeHint");
         var h = go.AddComponent<ExtinguisherMergeHint>();
-        h.uiPrefab = ui;
+        h.arrowPrefab = arrow;
         h.coreTextureOverride = beamTexture;
         h.tintCoreByDistance = tintCore;
         return h;
@@ -81,7 +76,7 @@ public class ExtinguisherMergeHint : MonoBehaviour
     private LineRenderer _glow, _core, _core2;
     private Material _glowMat, _coreMat, _core2Mat, _anchorMat;
     private Texture2D _beamTex;
-    private readonly List<GameObject> _uiInstances = new();
+    private GameObject _arrow;   // 指向隊友的箭頭（pivot；prefab 實例置中在裡面）
 
     private bool _previewMode;
 
@@ -201,10 +196,10 @@ public class ExtinguisherMergeHint : MonoBehaviour
         _core = MakeBeam("MergeHintBeamCore", _coreMat, coreWidth);
         _core2 = MakeBeam("MergeHintBeamCore2", _core2Mat, coreWidth);
 
-        // 每位玩家只看到「自己 anchor 上方」的一個 hint（本系統是純本地的，
+        // 每位玩家只看到「自己 anchor 上方」的箭頭（本系統是純本地的，
         // A 機器只畫 A 生的，B 機器只畫 B 生的——天然只有本人看得到）
-        if (uiPrefab != null)
-            _uiInstances.Add(MakeUiInstance());
+        if (arrowPrefab != null)
+            _arrow = MakeArrow();
 
         UpdateHintVisuals();
     }
@@ -305,13 +300,13 @@ public class ExtinguisherMergeHint : MonoBehaviour
 
     // 生成 UI 面板：外層 pivot 由我們控制位置/朝向/縮放；prefab 實例掛在裡面。
     // 組員 prefab 的 pivot 與內部縮放常不在原點（例如 55x 縮放節點 + 測試場座標），
-    // 所以生成後實測 renderer bounds：把「視覺中心」平移到 pivot、高度縮到 uiTargetHeight。
-    private GameObject MakeUiInstance()
+    // 所以生成後實測 renderer bounds：把「視覺中心」平移到 pivot、最長邊縮到 arrowTargetSize。
+    private GameObject MakeArrow()
     {
-        var pivot = new GameObject("MergeHintUI");
+        var pivot = new GameObject("MergeHintArrow");
         pivot.transform.SetParent(transform, false);
 
-        var inst = Instantiate(uiPrefab, pivot.transform);
+        var inst = Instantiate(arrowPrefab, pivot.transform);
         inst.transform.localPosition = Vector3.zero;
         inst.transform.localRotation = Quaternion.identity;
 
@@ -325,16 +320,16 @@ public class ExtinguisherMergeHint : MonoBehaviour
             else b.Encapsulate(r.bounds);
         }
 
-        if (has && b.size.y > 0.0001f)
+        float maxDim = Mathf.Max(b.size.x, b.size.y, b.size.z);
+        if (has && maxDim > 0.0001f)
         {
             inst.transform.position += pivot.transform.position - b.center;   // 視覺中心對到 pivot
-            pivot.transform.localScale = Vector3.one * (uiTargetHeight / b.size.y);
-            Debug.Log($"[MergeHint] UI auto-fit: bounds={b.size}, scale={uiTargetHeight / b.size.y:F4}");
+            pivot.transform.localScale = Vector3.one * (arrowTargetSize / maxDim);
+            Debug.Log($"[MergeHint] Arrow auto-fit: bounds={b.size}, scale={arrowTargetSize / maxDim:F4}");
         }
         else
         {
-            pivot.transform.localScale = Vector3.one * uiScale;   // 量不到就退回手動縮放
-            Debug.LogWarning("[MergeHint] UI prefab has no measurable renderers — using manual uiScale.");
+            Debug.LogWarning("[MergeHint] Arrow prefab has no measurable renderers.");
         }
 
         return pivot;
@@ -473,22 +468,16 @@ public class ExtinguisherMergeHint : MonoBehaviour
         if (_anchorMat != null)
             _anchorMat.SetColor("_BaseColor", c);
 
-        // UI 浮在「自己的 anchor」上方（每位玩家看自己的），面向自己的頭
-        var cam = Camera.main;
-        for (int i = 0; i < _uiInstances.Count; i++)
+        // 箭頭浮在「自己的 anchor」上方，每幀指向「對方的 anchor」——
+        // 對方移動 / 換邊，方向即時跟著轉（每位玩家只看到自己的箭頭）
+        if (_arrow != null)
         {
-            var ui = _uiInstances[i];
-            if (ui == null) continue;
+            _arrow.transform.position = a + Vector3.up * arrowHeight;
 
-            ui.transform.position = a + Vector3.up * uiHeight;
-
-            if (cam != null)
-            {
-                Quaternion look = Quaternion.LookRotation(ui.transform.position - cam.transform.position);
-                if (uiFlip180) look *= Quaternion.Euler(0f, 180f, 0f);
-                look *= Quaternion.Euler(uiRotationOffset);   // fbx 出廠朝向修正
-                ui.transform.rotation = look;
-            }
+            Vector3 dir = b - _arrow.transform.position;
+            if (dir.sqrMagnitude > 0.0001f)
+                _arrow.transform.rotation =
+                    Quaternion.LookRotation(dir.normalized) * Quaternion.Euler(arrowRotationOffset);
         }
     }
 
@@ -504,9 +493,8 @@ public class ExtinguisherMergeHint : MonoBehaviour
         _myAnchor = _partnerAnchor = null;
         _glow = _core = _core2 = null;
 
-        foreach (var ui in _uiInstances)
-            if (ui != null) Destroy(ui);
-        _uiInstances.Clear();
+        if (_arrow != null) Destroy(_arrow);
+        _arrow = null;
     }
 
     private void OnDestroy()
