@@ -10,6 +10,13 @@ public class NetworkFireController : NetworkBehaviour
     [Header("State")]
     [SerializeField] private float maxFireIntensity = 30f;
 
+    [Tooltip("剩餘強度低於 max 的這個比例就直接判定熄滅。快滅完的火粒子小到肉眼看不見，" +
+             "玩家會以為滅完了但遊戲沒結束 — 這裡把看不見的尾巴直接砍掉。")]
+    [SerializeField] private float autoExtinguishFraction = 0.12f;
+
+    [Tooltip("只要火還沒滅，視覺至少維持這個比例的大小/密度（避免快滅完時看不見）。")]
+    [SerializeField] private float minVisualFactor = 0.3f;
+
     public NetworkVariable<float> fireIntensity =
         new NetworkVariable<float>(
             30f,
@@ -71,6 +78,11 @@ public class NetworkFireController : NetworkBehaviour
             0f,
             maxFireIntensity
         );
+
+        // 低於門檻 = 視覺上已經等於滅了 → 直接歸零結束，不留看不見的殘火
+        if (v <= maxFireIntensity * autoExtinguishFraction)
+            v = 0f;
+
         fireIntensity.Value = v;
 
         if (v <= 0f)
@@ -90,6 +102,10 @@ public class NetworkFireController : NetworkBehaviour
         float sizeFactor = sizeCurve != null
             ? sizeCurve.Evaluate(t)
             : t;
+
+        // 還有火就要看得見：撐住視覺下限（歸零時不套，讓火真正消失）
+        if (fireIntensity.Value > 0f)
+            sizeFactor = Mathf.Max(sizeFactor, minVisualFactor);
 
         // 🔥 Particle Systems
         foreach (var ps in fireVFXs)
