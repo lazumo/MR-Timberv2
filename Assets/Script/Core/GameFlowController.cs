@@ -106,7 +106,7 @@ public class GameFlowController : NetworkBehaviour
             RoomBoundaryLine.Spawn(bannerHalfSize);
 
         // 每個 peer 各自跑合體提示（滅火階段：充能完成 → 光束亮到合體為止）
-        ExtinguisherMergeHint.Spawn(mergeHintAnchorOffset, mergeHintUiPrefab);
+        ExtinguisherMergeHint.Spawn(mergeHintAnchorOffset, mergeHintUiPrefab, mergeBeamTexture);
 
         // 房間 pose 廣播：host 等虛擬房載好後發布；client 收到就套用（含晚加入）
         if (IsServer)
@@ -482,6 +482,8 @@ public class GameFlowController : NetworkBehaviour
     [SerializeField] private Vector3 mergeHintAnchorOffset = new Vector3(0f, 0.18f, 0f);
     [Tooltip("組員的動畫 UI prefab（之後拖進來；留空只顯示 anchor+光束）")]
     [SerializeField] private GameObject mergeHintUiPrefab;
+    [Tooltip("光束亮芯貼圖（拖 seamless 的 _Emission 貼圖；留空 = Hovl Trail67 彗星）")]
+    [SerializeField] private Texture2D mergeBeamTexture;
 
     // 一明一滅的閃爍（加速）→ 定暗，配警報聲 + 環繞房間的警戒布條
     [ClientRpc]

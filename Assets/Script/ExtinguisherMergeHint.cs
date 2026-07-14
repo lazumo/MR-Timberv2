@@ -29,6 +29,8 @@ public class ExtinguisherMergeHint : MonoBehaviour
     public float coreWidth = 0.032f;   // 內層亮芯寬度（Trail67 彗星串要夠寬才讀得到形狀）
     public float pulseSpeed = 5f;      // 寬度脈動頻率
     public float scrollSpeed = 1.2f;   // 流光速度（負值可反向）
+    [Tooltip("亮芯貼圖覆寫（建議用 seamless 的 _Emission 貼圖）；留空 = 材質上烤好的 Hovl Trail67")]
+    public Texture2D coreTextureOverride;
 
     [Header("Editor 預覽（Play Mode 按此鍵在面前生一條假光束，不用雙人）")]
     public KeyCode editorPreviewKey = KeyCode.B;
@@ -43,7 +45,7 @@ public class ExtinguisherMergeHint : MonoBehaviour
     [Tooltip("面板背對你時勾這個轉 180°")]
     public bool uiFlip180 = false;
 
-    public static ExtinguisherMergeHint Spawn(Vector3 offset, GameObject ui)
+    public static ExtinguisherMergeHint Spawn(Vector3 offset, GameObject ui, Texture2D beamTexture = null)
     {
         var existing = FindAnyObjectByType<ExtinguisherMergeHint>();
         if (existing != null) return existing;
@@ -52,6 +54,7 @@ public class ExtinguisherMergeHint : MonoBehaviour
         var h = go.AddComponent<ExtinguisherMergeHint>();
         h.anchorOffset = offset;
         h.uiPrefab = ui;
+        h.coreTextureOverride = beamTexture;
         return h;
     }
 
@@ -204,6 +207,13 @@ public class ExtinguisherMergeHint : MonoBehaviour
 
             _core2Mat = new Material(baseMat);
             _core2Mat.mainTextureScale = new Vector2(-2f, 1f);  // 鏡像 → 彗星朝反方向
+
+            // 使用者挑的貼圖（GameFlow Inspector 拖入）覆寫亮芯
+            if (coreTextureOverride != null)
+            {
+                _coreMat.mainTexture = coreTextureOverride;
+                _core2Mat.mainTexture = coreTextureOverride;
+            }
         }
 
         if (_anchorMat == null)
