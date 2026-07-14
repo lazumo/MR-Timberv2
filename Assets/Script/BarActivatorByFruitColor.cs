@@ -30,6 +30,11 @@ public class BarShowWhenEnoughMatchingFruits : NetworkBehaviour
 
     // Latch so we only advance the game flow once (box disappears once).
     private bool _notifiedReady;
+
+    // 擠壓 UI 的全域門檻：要「所有」factory 都集滿，兩邊的 bars/handler 才一起亮
+    // （單一 factory 集滿只默默記著，避免一邊先玩起來、另一邊還在接果子）。
+    private static readonly List<BarShowWhenEnoughMatchingFruits> All = new();
+    private bool _selfMet;   // server-only：這個 factory 自己滿了沒
     private void OnEnable()
     {
         if (visual != null)
@@ -46,6 +51,8 @@ public class BarShowWhenEnoughMatchingFruits : NetworkBehaviour
     {
         base.OnNetworkSpawn();
 
+        if (IsServer && !All.Contains(this)) All.Add(this);
+
         shouldShowBars.OnValueChanged += OnShouldShowBarsChanged;
 
         ApplyBarsVisual(shouldShowBars.Value);
@@ -53,6 +60,7 @@ public class BarShowWhenEnoughMatchingFruits : NetworkBehaviour
 
     public override void OnNetworkDespawn()
     {
+        All.Remove(this);
         shouldShowBars.OnValueChanged -= OnShouldShowBarsChanged;
         base.OnNetworkDespawn();
     }
@@ -140,7 +148,8 @@ public class BarShowWhenEnoughMatchingFruits : NetworkBehaviour
         }
 
         bool met = (match + consumedMatch.Value >= requiredCount);
-        shouldShowBars.Value = met;
+        _selfMet = met;
+        UpdateBarsAllFactories();   // 全部 factory 都滿 → 兩邊的擠壓 UI 才一起亮
 
         // First time we have enough matching fruits → advance the flow (box prop disappears,
         // juice UI shows). Latched so it only fires once.
@@ -150,6 +159,17 @@ public class BarShowWhenEnoughMatchingFruits : NetworkBehaviour
             if (GameFlowController.Instance != null)
                 GameFlowController.Instance.NotifyFruitsReady();
         }
+    }
+
+    private static void UpdateBarsAllFactories()
+    {
+        bool allMet = All.Count > 0;
+        foreach (var f in All)
+            if (f == null || !f._selfMet) { allMet = false; break; }
+
+        foreach (var f in All)
+            if (f != null && f.shouldShowBars.Value != allMet)
+                f.shouldShowBars.Value = allMet;
     }
 
     public void NotifyFruitConsumed(int fruitColorIndex)
