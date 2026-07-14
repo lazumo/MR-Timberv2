@@ -11,12 +11,14 @@ using UnityEngine;
 public class RoomBoundaryLine : MonoBehaviour
 {
     [Header("落葉散佈")]
-    [Tooltip("整個範圍內的葉子總數（不用太密集）")]
-    public int leafCount = 50;
+    [Tooltip("內部填充的葉子數（全區都有、稀疏）")]
+    public int leafCount = 45;
+    [Tooltip("沿邊界排一圈、畫出方形輪廓的葉子數（密集、大致順著邊的方向）")]
+    public int borderLeafCount = 64;
     [Tooltip("離邊界至少留這個距離（公尺），避免葉子壓在界線外")]
     public float edgeMargin = 0.05f;
-    [Tooltip("靠邊密集度：1 = 全面均勻，越大越往邊界集中（中間稀、邊界密）")]
-    public float edgeBias = 4f;
+    [Tooltip("內部填充的靠邊傾向：1 = 全面均勻，越大越往邊界集中")]
+    public float edgeBias = 1.5f;
     [Tooltip("葉片長度範圍（公尺）")]
     public Vector2 leafLength = new Vector2(0.09f, 0.15f);
 
@@ -63,7 +65,7 @@ public class RoomBoundaryLine : MonoBehaviour
         }
 
         BuildLeaves();
-        Debug.Log($"[RoomBoundaryLeaves] {leafCount} leaves scattered, center={SpawnArea.Instance.GetCenter()}, half={_halfSize}");
+        Debug.Log($"[RoomBoundaryLeaves] {leafCount} fill + {borderLeafCount} border leaves scattered, center={SpawnArea.Instance.GetCenter()}, half={_halfSize}");
 
         // 持續跟隨：SpawnArea 的 pose 之後還會被修正
         // （host：虛擬房 SetPose；client：收到 host 廣播的權威 pose）。
@@ -95,10 +97,11 @@ public class RoomBoundaryLine : MonoBehaviour
         float Next(float min, float max) => min + (float)rng.NextDouble() * (max - min);
 
         float range = _halfSize - edgeMargin;
+        int idx = 0;
+
+        // ── 內部填充：整個正方形都有（輕微靠邊傾向）──
         for (int i = 0; i < leafCount; i++)
         {
-            // 整個正方形都有葉子，但靠邊較密、中間較稀：
-            // 先抽「離中心多遠」（edgeBias 次方偏向外圈），再在該圈（同心正方形環）上均勻取點
             float r = range * Mathf.Pow((float)rng.NextDouble(), 1f / Mathf.Max(1f, edgeBias));
             float along = Next(-r, r);
             Vector3 local = rng.Next(4) switch
@@ -108,22 +111,52 @@ public class RoomBoundaryLine : MonoBehaviour
                 2 => new Vector3(r, 0f, along),    // 右
                 _ => new Vector3(-r, 0f, along),   // 左
             };
-            // 跟舊綠線同高（2cm 起跳）：更貼地會被 passthrough 地板深度吃掉看不見
-            local.y = 0.02f + 0.008f * (i % 3);
-
-            var leaf = new GameObject($"Leaf_{i}");
-            leaf.transform.SetParent(transform, false);
-            leaf.transform.localPosition = local;
-            // 隨機朝向 + 微傾（落地的自然感）
-            leaf.transform.localRotation = Quaternion.Euler(Next(-8f, 8f), Next(0f, 360f), Next(-8f, 8f));
-            leaf.transform.localScale = Vector3.one * Next(leafLength.x, leafLength.y);
-
-            leaf.AddComponent<MeshFilter>().sharedMesh = _leafMesh;
-            var mr = leaf.AddComponent<MeshRenderer>();
-            mr.sharedMaterial = _mats[rng.Next(_mats.Length)];
-            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            mr.receiveShadows = false;
+            SpawnLeaf(local, Next(0f, 360f), rng, ref idx);
         }
+
+        // ── 邊界一圈：葉子密集排出方形輪廓，大致順著邊的方向躺 ──
+        int perEdge = Mathf.Max(1, borderLeafCount / 4);
+        for (int e = 0; e < 4; e++)
+        {
+            for (int k = 0; k < perEdge; k++)
+            {
+                // 沿邊等距 + 少量抖動；貼著邊界內側一窄條
+                float along = Mathf.Lerp(-range, range, (k + 0.5f) / perEdge) + Next(-0.06f, 0.06f);
+                float inset = _halfSize - Next(0.03f, 0.12f);
+                Vector3 local = e switch
+                {
+                    0 => new Vector3(along, 0f, inset),
+                    1 => new Vector3(along, 0f, -inset),
+                    2 => new Vector3(inset, 0f, along),
+                    _ => new Vector3(-inset, 0f, along),
+                };
+                // 葉長軸大致沿著邊的方向（±30° 自然抖動），視覺上像葉子畫的線
+                float edgeYaw = e < 2 ? 90f : 0f;
+                SpawnLeaf(local, edgeYaw + Next(-30f, 30f), rng, ref idx);
+            }
+        }
+    }
+
+    private void SpawnLeaf(Vector3 local, float yaw, System.Random rng, ref int idx)
+    {
+        float Next(float min, float max) => min + (float)rng.NextDouble() * (max - min);
+
+        // 跟舊綠線同高（2cm 起跳）：更貼地會被 passthrough 地板深度吃掉看不見
+        local.y = 0.02f + 0.008f * (idx % 3);
+
+        var leaf = new GameObject($"Leaf_{idx}");
+        leaf.transform.SetParent(transform, false);
+        leaf.transform.localPosition = local;
+        // 指定朝向 + 微傾（落地的自然感）
+        leaf.transform.localRotation = Quaternion.Euler(Next(-8f, 8f), yaw, Next(-8f, 8f));
+        leaf.transform.localScale = Vector3.one * Next(leafLength.x, leafLength.y);
+
+        leaf.AddComponent<MeshFilter>().sharedMesh = _leafMesh;
+        var mr = leaf.AddComponent<MeshRenderer>();
+        mr.sharedMaterial = _mats[rng.Next(_mats.Length)];
+        mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        mr.receiveShadows = false;
+        idx++;
     }
 
     /// 葉片形狀：XZ 平面上的尖頭橢圓（單位長、沿 +Z），雙面三角。
