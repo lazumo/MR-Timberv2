@@ -31,6 +31,8 @@ public class ExtinguisherMergeHint : MonoBehaviour
     public float scrollSpeed = 1.2f;   // 流光速度（負值可反向）
     [Tooltip("亮芯貼圖覆寫（建議用 seamless 的 _Emission 貼圖）；留空 = 材質上烤好的 Hovl Trail67")]
     public Texture2D coreTextureOverride;
+    [Tooltip("false = 亮芯用貼圖原色（適合綠/藍等非紅黃系貼圖，避免染髒）；距離紅黃訊號仍在柔光+anchor 上")]
+    public bool tintCoreByDistance = true;
 
     [Header("Editor 預覽（Play Mode 按此鍵在面前生一條假光束，不用雙人）")]
     public KeyCode editorPreviewKey = KeyCode.B;
@@ -45,7 +47,8 @@ public class ExtinguisherMergeHint : MonoBehaviour
     [Tooltip("面板背對你時勾這個轉 180°")]
     public bool uiFlip180 = false;
 
-    public static ExtinguisherMergeHint Spawn(Vector3 offset, GameObject ui, Texture2D beamTexture = null)
+    public static ExtinguisherMergeHint Spawn(
+        Vector3 offset, GameObject ui, Texture2D beamTexture = null, bool tintCore = true)
     {
         var existing = FindAnyObjectByType<ExtinguisherMergeHint>();
         if (existing != null) return existing;
@@ -55,6 +58,7 @@ public class ExtinguisherMergeHint : MonoBehaviour
         h.anchorOffset = offset;
         h.uiPrefab = ui;
         h.coreTextureOverride = beamTexture;
+        h.tintCoreByDistance = tintCore;
         return h;
     }
 
@@ -354,8 +358,10 @@ public class ExtinguisherMergeHint : MonoBehaviour
         }
         if (_coreMat != null || _core2Mat != null)
         {
-            // 亮芯偏白，看起來像過曝的光（兩層各半亮度，疊加後跟原本一樣亮）
-            var cc = Color.Lerp(c, Color.white, 0.65f); cc.a = 0.55f;
+            // 亮芯偏白，看起來像過曝的光（兩層各半亮度，疊加後跟原本一樣亮）；
+            // 不染色模式 = 貼圖原色（綠/藍系貼圖乘紅黃會變髒）
+            var cc = tintCoreByDistance ? Color.Lerp(c, Color.white, 0.65f) : Color.white;
+            cc.a = 0.55f;
             if (_coreMat != null)
             {
                 _coreMat.color = cc;
