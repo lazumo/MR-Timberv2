@@ -25,10 +25,10 @@ public class ExtinguisherMergeHint : MonoBehaviour
     public Color farColor = Color.yellow;
 
     [Header("光束外觀")]
-    public float glowWidth = 0.045f;   // 外層柔光寬度
-    public float coreWidth = 0.012f;   // 內層亮芯寬度
+    public float glowWidth = 0.06f;    // 外層柔光寬度
+    public float coreWidth = 0.032f;   // 內層亮芯寬度（Trail67 彗星串要夠寬才讀得到形狀）
     public float pulseSpeed = 5f;      // 寬度脈動頻率
-    public float scrollSpeed = 1.2f;   // 流光速度
+    public float scrollSpeed = 1.2f;   // 流光速度（負值可反向）
 
     [Header("小動畫 UI（組員的 prefab；上方浮出）")]
     public GameObject uiPrefab;
@@ -173,10 +173,14 @@ public class ExtinguisherMergeHint : MonoBehaviour
                 baseMat = Resources.Load<Material>("VFX/RoomLineMat");
             }
 
+            // 外層柔光：程式生成的柔邊貼圖（負責距離顏色暈染）
             _glowMat = new Material(baseMat);
-            _coreMat = new Material(baseMat);
             _glowMat.mainTexture = _beamTex;
-            _coreMat.mainTexture = _beamTex;
+
+            // 內層亮芯：保留材質上烤好的 Hovl Trail67（白色彗星拖尾），
+            // Tile + 捲動 = 一串發光彗星流向隊友（白色可染任何色）
+            _coreMat = new Material(baseMat);
+            _coreMat.mainTextureScale = new Vector2(2f, 1f);   // 約每 0.5m 一顆彗星
         }
 
         if (_anchorMat == null)
