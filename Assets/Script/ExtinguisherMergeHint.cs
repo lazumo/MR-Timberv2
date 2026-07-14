@@ -14,10 +14,13 @@ using UnityEngine;
 /// </summary>
 public class ExtinguisherMergeHint : MonoBehaviour
 {
-    [Header("Anchor：滅火器上兩個寫死的位置（local 座標，build 完手動優化）")]
-    [Tooltip("隊友在我左邊時顯示的 anchor（相對滅火器手的 local 座標）")]
+    [Header("Anchor：滅火器上兩個寫死的位置")]
+    [Tooltip("優先：FireExtinguisher prefab 裡名為 MergeAnchor_L / MergeAnchor_R 的子物件（在 prefab 編輯器裡視覺化擺位）。找不到才用下面的 local 座標。")]
+    public string anchorChildLeft = "MergeAnchor_L";
+    public string anchorChildRight = "MergeAnchor_R";
+    [Tooltip("備用：隊友在我左邊時顯示的 anchor（相對滅火器手的 local 座標）")]
     public Vector3 anchorLocalLeft = new Vector3(-0.12f, 0.18f, 0f);
-    [Tooltip("隊友在我右邊時顯示的 anchor（相對滅火器手的 local 座標）")]
+    [Tooltip("備用：隊友在我右邊時顯示的 anchor（相對滅火器手的 local 座標）")]
     public Vector3 anchorLocalRight = new Vector3(0.12f, 0.18f, 0f);
     public float anchorScale = 0.06f;
 
@@ -148,6 +151,9 @@ public class ExtinguisherMergeHint : MonoBehaviour
         return true;
     }
 
+    // prefab 裡的 anchor 標記子物件（有就優先用，可在 prefab 編輯器視覺化擺位）
+    private Transform _myAnchorL, _myAnchorR, _partnerAnchorL, _partnerAnchorR;
+
     private void ResolveHands()
     {
         _myHand = null;
@@ -161,7 +167,22 @@ public class ExtinguisherMergeHint : MonoBehaviour
         }
 
         if (_myHand != null && _partnerHand != null)
-            Debug.Log("[MergeHint] Hands resolved (mine + partner).");
+        {
+            _myAnchorL = FindChildByName(_myHand.transform, anchorChildLeft);
+            _myAnchorR = FindChildByName(_myHand.transform, anchorChildRight);
+            _partnerAnchorL = FindChildByName(_partnerHand.transform, anchorChildLeft);
+            _partnerAnchorR = FindChildByName(_partnerHand.transform, anchorChildRight);
+
+            Debug.Log($"[MergeHint] Hands resolved. Anchor markers: mine L={_myAnchorL != null} R={_myAnchorR != null}, " +
+                      $"partner L={_partnerAnchorL != null} R={_partnerAnchorR != null} (false = 用 local 座標備用值)");
+        }
+    }
+
+    private static Transform FindChildByName(Transform root, string name)
+    {
+        foreach (var t in root.GetComponentsInChildren<Transform>(true))
+            if (t.name == name) return t;
+        return null;
     }
 
     // ===================== 顯示 / 隱藏 =====================
@@ -359,8 +380,16 @@ public class ExtinguisherMergeHint : MonoBehaviour
             float px = theirs.InverseTransformPoint(mine.position).x;
             if (Mathf.Abs(px) > 0.05f) _partnerRightSide = px > 0f;
 
-            a = mine.TransformPoint(_myRightSide ? anchorLocalRight : anchorLocalLeft);
-            b = theirs.TransformPoint(_partnerRightSide ? anchorLocalRight : anchorLocalLeft);
+            // 優先用 prefab 裡的 MergeAnchor_L/R 子物件；沒有才用 local 座標備用值
+            Transform myMarker = _myRightSide ? _myAnchorR : _myAnchorL;
+            Transform theirMarker = _partnerRightSide ? _partnerAnchorR : _partnerAnchorL;
+
+            a = myMarker != null
+                ? myMarker.position
+                : mine.TransformPoint(_myRightSide ? anchorLocalRight : anchorLocalLeft);
+            b = theirMarker != null
+                ? theirMarker.position
+                : theirs.TransformPoint(_partnerRightSide ? anchorLocalRight : anchorLocalLeft);
         }
 
         // 圓柱橫躺：長軸保持水平、對齊兩人連線的方向
