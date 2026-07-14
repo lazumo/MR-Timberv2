@@ -108,6 +108,10 @@ public class GameFlowController : NetworkBehaviour
         // 每個 peer 各自跑合體提示（滅火階段：充能完成 → 光束亮到合體為止）
         ExtinguisherMergeHint.Spawn(mergeHintUiPrefab, mergeBeamTexture, mergeBeamTintCore);
 
+        // host 持續對齊 colocation anchor（guest 由 Meta BB 對齊；沒這個 host 一
+        // recenter/漂移，房間與綠框就會偏離 anchor 軸）
+        ColocationHostAlignment.Ensure();
+
         // 房間 pose 廣播：host 等虛擬房載好後發布；client 收到就套用（含晚加入）
         if (IsServer)
             StartCoroutine(PublishRoomPoseWhenReady());
