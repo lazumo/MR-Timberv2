@@ -15,6 +15,8 @@ public class RoomBoundaryLine : MonoBehaviour
     public int leafCount = 50;
     [Tooltip("離邊界至少留這個距離（公尺），避免葉子壓在界線外")]
     public float edgeMargin = 0.05f;
+    [Tooltip("靠邊密集度：1 = 全面均勻，越大越往邊界集中（中間稀、邊界密）")]
+    public float edgeBias = 4f;
     [Tooltip("葉片長度範圍（公尺）")]
     public Vector2 leafLength = new Vector2(0.06f, 0.11f);
 
@@ -86,8 +88,17 @@ public class RoomBoundaryLine : MonoBehaviour
         float range = _halfSize - edgeMargin;
         for (int i = 0; i < leafCount; i++)
         {
-            // 整個正方形內均勻散落（只留一點邊界 margin，葉子不壓線外）
-            var local = new Vector3(Next(-range, range), 0f, Next(-range, range));
+            // 整個正方形都有葉子，但靠邊較密、中間較稀：
+            // 先抽「離中心多遠」（edgeBias 次方偏向外圈），再在該圈（同心正方形環）上均勻取點
+            float r = range * Mathf.Pow((float)rng.NextDouble(), 1f / Mathf.Max(1f, edgeBias));
+            float along = Next(-r, r);
+            Vector3 local = rng.Next(4) switch
+            {
+                0 => new Vector3(along, 0f, r),    // 前
+                1 => new Vector3(along, 0f, -r),   // 後
+                2 => new Vector3(r, 0f, along),    // 右
+                _ => new Vector3(-r, 0f, along),   // 左
+            };
             local.y = 0.006f + 0.006f * (i % 3);   // 貼地 + 微錯層避免 z-fighting
 
             var leaf = new GameObject($"Leaf_{i}");
