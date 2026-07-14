@@ -198,8 +198,7 @@ public class ExtinguisherMergeHint : MonoBehaviour
 
         // 每位玩家只看到「自己 anchor 上方」的箭頭（本系統是純本地的，
         // A 機器只畫 A 生的，B 機器只畫 B 生的——天然只有本人看得到）
-        if (arrowPrefab != null)
-            _arrow = MakeArrow();
+        _arrow = MakeArrow();
 
         UpdateHintVisuals();
     }
@@ -306,6 +305,15 @@ public class ExtinguisherMergeHint : MonoBehaviour
         var pivot = new GameObject("MergeHintArrow");
         pivot.transform.SetParent(transform, false);
 
+        // 沒接 prefab 也要有箭頭（Inspector 槽很容易忘記接 / 欄位改名接線就丟）：
+        // 程式內建一支平面箭頭 mesh（十字兩片、各角度可見），用 anchor 材質 → 顏色跟著距離紅黃走
+        if (arrowPrefab == null)
+        {
+            Debug.Log("[MergeHint] No arrow prefab wired — using built-in arrow.");
+            BuildFallbackArrow(pivot.transform);
+            return pivot;
+        }
+
         var inst = Instantiate(arrowPrefab, pivot.transform);
         inst.transform.localPosition = Vector3.zero;
         inst.transform.localRotation = Quaternion.identity;
@@ -333,6 +341,50 @@ public class ExtinguisherMergeHint : MonoBehaviour
         }
 
         return pivot;
+    }
+
+    // 內建箭頭：指向 +Z 的平面箭頭（雙面），兩片繞 Z 軸交叉 90° 成十字 → 任何角度都看得到形狀
+    private Mesh _fallbackArrowMesh;   // 建一次重複用（每次充能顯示不重建）
+
+    private void BuildFallbackArrow(Transform parent)
+    {
+        var mesh = _fallbackArrowMesh;
+        if (mesh == null)
+        {
+            mesh = _fallbackArrowMesh = new Mesh { name = "MergeHintArrowMesh" };
+
+            // XZ 平面、單位長度、尖端朝 +Z（LookRotation 的 forward），寬度相對比例
+            var v = new[]
+            {
+                new Vector3(-0.14f, 0f, -0.5f),  // 桿
+                new Vector3( 0.14f, 0f, -0.5f),
+                new Vector3( 0.14f, 0f,  0.1f),
+                new Vector3(-0.14f, 0f,  0.1f),
+                new Vector3(-0.35f, 0f,  0.1f),  // 頭（三角）
+                new Vector3( 0.35f, 0f,  0.1f),
+                new Vector3( 0f,    0f,  0.5f),
+            };
+            // 正反兩面（unlit 不吃法線方向也保險起見兩面都畫）
+            var tris = new[] { 0, 2, 1, 0, 3, 2, 4, 6, 5,
+                               0, 1, 2, 0, 2, 3, 4, 5, 6 };
+            mesh.vertices = v;
+            mesh.triangles = tris;
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+        }
+
+        for (int i = 0; i < 2; i++)
+        {
+            var plane = new GameObject(i == 0 ? "ArrowFlat" : "ArrowCross");
+            plane.transform.SetParent(parent, false);
+            plane.transform.localScale = Vector3.one * arrowTargetSize;
+            if (i == 1) plane.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+            plane.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var mr = plane.AddComponent<MeshRenderer>();
+            mr.sharedMaterial = _anchorMat;   // 跟 anchor 同材質 → 近紅遠黃一起變
+            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            mr.receiveShadows = false;
+        }
     }
 
     // 橫躺的小圓柱（長軸水平、朝向隊友方向；Unity 圓柱軸向是 Y，靠旋轉放倒）
@@ -504,5 +556,6 @@ public class ExtinguisherMergeHint : MonoBehaviour
         if (_core2Mat != null) Destroy(_core2Mat);
         if (_anchorMat != null) Destroy(_anchorMat);
         if (_beamTex != null) Destroy(_beamTex);
+        if (_fallbackArrowMesh != null) Destroy(_fallbackArrowMesh);
     }
 }
