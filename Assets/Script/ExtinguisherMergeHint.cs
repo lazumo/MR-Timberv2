@@ -48,6 +48,8 @@ public class ExtinguisherMergeHint : MonoBehaviour
     public float uiScale = 0.02f;
     [Tooltip("面板背對你時勾這個轉 180°")]
     public bool uiFlip180 = false;
+    [Tooltip("面板朝向修正（billboard 之後再加的旋轉；fbx 出廠朝向歪掉用這個補，例如 Y=90）")]
+    public Vector3 uiRotationOffset = new Vector3(0f, 90f, 0f);
 
     public static ExtinguisherMergeHint Spawn(
         Vector3 offset, GameObject ui, Texture2D beamTexture = null, bool tintCore = true)
@@ -451,6 +453,7 @@ public class ExtinguisherMergeHint : MonoBehaviour
             {
                 Quaternion look = Quaternion.LookRotation(ui.transform.position - cam.transform.position);
                 if (uiFlip180) look *= Quaternion.Euler(0f, 180f, 0f);
+                look *= Quaternion.Euler(uiRotationOffset);   // fbx 出廠朝向修正
                 ui.transform.rotation = look;
             }
         }
