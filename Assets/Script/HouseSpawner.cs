@@ -29,8 +29,10 @@ public class HouseSpawnerNetworked : NetworkBehaviour
     [Header("Settings")]
     public GameObject housePrefab;
     public int numberOfHouses = 1;
-    [Tooltip("true = 用 3x3 四面牆中點當固定生成位（保證生滿）；false = 純隨機取樣")]
+    [Tooltip("true = 用 3x3 對面牆固定生成位（保證生滿、factory 不重疊）；false = 純隨機取樣")]
     public bool useFixedWallSlots = true;
+    [Tooltip("房子沿牆面往左偏移（公尺，以該牆面向房內的視角）；對面牆的左是斜對角 → 拉開兩座 factory")]
+    public float wallSlotLeftOffset = 0.5f;
 
     public int SpawnedHouseColorIndex { get; private set; } = -1;
     private int _baseColorIndex;
@@ -116,8 +118,9 @@ public class HouseSpawnerNetworked : NetworkBehaviour
             }
         }
 
-        // ⭐ 確定性生成：3x3 虛擬房的四面牆「中點」當候選位置（隨機順序取 numberOfHouses 面），
-        // 保證兩棟一定生得出來、且必在房間內。隨機取樣在小房間會機率性失敗
+        // ⭐ 確定性生成：兩棟房分在「對面的兩面牆」，各自往（面向房內的）左邊偏
+        // wallSlotLeftOffset 公尺——對面牆的「左」正好在斜對角，兩座 color factory
+        // 距離拉到最遠，3x3 小房間裡才不會重疊。隨機取樣在小房間會機率性失敗
         // （高度帶 + 邊界 + 柱狀檢查疊起來），曾造成 Only spawned 1/2 → pipeline 退化成 ×1。
         if (useFixedWallSlots && SpawnArea.Instance != null && SpawnArea.Instance.IsInitialized)
         {
@@ -126,19 +129,22 @@ public class HouseSpawnerNetworked : NetworkBehaviour
             float half = SpawnArea.Instance.radius;                    // 3x3 → 1.5 = 到牆距離
             float wallY = (minWallHeight + maxWallHeight) * 0.5f;
 
-            // 四面牆的內法線（由牆指向房間中心），洗牌讓每局牆面不同
-            Vector3[] inward = { yawRot * Vector3.forward, yawRot * Vector3.back, yawRot * Vector3.left, yawRot * Vector3.right };
-            for (int i = inward.Length - 1; i > 0; i--)
-            {
-                int j = Random.Range(0, i + 1);
-                (inward[i], inward[j]) = (inward[j], inward[i]);
-            }
+            // 對面牆成對排序：先隨機選一組對面牆（前後 or 左右），房 0/房 1 各拿一面；
+            // 那組被擋才輪到另一組
+            Vector3 f = yawRot * Vector3.forward;
+            Vector3 r = yawRot * Vector3.right;
+            bool frontBackFirst = Random.value < 0.5f;
+            Vector3[] order = frontBackFirst
+                ? new[] { f, -f, r, -r }
+                : new[] { r, -r, f, -f };
 
-            foreach (var n in inward)
+            foreach (var n in order)
             {
                 if (successfulSpawns >= numberOfHouses) break;
 
-                Vector3 slotPos = c - n * half;                        // 牆面中點
+                // 牆面中點 + 往「這面牆面向房內視角的左邊」偏移
+                Vector3 left = Vector3.Cross(n, Vector3.up).normalized;
+                Vector3 slotPos = c - n * half + left * wallSlotLeftOffset;
                 slotPos.y = wallY;
 
                 Quaternion slotRot = Quaternion.FromToRotation(Vector3.up, n);   // 同隨機路徑：up 對牆內法線
