@@ -10,15 +10,15 @@ using UnityEngine;
 /// </summary>
 public class RoomBoundaryLine : MonoBehaviour
 {
-    [Header("落葉散佈")]
-    [Tooltip("內部填充的葉子數（全區都有、稀疏）")]
-    public int leafCount = 45;
-    [Tooltip("沿邊界排一圈、畫出方形輪廓的葉子數（密集、大致順著邊的方向）")]
-    public int borderLeafCount = 64;
+    [Header("落葉散佈（堆積在方框邊上的自然感）")]
+    [Tooltip("內部零星的葉子數（很稀疏，像被風吹散的幾片）")]
+    public int strayCount = 16;
+    [Tooltip("沿框稀疏撒一圈的葉子數（讓輪廓在堆與堆之間保持連續）")]
+    public int sprinkleCount = 30;
+    [Tooltip("邊上的小堆數（每堆 4~8 片，位置隨機）")]
+    public int edgeClusterCount = 8;
     [Tooltip("離邊界至少留這個距離（公尺），避免葉子壓在界線外")]
     public float edgeMargin = 0.05f;
-    [Tooltip("內部填充的靠邊傾向：1 = 全面均勻，越大越往邊界集中")]
-    public float edgeBias = 1.5f;
     [Tooltip("葉片長度範圍（公尺）")]
     public Vector2 leafLength = new Vector2(0.09f, 0.15f);
 
@@ -65,7 +65,7 @@ public class RoomBoundaryLine : MonoBehaviour
         }
 
         BuildLeaves();
-        Debug.Log($"[RoomBoundaryLeaves] {leafCount} fill + {borderLeafCount} border leaves scattered, center={SpawnArea.Instance.GetCenter()}, half={_halfSize}");
+        Debug.Log($"[RoomBoundaryLeaves] {transform.childCount} leaves piled along the boundary, center={SpawnArea.Instance.GetCenter()}, half={_halfSize}");
 
         // 持續跟隨：SpawnArea 的 pose 之後還會被修正
         // （host：虛擬房 SetPose；client：收到 host 廣播的權威 pose）。
@@ -97,44 +97,64 @@ public class RoomBoundaryLine : MonoBehaviour
         float Next(float min, float max) => min + (float)rng.NextDouble() * (max - min);
 
         float range = _halfSize - edgeMargin;
+        float ring = 2f * range;        // 每邊長
+        float total = 4f * ring;        // 周長
         int idx = 0;
 
-        // ── 內部填充：整個正方形都有（輕微靠邊傾向）──
-        for (int i = 0; i < leafCount; i++)
+        // 周長參數 s（0 起點 = 左前角、順時針繞一圈）→ 邊界上往內縮 depth 的點
+        Vector3 PerimeterPoint(float s, float depth)
         {
-            float r = range * Mathf.Pow((float)rng.NextDouble(), 1f / Mathf.Max(1f, edgeBias));
-            float along = Next(-r, r);
-            Vector3 local = rng.Next(4) switch
+            s = ((s % total) + total) % total;
+            int e = (int)(s / ring);
+            float along = (s % ring) - range;
+            return e switch
             {
-                0 => new Vector3(along, 0f, r),    // 前
-                1 => new Vector3(along, 0f, -r),   // 後
-                2 => new Vector3(r, 0f, along),    // 右
-                _ => new Vector3(-r, 0f, along),   // 左
+                0 => new Vector3(along, 0f, range - depth),    // 前（左→右）
+                1 => new Vector3(range - depth, 0f, -along),   // 右（前→後）
+                2 => new Vector3(-along, 0f, -range + depth),  // 後（右→左）
+                _ => new Vector3(-range + depth, 0f, along),   // 左（後→前）
             };
-            SpawnLeaf(local, Next(0f, 360f), rng, ref idx);
         }
 
-        // ── 邊界一圈：葉子密集排出方形輪廓，大致順著邊的方向躺 ──
-        int perEdge = Mathf.Max(1, borderLeafCount / 4);
-        for (int e = 0; e < 4; e++)
+        // 高斯（沿邊聚成一撮）與指數（貼線最密、往內遞減）分佈 —— 堆積的關鍵
+        float Gauss(float sigma)
         {
-            for (int k = 0; k < perEdge; k++)
-            {
-                // 沿邊等距 + 少量抖動；貼著邊界內側一窄條
-                float along = Mathf.Lerp(-range, range, (k + 0.5f) / perEdge) + Next(-0.06f, 0.06f);
-                float inset = _halfSize - Next(0.03f, 0.12f);
-                Vector3 local = e switch
-                {
-                    0 => new Vector3(along, 0f, inset),
-                    1 => new Vector3(along, 0f, -inset),
-                    2 => new Vector3(inset, 0f, along),
-                    _ => new Vector3(-inset, 0f, along),
-                };
-                // 葉長軸大致沿著邊的方向（±30° 自然抖動），視覺上像葉子畫的線
-                float edgeYaw = e < 2 ? 90f : 0f;
-                SpawnLeaf(local, edgeYaw + Next(-30f, 30f), rng, ref idx);
-            }
+            double u1 = 1.0 - rng.NextDouble(), u2 = rng.NextDouble();
+            return sigma * (float)(System.Math.Sqrt(-2.0 * System.Math.Log(u1)) *
+                                   System.Math.Cos(2.0 * System.Math.PI * u2));
         }
+        float ExpDepth(float scale, float max) =>
+            Mathf.Min(max, 0.02f - Mathf.Log(1f - (float)rng.NextDouble()) * scale);
+
+        // ── 四個角落：明顯的堆（風把葉子掃進角落的感覺）──
+        for (int c = 0; c < 4; c++)
+        {
+            float sc = c * ring;   // 角落在周長上的位置
+            int n = rng.Next(8, 13);
+            for (int k = 0; k < n; k++)
+                SpawnLeaf(PerimeterPoint(sc + Gauss(0.14f), ExpDepth(0.07f, 0.35f)),
+                          Next(0f, 360f), rng, ref idx);
+        }
+
+        // ── 邊上的小堆：位置隨機、一撮一撮 ──
+        for (int j = 0; j < edgeClusterCount; j++)
+        {
+            float sc = Next(0f, total);
+            int n = rng.Next(4, 9);
+            for (int k = 0; k < n; k++)
+                SpawnLeaf(PerimeterPoint(sc + Gauss(0.16f), ExpDepth(0.05f, 0.30f)),
+                          Next(0f, 360f), rng, ref idx);
+        }
+
+        // ── 沿框稀疏撒一圈：堆與堆之間輪廓不斷線 ──
+        for (int i = 0; i < sprinkleCount; i++)
+            SpawnLeaf(PerimeterPoint(Next(0f, total), ExpDepth(0.04f, 0.25f)),
+                      Next(0f, 360f), rng, ref idx);
+
+        // ── 內部零星幾片：被吹散的感覺 ──
+        for (int i = 0; i < strayCount; i++)
+            SpawnLeaf(new Vector3(Next(-range, range), 0f, Next(-range, range)),
+                      Next(0f, 360f), rng, ref idx);
     }
 
     private void SpawnLeaf(Vector3 local, float yaw, System.Random rng, ref int idx)
