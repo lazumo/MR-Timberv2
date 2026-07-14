@@ -65,8 +65,8 @@ public class ExtinguisherMergeHint : MonoBehaviour
 
     // runtime visuals
     private GameObject _myAnchor, _partnerAnchor;
-    private LineRenderer _glow, _core;
-    private Material _glowMat, _coreMat, _anchorMat;
+    private LineRenderer _glow, _core, _core2;
+    private Material _glowMat, _coreMat, _core2Mat, _anchorMat;
     private Texture2D _beamTex;
     private readonly List<GameObject> _uiInstances = new();
 
@@ -163,6 +163,7 @@ public class ExtinguisherMergeHint : MonoBehaviour
 
         _glow = MakeBeam("MergeHintBeamGlow", _glowMat, glowWidth);
         _core = MakeBeam("MergeHintBeamCore", _coreMat, coreWidth);
+        _core2 = MakeBeam("MergeHintBeamCore2", _core2Mat, coreWidth);
 
         if (uiPrefab != null)
         {
@@ -196,9 +197,13 @@ public class ExtinguisherMergeHint : MonoBehaviour
             _glowMat.mainTexture = _beamTex;
 
             // 內層亮芯：保留材質上烤好的 Hovl Trail67（白色彗星拖尾），
-            // Tile + 捲動 = 一串發光彗星流向隊友（白色可染任何色）
+            // Tile + 捲動 = 一串發光彗星。彗星頭肥尾細會讓單向那層「一頭重」，
+            // 所以跑兩層方向相反的流（我→隊友 + 隊友→我），亮度對稱、雙向靠攏。
             _coreMat = new Material(baseMat);
-            _coreMat.mainTextureScale = new Vector2(2f, 1f);   // 約每 0.5m 一顆彗星
+            _coreMat.mainTextureScale = new Vector2(2f, 1f);    // 約每 0.5m 一顆彗星
+
+            _core2Mat = new Material(baseMat);
+            _core2Mat.mainTextureScale = new Vector2(-2f, 1f);  // 鏡像 → 彗星朝反方向
         }
 
         if (_anchorMat == null)
@@ -324,6 +329,12 @@ public class ExtinguisherMergeHint : MonoBehaviour
             _core.SetPosition(1, b);
             _core.widthMultiplier = coreWidth * pulse;
         }
+        if (_core2 != null)
+        {
+            _core2.SetPosition(0, a);
+            _core2.SetPosition(1, b);
+            _core2.widthMultiplier = coreWidth * pulse;
+        }
 
         if (_glowMat != null)
         {
@@ -331,12 +342,21 @@ public class ExtinguisherMergeHint : MonoBehaviour
             _glowMat.color = gc;
             _glowMat.mainTextureOffset = new Vector2(-Time.time * scrollSpeed, 0f);
         }
-        if (_coreMat != null)
+        if (_coreMat != null || _core2Mat != null)
         {
-            // 亮芯偏白，看起來像過曝的光
-            var cc = Color.Lerp(c, Color.white, 0.65f); cc.a = 0.9f;
-            _coreMat.color = cc;
-            _coreMat.mainTextureOffset = new Vector2(-Time.time * scrollSpeed * 1.8f, 0f);
+            // 亮芯偏白，看起來像過曝的光（兩層各半亮度，疊加後跟原本一樣亮）
+            var cc = Color.Lerp(c, Color.white, 0.65f); cc.a = 0.55f;
+            if (_coreMat != null)
+            {
+                _coreMat.color = cc;
+                _coreMat.mainTextureOffset = new Vector2(-Time.time * scrollSpeed * 1.8f, 0f);
+            }
+            if (_core2Mat != null)
+            {
+                _core2Mat.color = cc;
+                // 反向捲動：另一串彗星從隊友那端流回來（雙向靠攏）
+                _core2Mat.mainTextureOffset = new Vector2(Time.time * scrollSpeed * 1.8f, 0f);
+            }
         }
         if (_anchorMat != null)
             _anchorMat.SetColor("_BaseColor", c);
@@ -369,8 +389,9 @@ public class ExtinguisherMergeHint : MonoBehaviour
         if (_partnerAnchor != null) Destroy(_partnerAnchor);
         if (_glow != null) Destroy(_glow.gameObject);
         if (_core != null) Destroy(_core.gameObject);
+        if (_core2 != null) Destroy(_core2.gameObject);
         _myAnchor = _partnerAnchor = null;
-        _glow = _core = null;
+        _glow = _core = _core2 = null;
 
         foreach (var ui in _uiInstances)
             if (ui != null) Destroy(ui);
@@ -381,6 +402,7 @@ public class ExtinguisherMergeHint : MonoBehaviour
     {
         if (_glowMat != null) Destroy(_glowMat);
         if (_coreMat != null) Destroy(_coreMat);
+        if (_core2Mat != null) Destroy(_core2Mat);
         if (_anchorMat != null) Destroy(_anchorMat);
         if (_beamTex != null) Destroy(_beamTex);
     }
