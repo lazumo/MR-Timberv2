@@ -40,8 +40,6 @@ public class ExtinguisherMergeHint : MonoBehaviour
     [Header("小動畫 UI（組員的 prefab；上方浮出）")]
     public GameObject uiPrefab;
     public float uiHeight = 0.12f;     // UI 在 anchor 上方多高
-    [Tooltip("true = 只在兩人中間生一個（適合已同時畫左右的教學面板）；false = 兩個 anchor 上各生一個")]
-    public bool uiSingleAtMidpoint = true;
     [Tooltip("自動縮放後的面板高度（公尺）。生成時量 renderer bounds 自動置中+縮放，pivot 亂掉的 prefab 也能正確顯示")]
     public float uiTargetHeight = 0.3f;
     [Tooltip("備用手動縮放（prefab 沒有任何 Renderer 可量時才用）")]
@@ -176,12 +174,10 @@ public class ExtinguisherMergeHint : MonoBehaviour
         _core = MakeBeam("MergeHintBeamCore", _coreMat, coreWidth);
         _core2 = MakeBeam("MergeHintBeamCore2", _core2Mat, coreWidth);
 
+        // 每位玩家只看到「自己 anchor 上方」的一個 hint（本系統是純本地的，
+        // A 機器只畫 A 生的，B 機器只畫 B 生的——天然只有本人看得到）
         if (uiPrefab != null)
-        {
-            int count = uiSingleAtMidpoint ? 1 : 2;
-            for (int i = 0; i < count; i++)
-                _uiInstances.Add(MakeUiInstance());
-        }
+            _uiInstances.Add(MakeUiInstance());
 
         UpdateHintVisuals();
     }
@@ -438,16 +434,14 @@ public class ExtinguisherMergeHint : MonoBehaviour
         if (_anchorMat != null)
             _anchorMat.SetColor("_BaseColor", c);
 
-        // UI 浮出（單一置中 = 兩人中間；否則兩個 anchor 上各一個），面向自己的頭
+        // UI 浮在「自己的 anchor」上方（每位玩家看自己的），面向自己的頭
         var cam = Camera.main;
-        Vector3 mid = (a + b) * 0.5f;
         for (int i = 0; i < _uiInstances.Count; i++)
         {
             var ui = _uiInstances[i];
             if (ui == null) continue;
 
-            Vector3 basePos = uiSingleAtMidpoint ? mid : (i == 0 ? a : b);
-            ui.transform.position = basePos + Vector3.up * uiHeight;
+            ui.transform.position = a + Vector3.up * uiHeight;
 
             if (cam != null)
             {
