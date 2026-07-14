@@ -58,6 +58,10 @@ public class GameFlowController : NetworkBehaviour
     [SerializeField] private Transform danceCenter;
 
 
+    [Header("勝利排行榜")]
+    [Tooltip("小精靈開跳後幾秒顯示排行榜")]
+    [SerializeField] private float rankingDelay = 3f;
+
     [Header("Restart Input (physical controller)")]
     [SerializeField] private OVRInput.Button restartButton = OVRInput.Button.Two; // B / Y
     [SerializeField] private OVRInput.Controller restartController = OVRInput.Controller.Active;
@@ -288,6 +292,7 @@ public class GameFlowController : NetworkBehaviour
         _started = true;
         _bridging = false;
         _felledTrees = 0;
+        _runStartTime = Time.time;      // 排行榜計時起點（勝利時停表）
         VictoryReached.Value = false;
         EnterPhase(GamePhase.Logging);
     }
@@ -550,6 +555,57 @@ public class GameFlowController : NetworkBehaviour
         }
 
         PlayElfDanceClientRpc(center);
+
+        // ===== 勝利排行榜：停表 → 寫入歷史 → 算名次/前五 → 廣播（client 端延遲 rankingDelay 顯示）=====
+        float runSeconds = Time.time - _runStartTime;
+        float[] topTimes = UpdateLeaderboard(runSeconds, out int rank, out int total);
+        Debug.Log($"[GameFlow] Run time {runSeconds:F1}s → rank {rank}/{total}.");
+        ShowRankingClientRpc(runSeconds, rank, total, topTimes);
+    }
+
+    // =========================
+    // 勝利排行榜（host 端記錄，PlayerPrefs 持久化 — 換組、重開 app 都保留）
+    // =========================
+
+    private const string LeaderboardKey = "TL_Leaderboard";
+    private float _runStartTime;
+
+    /// 把本次成績加入歷史（秒，升冪 = 越快名次越前），回傳前五名。
+    private float[] UpdateLeaderboard(float runSeconds, out int rank, out int total)
+    {
+        var times = new System.Collections.Generic.List<float>();
+        string saved = PlayerPrefs.GetString(LeaderboardKey, "");
+        foreach (var tok in saved.Split(';'))
+        {
+            if (float.TryParse(tok, System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture, out float v))
+                times.Add(v);
+        }
+
+        times.Add(runSeconds);
+        times.Sort();
+
+        var sb = new System.Text.StringBuilder();
+        for (int i = 0; i < times.Count; i++)
+        {
+            if (i > 0) sb.Append(';');
+            sb.Append(times[i].ToString("F2", System.Globalization.CultureInfo.InvariantCulture));
+        }
+        PlayerPrefs.SetString(LeaderboardKey, sb.ToString());
+        PlayerPrefs.Save();
+
+        rank = times.IndexOf(runSeconds) + 1;
+        total = times.Count;
+
+        var top = new float[Mathf.Min(5, times.Count)];
+        for (int i = 0; i < top.Length; i++) top[i] = times[i];
+        return top;
+    }
+
+    [ClientRpc]
+    private void ShowRankingClientRpc(float myTime, int myRank, int totalGroups, float[] topTimes)
+    {
+        VictoryRankingUI.Show(rankingDelay, myTime, myRank, totalGroups, topTimes);
     }
 
     // ⭐ 舞蹈改成「每台 client 本地播」：只廣播一次起始點，之後各自 60fps 動畫
@@ -562,7 +618,11 @@ public class GameFlowController : NetworkBehaviour
     }
 
     [ClientRpc]
-    private void StopElfDanceClientRpc() => StopLocalElfDance();
+    private void StopElfDanceClientRpc()
+    {
+        StopLocalElfDance();
+        VictoryRankingUI.Clear();   // 勝利視覺一起收（排行榜面板）
+    }
 
     private Coroutine _localDance;
     private readonly System.Collections.Generic.List<GameObject> _localElves = new();
