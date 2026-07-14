@@ -50,9 +50,17 @@ public class RoomBoundaryLine : MonoBehaviour
 
     private IEnumerator Start()
     {
-        // 等虛擬房間載入、SpawnArea 圓心定位完成
+        // 等虛擬房間載入、SpawnArea 圓心定位完成（每 5 秒報一次還在等，方便 logcat 診斷）
+        float nextWaitLog = Time.time + 5f;
         while (SpawnArea.Instance == null || !SpawnArea.Instance.IsInitialized)
+        {
+            if (Time.time >= nextWaitLog)
+            {
+                nextWaitLog = Time.time + 5f;
+                Debug.Log("[RoomBoundaryLeaves] waiting for SpawnArea...");
+            }
             yield return null;
+        }
 
         BuildLeaves();
         Debug.Log($"[RoomBoundaryLeaves] {leafCount} leaves scattered, center={SpawnArea.Instance.GetCenter()}, half={_halfSize}");
@@ -126,7 +134,9 @@ public class RoomBoundaryLine : MonoBehaviour
         for (int i = 0; i <= seg; i++)
         {
             float t = i / (float)seg;                                   // 0=葉柄 1=葉尖
-            float halfW = Mathf.Pow(Mathf.Sin(Mathf.PI * t), 0.8f) * 0.28f;
+            // Max(0,·)：Sin(PI) 浮點誤差是 -8.7e-8，負數的 0.8 次方 = NaN
+            // → 頂點/bounds 全 NaN → 整個 mesh 被視錐剔除，一片都不會畫
+            float halfW = Mathf.Pow(Mathf.Max(0f, Mathf.Sin(Mathf.PI * t)), 0.8f) * 0.28f;
             verts[i * 2] = new Vector3(-halfW, 0f, t - 0.5f);
             verts[i * 2 + 1] = new Vector3(halfW, 0f, t - 0.5f);
         }
