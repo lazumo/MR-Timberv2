@@ -16,6 +16,8 @@ public class ExtinguisherMergeHint : MonoBehaviour
 {
     [Header("Anchor（相對滅火器手的 world offset，可調）")]
     public Vector3 anchorOffset = new Vector3(0f, 0.18f, 0f);
+    [Tooltip("anchor 朝隊友方向的水平偏移：隊友在左 anchor 就在左、在右就在右（host/client 自動鏡像）")]
+    public float anchorTowardPartner = 0.12f;
     public float anchorScale = 0.06f;
 
     [Header("光束距離→顏色（越近越紅、越遠越黃）")]
@@ -343,6 +345,17 @@ public class ExtinguisherMergeHint : MonoBehaviour
             if (_myHand == null || _partnerHand == null) { HideHint(); return; }
             a = _myHand.transform.position + anchorOffset;
             b = _partnerHand.transform.position + anchorOffset;
+        }
+
+        // anchor 朝隊友那側偏移（水平）：隊友在左 → 我的 anchor 在左，
+        // 兩端各自朝對方偏 → host/client 左右鏡像對稱
+        Vector3 toPartner = b - a;
+        toPartner.y = 0f;
+        if (toPartner.sqrMagnitude > 0.0001f)
+        {
+            toPartner.Normalize();
+            a += toPartner * anchorTowardPartner;
+            b -= toPartner * anchorTowardPartner;
         }
 
         // 圓柱橫躺：長軸保持水平、對齊兩人連線的方向
