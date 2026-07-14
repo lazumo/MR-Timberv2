@@ -30,6 +30,9 @@ public class ExtinguisherMergeHint : MonoBehaviour
     public float pulseSpeed = 5f;      // 寬度脈動頻率
     public float scrollSpeed = 1.2f;   // 流光速度（負值可反向）
 
+    [Header("Editor 預覽（Play Mode 按此鍵在面前生一條假光束，不用雙人）")]
+    public KeyCode editorPreviewKey = KeyCode.B;
+
     [Header("小動畫 UI（組員的 prefab；上方浮出）")]
     public GameObject uiPrefab;
     public float uiHeight = 0.12f;     // UI 在 anchor 上方多高
@@ -67,8 +70,23 @@ public class ExtinguisherMergeHint : MonoBehaviour
     private Texture2D _beamTex;
     private readonly List<GameObject> _uiInstances = new();
 
+    private bool _previewMode;
+
     private void Update()
     {
+        // ===== Editor 外觀預覽：按鍵切換，在鏡頭前擺一條固定光束 =====
+        if (Application.isEditor && editorPreviewKey != KeyCode.None && Input.GetKeyDown(editorPreviewKey))
+        {
+            _previewMode = !_previewMode;
+            if (_previewMode && !_showing) ShowHint();
+            else if (!_previewMode && _showing) HideHint();
+        }
+        if (_previewMode)
+        {
+            if (_showing) UpdateHintVisuals();
+            return;
+        }
+
         if (!ConditionsMet())
         {
             // 合體 / 離開滅火階段 / 手不見了 → 收掉（重新充能後 IsChargedNet 會再亮）
@@ -252,10 +270,22 @@ public class ExtinguisherMergeHint : MonoBehaviour
 
     private void UpdateHintVisuals()
     {
-        if (_myHand == null || _partnerHand == null) { HideHint(); return; }
+        Vector3 a, b;
 
-        Vector3 a = _myHand.transform.position + anchorOffset;
-        Vector3 b = _partnerHand.transform.position + anchorOffset;
+        if (_previewMode)
+        {
+            // 預覽：鏡頭前 1.2m、左右各 0.7m 的固定兩點
+            var pc = Camera.main != null ? Camera.main.transform : transform;
+            Vector3 mid0 = pc.position + pc.forward * 1.2f;
+            a = mid0 - pc.right * 0.7f;
+            b = mid0 + pc.right * 0.7f;
+        }
+        else
+        {
+            if (_myHand == null || _partnerHand == null) { HideHint(); return; }
+            a = _myHand.transform.position + anchorOffset;
+            b = _partnerHand.transform.position + anchorOffset;
+        }
 
         // 圓柱橫躺：長軸保持水平、對齊兩人連線的方向
         Vector3 flat = b - a;
