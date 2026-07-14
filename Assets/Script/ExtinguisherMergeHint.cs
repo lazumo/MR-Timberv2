@@ -14,10 +14,11 @@ using UnityEngine;
 /// </summary>
 public class ExtinguisherMergeHint : MonoBehaviour
 {
-    [Header("Anchor（相對滅火器手的 world offset，可調）")]
-    public Vector3 anchorOffset = new Vector3(0f, 0.18f, 0f);
-    [Tooltip("anchor 朝隊友方向的水平偏移：隊友在左 anchor 就在左、在右就在右（host/client 自動鏡像）")]
-    public float anchorTowardPartner = 0.12f;
+    [Header("Anchor：滅火器上兩個寫死的位置（local 座標，build 完手動優化）")]
+    [Tooltip("隊友在我左邊時顯示的 anchor（相對滅火器手的 local 座標）")]
+    public Vector3 anchorLocalLeft = new Vector3(-0.12f, 0.18f, 0f);
+    [Tooltip("隊友在我右邊時顯示的 anchor（相對滅火器手的 local 座標）")]
+    public Vector3 anchorLocalRight = new Vector3(0.12f, 0.18f, 0f);
     public float anchorScale = 0.06f;
 
     [Header("光束距離→顏色（越近越紅、越遠越黃）")]
@@ -52,14 +53,16 @@ public class ExtinguisherMergeHint : MonoBehaviour
     public Vector3 uiRotationOffset = new Vector3(0f, 90f, 0f);
 
     public static ExtinguisherMergeHint Spawn(
-        Vector3 offset, GameObject ui, Texture2D beamTexture = null, bool tintCore = true)
+        Vector3 anchorLeft, Vector3 anchorRight, GameObject ui,
+        Texture2D beamTexture = null, bool tintCore = true)
     {
         var existing = FindAnyObjectByType<ExtinguisherMergeHint>();
         if (existing != null) return existing;
 
         var go = new GameObject("ExtinguisherMergeHint");
         var h = go.AddComponent<ExtinguisherMergeHint>();
-        h.anchorOffset = offset;
+        h.anchorLocalLeft = anchorLeft;
+        h.anchorLocalRight = anchorRight;
         h.uiPrefab = ui;
         h.coreTextureOverride = beamTexture;
         h.tintCoreByDistance = tintCore;
@@ -73,6 +76,7 @@ public class ExtinguisherMergeHint : MonoBehaviour
     private float _nextHandFind;
 
     private bool _showing;
+    private bool _myRightSide, _partnerRightSide;   // 目前顯示哪一側的 anchor（帶死區記憶）
 
     // runtime visuals
     private GameObject _myAnchor, _partnerAnchor;
@@ -343,19 +347,20 @@ public class ExtinguisherMergeHint : MonoBehaviour
         else
         {
             if (_myHand == null || _partnerHand == null) { HideHint(); return; }
-            a = _myHand.transform.position + anchorOffset;
-            b = _partnerHand.transform.position + anchorOffset;
-        }
 
-        // anchor 朝隊友那側偏移（水平）：隊友在左 → 我的 anchor 在左，
-        // 兩端各自朝對方偏 → host/client 左右鏡像對稱
-        Vector3 toPartner = b - a;
-        toPartner.y = 0f;
-        if (toPartner.sqrMagnitude > 0.0001f)
-        {
-            toPartner.Normalize();
-            a += toPartner * anchorTowardPartner;
-            b -= toPartner * anchorTowardPartner;
+            // 每支滅火器有左右兩個寫死的 anchor（local 座標），
+            // 依「隊友在我的左邊還是右邊」二選一顯示（帶 5cm 死區防抖動換邊）
+            Transform mine = _myHand.transform;
+            Transform theirs = _partnerHand.transform;
+
+            float mx = mine.InverseTransformPoint(theirs.position).x;
+            if (Mathf.Abs(mx) > 0.05f) _myRightSide = mx > 0f;
+
+            float px = theirs.InverseTransformPoint(mine.position).x;
+            if (Mathf.Abs(px) > 0.05f) _partnerRightSide = px > 0f;
+
+            a = mine.TransformPoint(_myRightSide ? anchorLocalRight : anchorLocalLeft);
+            b = theirs.TransformPoint(_partnerRightSide ? anchorLocalRight : anchorLocalLeft);
         }
 
         // 圓柱橫躺：長軸保持水平、對齊兩人連線的方向
