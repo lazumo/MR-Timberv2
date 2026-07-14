@@ -18,7 +18,7 @@ public class RoomBoundaryLine : MonoBehaviour
     [Tooltip("靠邊密集度：1 = 全面均勻，越大越往邊界集中（中間稀、邊界密）")]
     public float edgeBias = 4f;
     [Tooltip("葉片長度範圍（公尺）")]
-    public Vector2 leafLength = new Vector2(0.06f, 0.11f);
+    public Vector2 leafLength = new Vector2(0.09f, 0.15f);
 
     // 低飽和秋葉色盤（乾枯感、不搶戲）
     private static readonly Color[] Palette =
@@ -55,6 +55,7 @@ public class RoomBoundaryLine : MonoBehaviour
             yield return null;
 
         BuildLeaves();
+        Debug.Log($"[RoomBoundaryLeaves] {leafCount} leaves scattered, center={SpawnArea.Instance.GetCenter()}, half={_halfSize}");
 
         // 持續跟隨：SpawnArea 的 pose 之後還會被修正
         // （host：虛擬房 SetPose；client：收到 host 廣播的權威 pose）。
@@ -99,7 +100,8 @@ public class RoomBoundaryLine : MonoBehaviour
                 2 => new Vector3(r, 0f, along),    // 右
                 _ => new Vector3(-r, 0f, along),   // 左
             };
-            local.y = 0.006f + 0.006f * (i % 3);   // 貼地 + 微錯層避免 z-fighting
+            // 跟舊綠線同高（2cm 起跳）：更貼地會被 passthrough 地板深度吃掉看不見
+            local.y = 0.02f + 0.008f * (i % 3);
 
             var leaf = new GameObject($"Leaf_{i}");
             leaf.transform.SetParent(transform, false);

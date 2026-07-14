@@ -47,6 +47,9 @@ public class ExtinguisherMergeHint : MonoBehaviour
     public float arrowTargetSize = 0.15f;
     [Tooltip("箭頭 mesh 出廠軸向修正（LookRotation 之後再加；箭頭沒指對方向就調這個，例如 Y=90 或 X=90）")]
     public Vector3 arrowRotationOffset = Vector3.zero;
+    [Tooltip("箭頭沿指向方向往隊友輕推再收回的動畫幅度（公尺）；0 = 關閉")]
+    public float arrowBobAmplitude = 0.04f;
+    public float arrowBobSpeed = 4f;
 
     public static ExtinguisherMergeHint Spawn(
         GameObject arrow, Texture2D beamTexture = null, bool tintCore = true)
@@ -76,7 +79,8 @@ public class ExtinguisherMergeHint : MonoBehaviour
     private LineRenderer _glow, _core, _core2;
     private Material _glowMat, _coreMat, _core2Mat, _anchorMat;
     private Texture2D _beamTex;
-    private GameObject _arrow;   // 指向隊友的箭頭（pivot；prefab 實例置中在裡面）
+    private GameObject _arrow;          // 自己 anchor 上的箭頭 → 指向隊友
+    private GameObject _arrowPartner;   // 隊友 anchor 上的箭頭 → 指向自己（兩支大家都看得到）
 
     private bool _previewMode;
 
@@ -196,9 +200,10 @@ public class ExtinguisherMergeHint : MonoBehaviour
         _core = MakeBeam("MergeHintBeamCore", _coreMat, coreWidth);
         _core2 = MakeBeam("MergeHintBeamCore2", _core2Mat, coreWidth);
 
-        // 每位玩家只看到「自己 anchor 上方」的箭頭（本系統是純本地的，
-        // A 機器只畫 A 生的，B 機器只畫 B 生的——天然只有本人看得到）
+        // 兩個 anchor 上各一支箭頭、互相指向對方（雙方玩家都看得到兩支；
+        // 方向本地就算得出來，不用網路同步）
         _arrow = MakeArrow();
+        _arrowPartner = MakeArrow();
 
         UpdateHintVisuals();
     }
@@ -343,7 +348,8 @@ public class ExtinguisherMergeHint : MonoBehaviour
         return pivot;
     }
 
-    // 內建箭頭：指向 +Z 的平面箭頭（雙面），兩片繞 Z 軸交叉 90° 成十字 → 任何角度都看得到形狀
+    // 內建箭頭：有厚度的立體箭頭（稜柱），尖端朝 +Z——單一實體，任何角度都是「一支」箭頭
+    // （先前用兩片交叉的作法從斜角看會像兩支重疊的箭頭）
     private Mesh _fallbackArrowMesh;   // 建一次重複用（每次充能顯示不重建）
 
     private void BuildFallbackArrow(Transform parent)
@@ -353,38 +359,52 @@ public class ExtinguisherMergeHint : MonoBehaviour
         {
             mesh = _fallbackArrowMesh = new Mesh { name = "MergeHintArrowMesh" };
 
-            // XZ 平面、單位長度、尖端朝 +Z（LookRotation 的 forward），寬度相對比例
-            var v = new[]
+            // 單位長的箭頭外形（XZ 平面、尖端朝 +Z），往上下各擠出 half 厚度
+            var outline = new[]
             {
-                new Vector3(-0.14f, 0f, -0.5f),  // 桿
-                new Vector3( 0.14f, 0f, -0.5f),
-                new Vector3( 0.14f, 0f,  0.1f),
-                new Vector3(-0.14f, 0f,  0.1f),
-                new Vector3(-0.35f, 0f,  0.1f),  // 頭（三角）
-                new Vector3( 0.35f, 0f,  0.1f),
-                new Vector3( 0f,    0f,  0.5f),
+                new Vector3(-0.14f, 0f, -0.5f),  // 0 桿
+                new Vector3( 0.14f, 0f, -0.5f),  // 1
+                new Vector3( 0.14f, 0f,  0.1f),  // 2
+                new Vector3(-0.14f, 0f,  0.1f),  // 3
+                new Vector3(-0.35f, 0f,  0.1f),  // 4 頭
+                new Vector3( 0.35f, 0f,  0.1f),  // 5
+                new Vector3( 0f,    0f,  0.5f),  // 6 尖
             };
-            // 正反兩面（unlit 不吃法線方向也保險起見兩面都畫）
-            var tris = new[] { 0, 2, 1, 0, 3, 2, 4, 6, 5,
-                               0, 1, 2, 0, 2, 3, 4, 5, 6 };
+            const float half = 0.09f;   // 厚度一半（相對單位長）
+            int n = outline.Length;
+            var v = new Vector3[n * 2];
+            for (int j = 0; j < n; j++)
+            {
+                v[j] = outline[j] + Vector3.up * half;       // 上面
+                v[j + n] = outline[j] - Vector3.up * half;   // 下面
+            }
+
+            var cap = new[] { 0, 2, 1, 0, 3, 2, 4, 6, 5 };   // 上蓋（法線朝上）
+            var loop = new[] { 0, 1, 2, 5, 6, 4, 3 };        // 外圈邊界順序
+            var tris = new System.Collections.Generic.List<int>(cap);
+            for (int j = cap.Length - 1; j >= 0; j--) tris.Add(cap[j] + n);   // 下蓋（反繞）
+            for (int j = 0; j < loop.Length; j++)                              // 側壁（雙面保險）
+            {
+                int a1 = loop[j], b1 = loop[(j + 1) % loop.Length];
+                int a2 = a1 + n, b2 = b1 + n;
+                tris.AddRange(new[] { a1, b1, b2, a1, b2, a2,
+                                      a1, b2, b1, a1, a2, b2 });
+            }
+
             mesh.vertices = v;
-            mesh.triangles = tris;
+            mesh.triangles = tris.ToArray();
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
         }
 
-        for (int i = 0; i < 2; i++)
-        {
-            var plane = new GameObject(i == 0 ? "ArrowFlat" : "ArrowCross");
-            plane.transform.SetParent(parent, false);
-            plane.transform.localScale = Vector3.one * arrowTargetSize;
-            if (i == 1) plane.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
-            plane.AddComponent<MeshFilter>().sharedMesh = mesh;
-            var mr = plane.AddComponent<MeshRenderer>();
-            mr.sharedMaterial = _anchorMat;   // 跟 anchor 同材質 → 近紅遠黃一起變
-            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            mr.receiveShadows = false;
-        }
+        var body = new GameObject("ArrowBody");
+        body.transform.SetParent(parent, false);
+        body.transform.localScale = Vector3.one * arrowTargetSize;
+        body.AddComponent<MeshFilter>().sharedMesh = mesh;
+        var mr = body.AddComponent<MeshRenderer>();
+        mr.sharedMaterial = _anchorMat;   // 跟 anchor 同材質 → 近紅遠黃一起變
+        mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        mr.receiveShadows = false;
     }
 
     // 橫躺的小圓柱（長軸水平、朝向隊友方向；Unity 圓柱軸向是 Y，靠旋轉放倒）
@@ -520,16 +540,29 @@ public class ExtinguisherMergeHint : MonoBehaviour
         if (_anchorMat != null)
             _anchorMat.SetColor("_BaseColor", c);
 
-        // 箭頭浮在「自己的 anchor」上方，每幀指向「對方的 anchor」——
-        // 對方移動 / 換邊，方向即時跟著轉（每位玩家只看到自己的箭頭）
-        if (_arrow != null)
-        {
-            _arrow.transform.position = a + Vector3.up * arrowHeight;
+        // 兩支箭頭各浮在 anchor 上方、互相指向對方，
+        // 並沿指向方向輕輕往隊友推進再收回（「往那邊靠」的暗示）
+        UpdateArrow(_arrow, a, b);
+        UpdateArrow(_arrowPartner, b, a);
+    }
 
-            Vector3 dir = b - _arrow.transform.position;
-            if (dir.sqrMagnitude > 0.0001f)
-                _arrow.transform.rotation =
-                    Quaternion.LookRotation(dir.normalized) * Quaternion.Euler(arrowRotationOffset);
+    private void UpdateArrow(GameObject arrow, Vector3 from, Vector3 to)
+    {
+        if (arrow == null) return;
+
+        Vector3 basePos = from + Vector3.up * arrowHeight;
+        Vector3 dir = to - basePos;
+        if (dir.sqrMagnitude > 0.0001f)
+        {
+            Vector3 dn = dir.normalized;
+            float push = arrowBobAmplitude * (0.5f + 0.5f * Mathf.Sin(Time.time * arrowBobSpeed));
+            arrow.transform.position = basePos + dn * push;
+            arrow.transform.rotation =
+                Quaternion.LookRotation(dn) * Quaternion.Euler(arrowRotationOffset);
+        }
+        else
+        {
+            arrow.transform.position = basePos;
         }
     }
 
@@ -546,7 +579,8 @@ public class ExtinguisherMergeHint : MonoBehaviour
         _glow = _core = _core2 = null;
 
         if (_arrow != null) Destroy(_arrow);
-        _arrow = null;
+        if (_arrowPartner != null) Destroy(_arrowPartner);
+        _arrow = _arrowPartner = null;
     }
 
     private void OnDestroy()

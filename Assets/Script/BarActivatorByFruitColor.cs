@@ -35,6 +35,10 @@ public class BarShowWhenEnoughMatchingFruits : NetworkBehaviour
     // （單一 factory 集滿只默默記著，避免一邊先玩起來、另一邊還在接果子）。
     private static readonly List<BarShowWhenEnoughMatchingFruits> All = new();
     private bool _selfMet;   // server-only：這個 factory 自己滿了沒
+
+    // 閂鎖：擠壓 UI 一旦全域亮起就不再縮回。一邊擠壓成功時果子被消耗/despawn，
+    // 該 factory 的計數會瞬間掉回未滿，沒有閂鎖的話另一邊的手把會跟著被收掉。
+    private static bool _revealed;
     private void OnEnable()
     {
         if (visual != null)
@@ -61,6 +65,7 @@ public class BarShowWhenEnoughMatchingFruits : NetworkBehaviour
     public override void OnNetworkDespawn()
     {
         All.Remove(this);
+        if (All.Count == 0) _revealed = false;   // restart：全部收掉 → 閂鎖歸零
         shouldShowBars.OnValueChanged -= OnShouldShowBarsChanged;
         base.OnNetworkDespawn();
     }
@@ -167,9 +172,12 @@ public class BarShowWhenEnoughMatchingFruits : NetworkBehaviour
         foreach (var f in All)
             if (f == null || !f._selfMet) { allMet = false; break; }
 
+        if (allMet) _revealed = true;
+        bool show = _revealed;   // 亮過就維持亮（直到 restart 全部 despawn）
+
         foreach (var f in All)
-            if (f != null && f.shouldShowBars.Value != allMet)
-                f.shouldShowBars.Value = allMet;
+            if (f != null && f.shouldShowBars.Value != show)
+                f.shouldShowBars.Value = show;
     }
 
     public void NotifyFruitConsumed(int fruitColorIndex)
