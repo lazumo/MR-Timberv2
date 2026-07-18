@@ -290,9 +290,9 @@ public class VirtualMRUKRoomLoader : MonoBehaviour
 
         StringBuilder sb = new StringBuilder(4096);
         sb.Append("{\"CoordinateSystem\":\"Unity\",\"Rooms\":[{");
-        AppendProp(sb, "UUID", RoomUuid, false);
+        AppendProp(sb, "UUID", RoomUuid);
         sb.Append("\"RoomLayout\":{");
-        AppendProp(sb, "FloorUuid", FloorUuid, false);
+        AppendProp(sb, "FloorUuid", FloorUuid);
         AppendProp(sb, "CeilingUuid", CeilingUuid);
         sb.Append("\"WallsUUid\":[");
         AppendQuoted(sb, FrontWallUuid); sb.Append(',');
@@ -330,7 +330,7 @@ public class VirtualMRUKRoomLoader : MonoBehaviour
         }
 
         sb.Append('{');
-        AppendProp(sb, "UUID", uuid, false);
+        AppendProp(sb, "UUID", uuid);
         sb.Append("\"SemanticClassifications\":[");
         AppendQuoted(sb, label);
         sb.Append("],");
