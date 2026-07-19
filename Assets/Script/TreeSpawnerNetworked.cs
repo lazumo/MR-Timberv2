@@ -28,6 +28,15 @@ public class TreeSpawnerNetworked : NetworkBehaviour
     public LayerMask collisionLayerMask;
     public float posOffset = 1.5f;
 
+    [Header("Fruit tree fixed height（不依賴 MRUK 天花板）")]
+    [Tooltip("開啟 = 果樹固定從 fruitSpawnHeight 往下長，XZ 直接在 SpawnArea 3x3 內取點；" +
+             "MRUK 房間（真實或虛擬）載入與否、天花板多高都不影響。")]
+    public bool useFixedFruitHeight = true;
+    [Tooltip("果樹樹根（吊掛點）的離地高度，公尺")]
+    public float fruitSpawnHeight = 3.5f;
+    [Tooltip("固定高度模式的 XZ 取點範圍（以 SpawnArea 中心為原點的正方形半寬）")]
+    public float fruitSpawnRange = 1.2f;
+
     [Header("Phase Control")]
     [Tooltip("Legacy auto-start on spawn. Leave OFF — LoggingPhase / CatchingPhase now drive spawning.")]
     [SerializeField] private bool autoStartLegacy = false;
@@ -134,7 +143,8 @@ public class TreeSpawnerNetworked : NetworkBehaviour
         if (_fruitSpawning) return;
         _fruitSpawning = true;
 
-        if (MRUK.Instance && MRUK.Instance.GetCurrentRoom() != null)
+        // 固定高度模式不需要 MRUK 房間，直接開始
+        if (useFixedFruitHeight || (MRUK.Instance && MRUK.Instance.GetCurrentRoom() != null))
             StartCoroutine(SpawnFruitTreesRoutine(treeCount));
         else if (MRUK.Instance)
             MRUK.Instance.RegisterSceneLoadedCallback(() => { if (_fruitSpawning) StartCoroutine(SpawnFruitTreesRoutine(treeCount)); });
@@ -300,6 +310,36 @@ public class TreeSpawnerNetworked : NetworkBehaviour
         // ⭐ Once a phase has ended, refuse respawns (e.g. SliceObject / FruitTree delayed respawn).
         if (type == TreeType.Wood && !_woodLogging) return false;
         if (type == TreeType.Fruit && !_fruitSpawning) return false;
+
+        // 果樹固定高度模式：不問 MRUK 天花板，XZ 在 SpawnArea 3x3 內取點、
+        // 樹根固定掛在 fruitSpawnHeight（比照房子改 deterministic 的做法）
+        if (type == TreeType.Fruit && useFixedFruitHeight)
+        {
+            if (SpawnArea.Instance == null) return false;
+
+            Vector3 c0 = SpawnArea.Instance.GetCenter();
+            Quaternion yawQ = SpawnArea.Instance.GetRotation();
+
+            for (int i = 0; i < 50; i++)
+            {
+                Vector3 p = c0 + yawQ * new Vector3(
+                    Random.Range(-fruitSpawnRange, fruitSpawnRange), 0f,
+                    Random.Range(-fruitSpawnRange, fruitSpawnRange));
+                p.y = fruitSpawnHeight - posOffset;   // PerformSpawn 會 +posOffset，抵銷後正好在 fruitSpawnHeight
+
+                // 倒掛朝向（同天花板生成的 normal = 下）+ 隨機轉向
+                Quaternion hang = Quaternion.FromToRotation(Vector3.up, Vector3.down)
+                                  * Quaternion.Euler(0, Random.Range(0, 360), 0);
+
+                if (IsSpaceEmpty(p, hang))
+                {
+                    Debug.Log($"[TreeSpawner] Fruit tree at fixed height {fruitSpawnHeight}m.");
+                    PerformSpawn(type, p, hang, forcedFruitColorIndex);
+                    return true;
+                }
+            }
+            return false;
+        }
 
         MRUKRoom room = MRUK.Instance.GetCurrentRoom();
         if (room == null) return false;
