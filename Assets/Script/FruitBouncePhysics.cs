@@ -13,7 +13,12 @@ public class FruitBouncePhysics : NetworkBehaviour
     public float destroyDelay = 2.0f;
     public string groundLayerName = "Ground";
 
+    [Tooltip("高於此高度的『水平』靜態表面視為天花板，果子直接穿過。果樹吊點（3.5m）可能比 " +
+             "MRUK 天花板 collider（真實房約 2.4m）高，果子會生在天花板上面、被當成落地而消失。")]
+    public float ceilingIgnoreAboveY = 2.2f;
+
     private Rigidbody rb;
+    private Collider _col;
     private int bounceCount = 0;
     private bool physicsEnabled = false;
 
@@ -23,6 +28,7 @@ public class FruitBouncePhysics : NetworkBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        _col = GetComponent<Collider>();
         dropState = GetComponent<FruitDropState>();
         autoDestroy = GetComponent<AutoDestroyNetworkObject>();
     }
@@ -80,6 +86,19 @@ public class FruitBouncePhysics : NetworkBehaviour
     private void OnCollisionEnter(Collision collision)
     {
         if (!IsServer || !physicsEnabled) return;
+
+        // ⭐ 天花板穿透：果子撞到「高處的水平靜態表面」= 天花板 collider →
+        // 忽略碰撞讓它穿過繼續落下（不彈跳、不排程消失）。
+        var contact = collision.GetContact(0);
+        if (contact.point.y > ceilingIgnoreAboveY &&
+            Mathf.Abs(contact.normal.y) > 0.5f &&
+            collision.collider.attachedRigidbody == null)
+        {
+            Debug.Log($"[FruitBounce] Passing through ceiling-like collider '{collision.collider.name}' at y={contact.point.y:F2}.");
+            if (_col != null)
+                Physics.IgnoreCollision(collision.collider, _col);
+            return;
+        }
 
         // ⭐ 落在地板 → 啟動 Despawn（是否重複由 AutoDestroyNetworkObject 處理）
         if (IsGroundSurface(collision))
