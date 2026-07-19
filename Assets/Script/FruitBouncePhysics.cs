@@ -1,5 +1,6 @@
 using UnityEngine;
 using Unity.Netcode;
+using Meta.XR.MRUtilityKit;
 
 [RequireComponent(typeof(Rigidbody))]
 public class FruitBouncePhysics : NetworkBehaviour
@@ -80,7 +81,42 @@ public class FruitBouncePhysics : NetworkBehaviour
         physicsEnabled = true;
         rb.isKinematic = false;
         rb.useGravity = true;
+        IgnoreNonFloorSceneColliders();
         dropState?.MarkDropped();
+    }
+
+    // 掉落路徑上的隱形殺手：MRUK 房間（尤其真實掃描房）除了天花板還有
+    // 桌子/櫃子/沙發等家具 volume 的 collider 隱形立在半空中，果子砸到
+    // 就被當成「落地」→ 2 秒清掉。果子只跟「地板」互動（漏接清理用），
+    // 其餘 MRUK collider（天花板/牆/家具/global mesh）一律忽略穿過。
+    private static bool _loggedIgnore;
+
+    private void IgnoreNonFloorSceneColliders()
+    {
+        if (MRUK.Instance == null || _col == null) return;
+
+        int n = 0;
+        foreach (var room in MRUK.Instance.Rooms)
+        {
+            if (room == null) continue;
+            foreach (var anchor in room.Anchors)
+            {
+                if (anchor == null) continue;
+                if (anchor.HasAnyLabel(MRUKAnchor.SceneLabels.FLOOR)) continue;
+
+                foreach (var c in anchor.GetComponentsInChildren<Collider>(true))
+                {
+                    Physics.IgnoreCollision(c, _col);
+                    n++;
+                }
+            }
+        }
+
+        if (!_loggedIgnore && n > 0)
+        {
+            _loggedIgnore = true;
+            Debug.Log($"[FruitBounce] Fruits ignore {n} non-floor MRUK colliders (ceiling/walls/furniture).");
+        }
     }
 
     private void OnCollisionEnter(Collision collision)
