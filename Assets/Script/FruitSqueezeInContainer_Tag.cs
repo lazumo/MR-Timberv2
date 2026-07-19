@@ -33,12 +33,8 @@ public class FruitSqueezeInContainer_Tag : NetworkBehaviour
     private bool isFullySqueezed = false;
     private float gap0;
     private bool barsReady;
-    private BarShowWhenEnoughMatchingFruits requirement;   // 擠壓 UI 亮起前不許爆果子
     private void OnEnable()
     {
-        if (requirement == null)
-            requirement = GetComponent<BarShowWhenEnoughMatchingFruits>();
-
         if (visual != null)
             visual.OnVisualReady += TryBindBars;
 
@@ -75,17 +71,6 @@ public class FruitSqueezeInContainer_Tag : NetworkBehaviour
     {
         if (!barsReady) return;
         if (fruitSet.Count == 0) return;
-
-        // ⭐ 擠壓 UI 還沒亮（果子還在收集中）→ 不計數、不縮放。
-        // bars 是隱形時也會跟著兩人手距合攏的，沒這個門，收集階段玩家彼此靠近
-        // 或路過觸發區，箱裡的果子就會被「隱形擠壓」爆掉。
-        if (requirement != null && !requirement.IsRequirementMet())
-        {
-            isFullySqueezed = false;
-            squeezeCount = 0;
-            gap0 = Mathf.Max(GetGap(), 0.0001f);   // 順便刷新基準：亮起那刻從當下間距起算
-            return;
-        }
 
         float gap = GetGap();
         float t = gap / gap0;

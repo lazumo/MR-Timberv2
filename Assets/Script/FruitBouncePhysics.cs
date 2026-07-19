@@ -13,10 +13,6 @@ public class FruitBouncePhysics : NetworkBehaviour
     public float destroyDelay = 2.0f;
     public string groundLayerName = "Ground";
 
-    [Tooltip("落下速度上限（m/s）。果樹改吊 3.5m 後自由落體可達 8m/s+，" +
-             "限速讓果子進箱的撞擊溫和、不彈飛。6 = 約 1.8m 自由落體的速度")]
-    public float maxFallSpeed = 6f;
-
     private Rigidbody rb;
     private int bounceCount = 0;
     private bool physicsEnabled = false;
@@ -78,7 +74,6 @@ public class FruitBouncePhysics : NetworkBehaviour
         physicsEnabled = true;
         rb.isKinematic = false;
         rb.useGravity = true;
-        rb.maxLinearVelocity = maxFallSpeed;
         dropState?.MarkDropped();
     }
 
