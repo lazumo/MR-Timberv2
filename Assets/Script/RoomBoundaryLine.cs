@@ -70,11 +70,25 @@ public class RoomBoundaryLine : MonoBehaviour
         // 持續跟隨：SpawnArea 的 pose 之後還會被修正
         // （host：虛擬房 SetPose；client：收到 host 廣播的權威 pose）。
         // 葉子是本物件的 children（房間 local 座標），跟著根一起動。
+        Vector3 lastC = Vector3.positiveInfinity;
+        float lastYaw = float.PositiveInfinity;
         while (true)
         {
             Vector3 c = SpawnArea.Instance.GetCenter();
             c.y = 0f;
-            transform.SetPositionAndRotation(c, SpawnArea.Instance.GetRotation());
+            Quaternion rot = SpawnArea.Instance.GetRotation();
+
+            // shift 追蹤器：房間 pose 一有可見變化就記錄從哪跳到哪（診斷「樹葉範圍一直跳」用）
+            float yaw = rot.eulerAngles.y;
+            if ((c - lastC).sqrMagnitude > 0.02f * 0.02f || Mathf.Abs(Mathf.DeltaAngle(yaw, lastYaw)) > 1f)
+            {
+                if (!float.IsInfinity(lastYaw))
+                    Debug.LogWarning($"[RoomBoundaryLeaves] Room pose SHIFTED: {lastC} yaw={lastYaw:F1} -> {c} yaw={yaw:F1}");
+                lastC = c;
+                lastYaw = yaw;
+            }
+
+            transform.SetPositionAndRotation(c, rot);
             yield return new WaitForSeconds(0.5f);
         }
     }

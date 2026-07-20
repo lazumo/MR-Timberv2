@@ -60,8 +60,18 @@ public class VirtualMRUKRoomLoader : MonoBehaviour
         }
     }
 
+    // 一次性防護：場景裡 MRUK 的 SceneLoadedEvent 接著 LoadVirtualRoomFromUnityEvent，
+    // 玩家走出掃描範圍→re-localization→MRUK 重載場景就會再呼叫進來；而房間中心算式
+    // 用的是「相機當下位置」→ 每重載一次房間就搬到玩家腳下。甚至我們自己的
+    // LoadSceneFromJsonString 也會發 SceneLoadedEvent 造成自我觸發。
+    // 成功載入一次就永遠不再重載（失敗才放行重試）。
+    private bool _loadingOrLoaded;
+
     public async Task LoadVirtualRoom()
     {
+        if (_loadingOrLoaded) return;
+        _loadingOrLoaded = true;
+
         while (MRUK.Instance == null)
         {
             await Task.Yield();
@@ -75,6 +85,7 @@ public class VirtualMRUKRoomLoader : MonoBehaviour
         if (result != MRUK.LoadDeviceResult.Success)
         {
             Debug.LogError($"[VirtualMRUKRoomLoader] Failed to load virtual MRUK room: {result}");
+            _loadingOrLoaded = false;   // 失敗 → 允許下一次 SceneLoadedEvent 重試
             return;
         }
 
