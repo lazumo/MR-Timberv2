@@ -172,12 +172,23 @@ public class BarShowWhenEnoughMatchingFruits : NetworkBehaviour
         foreach (var f in All)
             if (f == null || !f._selfMet) { allMet = false; break; }
 
+        bool firstReveal = allMet && !_revealed;
         if (allMet) _revealed = true;
         bool show = _revealed;   // 亮過就維持亮（直到 restart 全部 despawn）
 
         foreach (var f in All)
             if (f != null && f.shouldShowBars.Value != show)
                 f.shouldShowBars.Value = show;
+
+        // 推進階段跟 UI 亮起綁同一瞬間。各 factory 的一次性閂鎖有順序漏洞：
+        // A 滿→閂鎖用掉→果子掉了又補滿（不再通知）→ B 早已滿（閂鎖也用掉）
+        // → UI 亮了但 NotifyFruitsReady 永遠沒人叫 → 卡在 Catching、box 收不掉。
+        // 這裡在「全部集滿」的第一刻直接通知，跟閂鎖誰先誰後無關。
+        if (firstReveal && GameFlowController.Instance != null)
+        {
+            Debug.Log("[BarShow] All factories full — revealing squeeze UI + notifying GameFlow.");
+            GameFlowController.Instance.NotifyFruitsReady();
+        }
     }
 
     public void NotifyFruitConsumed(int fruitColorIndex)
