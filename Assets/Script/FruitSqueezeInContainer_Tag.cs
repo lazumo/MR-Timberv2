@@ -33,6 +33,7 @@ public class FruitSqueezeInContainer_Tag : NetworkBehaviour
     private bool isFullySqueezed = false;
     private float gap0;
     private bool barsReady;
+    private int poppedFruits = 0;   // 本座 factory 已爆果數（上色進度 = popped / required）
     private void OnEnable()
     {
         if (visual != null)
@@ -261,6 +262,14 @@ public class FruitSqueezeInContainer_Tag : NetworkBehaviour
 
         var houseSync = colorFactory.OwnerHouseSync;
         if (houseSync == null) return;
-        houseSync.AdvancePaintStage();
+
+        // 等比上色：讀 factory 的需求果數（Inspector 的 Required Count），
+        // 最後一顆爆掉時剛好 Full——需求數改 2/3/5 都不用再動擠壓端
+        poppedFruits++;
+        int required = 3;
+        var barRule = GetComponent<BarShowWhenEnoughMatchingFruits>();
+        if (barRule != null) required = barRule.RequiredCount;
+
+        houseSync.SetPaintProgress(poppedFruits, required);
     }
 }

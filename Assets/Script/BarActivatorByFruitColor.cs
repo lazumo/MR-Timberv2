@@ -197,4 +197,7 @@ public class BarShowWhenEnoughMatchingFruits : NetworkBehaviour
     {
         return shouldShowBars.Value;
     }
+
+    /// 需要收集的果子數（擠壓端按這個數字等比推進房子上色進度）
+    public int RequiredCount => requiredCount;
 }

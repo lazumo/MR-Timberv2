@@ -299,6 +299,25 @@ public class ObjectNetworkSync : NetworkBehaviour
             SetState(HouseState.Colored);
     }
 
+    /// 按「已爆果數 / 需求果數」等比設定上色進度：最後一顆保證剛好 Full。
+    /// 舊的 AdvancePaintStage 一顆推一階（且第一顆只切狀態），需求果數一改就對不上；
+    /// 這裡直接算比例，需求 2 顆、3 顆、5 顆都自動成立。
+    public void SetPaintProgress(int poppedFruits, int requiredFruits)
+    {
+        if (!IsServer) return;
+
+        if (currentHouseState.Value != HouseState.Coloring &&
+            currentHouseState.Value != HouseState.Colored)
+            SetState(HouseState.Coloring);
+
+        int stage = Mathf.Clamp(
+            Mathf.CeilToInt(3f * poppedFruits / Mathf.Max(1, requiredFruits)), 0, 3);
+        paintStage.Value = (PaintStage)stage;
+
+        if (paintStage.Value == PaintStage.Full)
+            SetState(HouseState.Colored);
+    }
+
     // ============================================================
     // DEBUG 後門（demo 前停用）：
     //   grip = 強制上色一階、左手食指扳機 = 強制切換房子狀態
