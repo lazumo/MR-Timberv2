@@ -37,6 +37,11 @@ public class SpawnArea : MonoBehaviour
 
     private void CaptureCenter()
     {
+        // 閂鎖：只做「第一次」的保底定位。這個方法掛在 MRUK 的 SceneLoaded callback 上，
+        // 玩家走出掃描範圍→re-localization→場景重載時會再被觸發，沒有閂鎖的話
+        // 房間會重新以玩家當下位置為中心（永久搬家），並蓋掉 loader 的權威 pose。
+        if (IsInitialized) return;
+
         if (Camera.main != null)
             _center = Camera.main.transform.position;
         else
