@@ -1,4 +1,5 @@
 using UnityEngine;
+using Meta.XR.MRUtilityKit;
 
 // 限制 TreeSpawner / HouseSpawner 只在玩家初始站位附近的圓形範圍（XZ 平面）內生成物件。
 // MRUK 會把實體上缺少的牆面補完、或把真牆延伸太長，導致生成點落在玩家構不到的位置。
@@ -24,10 +25,32 @@ public class SpawnArea : MonoBehaviour
         Instance = this;
     }
 
-    // ⭐ 不再有「抓頭盔位置當中心」的機制（原 CaptureCenter 已整個移除）。
-    // 它掛在 MRUK 的 SceneLoaded callback 上，玩家走出掃描範圍等事件觸發場景重載時
-    // 會把房間重新定位到 host 當下的位置。現在房間 pose 只有兩個來源、各設一次：
-    //   host：VirtualMRUKRoomLoader.SetPose；client：host 廣播的 SetPoseFromNetwork。
+    private void Start()
+    {
+        if (MRUK.Instance != null && MRUK.Instance.GetCurrentRoom() != null)
+            CaptureCenter();
+        else if (MRUK.Instance != null)
+            MRUK.Instance.RegisterSceneLoadedCallback(CaptureCenter);
+        else
+            CaptureCenter();
+    }
+
+    private void CaptureCenter()
+    {
+        // 只做「第一次」的開機保底。這個方法掛在 MRUK 的 SceneLoaded callback 上，
+        // 每次場景載入（真實房、虛擬房、裝置端場景更新）都會再被呼叫——沒有這個閂鎖，
+        // 房間中心會一次次跳到 host 當下的頭盔位置，還會蓋掉 loader 算好的權威 pose。
+        if (IsInitialized) return;
+
+        if (Camera.main != null)
+            _center = Camera.main.transform.position;
+        else
+            _center = transform.position;
+
+        IsInitialized = true;
+        Debug.Log($"[SpawnArea] Center locked at {_center} (radius={radius})");
+    }
+
     public Vector3 GetCenter() => _center;
     public Quaternion GetRotation() => _yaw;
 
