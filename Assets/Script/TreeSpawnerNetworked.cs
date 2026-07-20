@@ -37,6 +37,9 @@ public class TreeSpawnerNetworked : NetworkBehaviour
     [Tooltip("固定高度模式的 XZ 取點範圍（以 SpawnArea 中心為原點的正方形半寬）")]
     public float fruitSpawnRange = 1.2f;
 
+    [Tooltip("木頭樹離房間中心的最大距離（比 SpawnArea 的 1.5m 圓再收一點，不要貼牆）")]
+    public float woodSpawnRadius = 1.2f;
+
     [Header("Phase Control")]
     [Tooltip("Legacy auto-start on spawn. Leave OFF — LoggingPhase / CatchingPhase now drive spawning.")]
     [SerializeField] private bool autoStartLegacy = false;
@@ -354,6 +357,14 @@ public class TreeSpawnerNetworked : NetworkBehaviour
             attempts++;
             if (room.GenerateRandomPositionOnSurface(surfaceType, 0.1f, filter, out Vector3 pos, out Vector3 normal))
             {
+                // 木頭樹：比 SpawnArea 的圓再收緊一圈（獨立可調，不影響房子/火的邊界）
+                if (type == TreeType.Wood && SpawnArea.Instance != null)
+                {
+                    Vector3 d = pos - SpawnArea.Instance.GetCenter();
+                    d.y = 0f;
+                    if (d.sqrMagnitude > woodSpawnRadius * woodSpawnRadius) continue;
+                }
+
                 Quaternion rotation = Quaternion.FromToRotation(Vector3.up, normal);
                 rotation *= Quaternion.Euler(0, Random.Range(0, 360), 0);
 
