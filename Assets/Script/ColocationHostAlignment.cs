@@ -2,7 +2,10 @@ using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
-/// Host 端把 camera rig「持續」對齊 colocation alignment anchor。
+/// Host 端把 camera rig 對齊 colocation alignment anchor —— 只在進場時對齊「一次」。
+/// （曾經是每幀持續對齊，但 anchor 追蹤估計的噪音會帶著整個世界連續滑動，
+/// 使用者實測樹葉範圍一直漂移後決定改回一次性。代價：host 中途 recenter/休眠喚醒
+/// 的話世界會偏掉，demo 時避免這兩個動作即可。）
 /// Meta 的 colocation building block 只讓 guest 對齊（AlignCameraToAnchor 只加在 guest），
 /// host 停留在開機 tracking frame —— 一旦 host recenter / tracking 漂移修正，
 /// 世界軸就偏離鎖在物理空間的 anchor，綠框/房間/所有視覺就跟 anchor 軸歪掉。
@@ -16,7 +19,7 @@ public class ColocationHostAlignment : MonoBehaviour
     private OVRSpatialAnchor _anchor;
     private Transform _rig;
     private float _nextFind;
-    private bool _logged;
+    private bool _alignedOnce;   // 只對齊一次：持續每幀對齊會讓 anchor 估計的噪音帶著整個世界滑動
 
     /// 零接線生成（GameFlowController.OnNetworkSpawn 呼叫；guest 上是 no-op）
     public static void Ensure()
@@ -44,15 +47,12 @@ public class ColocationHostAlignment : MonoBehaviour
             if (_anchor == null || _rig == null) return;
         }
 
+        if (_alignedOnce) return;   // 進場對齊一次就收工，之後世界不再被動
         if (!_anchor.Created) return;
 
-        if (!_logged)
-        {
-            _logged = true;
-            Debug.Log("[ColocationHostAlignment] Host camera rig now continuously aligned to the colocation anchor.");
-        }
-
         Align(_anchor.transform);
+        _alignedOnce = true;
+        Debug.Log("[ColocationHostAlignment] Host aligned to colocation anchor ONCE at session start (continuous alignment disabled).");
     }
 
     private void Align(Transform anchorTransform)
