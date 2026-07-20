@@ -37,11 +37,6 @@ public class SpawnArea : MonoBehaviour
 
     private void CaptureCenter()
     {
-        // 只做「第一次」的開機保底。這個方法掛在 MRUK 的 SceneLoaded callback 上，
-        // 每次場景載入（真實房、虛擬房、裝置端場景更新）都會再被呼叫——沒有這個閂鎖，
-        // 房間中心會一次次跳到 host 當下的頭盔位置，還會蓋掉 loader 算好的權威 pose。
-        if (IsInitialized) return;
-
         if (Camera.main != null)
             _center = Camera.main.transform.position;
         else
