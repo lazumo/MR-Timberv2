@@ -2068,7 +2068,7 @@ PrefabInstance:
     - target: {fileID: 6669701797243572565, guid: a702265522a83254d9e4bd5a46794e07,
         type: 3}
       propertyPath: stage2Contrast
-      value: 1.5
+      value: 1.1
       objectReference: {fileID: 0}
     - target: {fileID: 6669701797243572565, guid: a702265522a83254d9e4bd5a46794e07,
         type: 3}
@@ -2083,7 +2083,7 @@ PrefabInstance:
     - target: {fileID: 6669701797243572565, guid: a702265522a83254d9e4bd5a46794e07,
         type: 3}
       propertyPath: stage2Brightness
-      value: -0.6
+      value: -0.3
       objectReference: {fileID: 0}
     - target: {fileID: 6669701797243572565, guid: a702265522a83254d9e4bd5a46794e07,
         type: 3}
@@ -2136,9 +2136,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   roomWidth: 3
   roomDepth: 3
-  ceilingHeight: 5
+  ceilingHeight: 3.5
   floorY: 0
-  useRealCeilingHeightWhenLower: 1
+  useRealCeilingHeightWhenLower: 0
   alignmentMode: 4
   wallReference: {fileID: 0}
   cameraForwardWallDistance: 1.5
@@ -2482,6 +2482,7 @@ MonoBehaviour:
   danceRadius: 1
   danceOrbitSpeed: 60
   danceCenter: {fileID: 0}
+  rankingDelay: 3
   restartButton: 2
   restartController: -2147483648
   CurrentPhase:
@@ -2498,9 +2499,7 @@ MonoBehaviour:
   bannerHeight: 1.4
   bannerHalfSize: 1.5
   showRoomBoundary: 1
-  mergeHintAnchorOffset: {x: 0, y: 0.18, z: 0}
-  mergeHintUiPrefab: {fileID: 1473447485288047109, guid: e17fcac8d1ab64345a98071571a24a29,
-    type: 3}
+  mergeArrowPrefab: {fileID: 0}
   mergeBeamTexture: {fileID: 2800000, guid: da4e1a5f51dfe774a9a75f04fc855746, type: 3}
   mergeBeamTintCore: 1
 --- !u!82 &1254098480
@@ -3084,6 +3083,11 @@ PrefabInstance:
         type: 3}
       propertyPath: targetWoodTrees
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6873156181121848096, guid: 183d70e2332751744824b132356e8481,
+        type: 3}
+      propertyPath: fruitSpawnHeight
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 6873156181121848096, guid: 183d70e2332751744824b132356e8481,
         type: 3}

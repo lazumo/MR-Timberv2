@@ -779,7 +779,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   factoryData: {fileID: 413048523854809569}
   visual: {fileID: 3308849157903602386}
-  requiredCount: 3
+  requiredCount: 2
 --- !u!1 &1539077161247293660
 GameObject:
   m_ObjectHideFlags: 0
@@ -2900,6 +2900,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   hintRoot: {fileID: 4122040213999441137}
+  driver: {fileID: 0}
+  reappearDelay: 2
 --- !u!1 &5169657565666995893
 GameObject:
   m_ObjectHideFlags: 0

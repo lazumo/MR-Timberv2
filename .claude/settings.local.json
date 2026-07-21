@@ -7,7 +7,11 @@
       "Bash(grep -v \".meta$\")",
       "Bash(awk '/m_Script: .*2dc145c6b7f000142a212c7d518b9d47/{f=1} f{print} f&&/^---/{c++; if\\(c>=1 && NR>start+3\\){}}' NewColorFactory.prefab)",
       "Bash(awk '/m_Script: .*2dc145c6b7f000142a212c7d518b9d47/{f=1} f{print} f&&/^---/&&!/2dc145c6/{exit}')",
-      "Bash(git fetch *)"
+      "Bash(git fetch *)",
+      "PowerShell(git log --oneline --all -- Assets/Script/VirtualMRUKRoomLoader.cs | Select-Object -First 8; Write-Output \"---who wrote the comma lines---\"; git log -L 293,296:Assets/Script/VirtualMRUKRoomLoader.cs --oneline | Select-String -Pattern \"^[0-9a-f]{7} |AppendProp\" | Select-Object -First 12 | ForEach-Object { $_.Line })",
+      "PowerShell(git add Assets/Script/SpawnArea.cs)",
+      "PowerShell(git push origin feature/siggraph)",
+      "PowerShell(git add Assets/Script/TreeSpawnerNetworked.cs)"
     ],
     "additionalDirectories": [
       "c:\\Users\\susan\\MR-Timberv2\\Assets\\Script"

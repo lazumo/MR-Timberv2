@@ -51,8 +51,52 @@ public class SpawnArea : MonoBehaviour
         Debug.Log($"[SpawnArea] Center locked at {_center} (radius={radius})");
     }
 
-    public Vector3 GetCenter() => _center;
-    public Quaternion GetRotation() => _yaw;
+    // ===== 房間 pose 以 colocation anchor 為基準 =====
+    // anchor 是物理鎖定的：玩家走出邊界→re-localization→世界座標系移動時，
+    // anchor 的 transform 會被追蹤系統自動貼回正確的物理位置。
+    // 房間 pose 若存成死的世界座標，世界一動房間就「壞掉」；
+    // 改存「相對 anchor」的偏移、讀取時用 anchor 當下位置換算回來 → anchor 對，房間就永遠對。
+    private Transform _anchorRef;
+    private Vector3 _localCenter;     // 房間中心（anchor 座標系、只算 yaw）
+    private float _localYawOffset;    // 房間 yaw 相對 anchor yaw
+    private bool _anchorRelative;
+
+    private void TryBindAnchor()
+    {
+        if (_anchorRef != null) return;
+        var a = FindAnyObjectByType<OVRSpatialAnchor>();
+        if (a != null && a.Created) _anchorRef = a.transform;
+    }
+
+    // 已有世界 pose、之後才找到 anchor → 補做一次轉換（lazy）
+    private void TryConvertToAnchorRelative()
+    {
+        if (_anchorRelative || !IsInitialized) return;
+        TryBindAnchor();
+        if (_anchorRef == null) return;
+
+        float ay = _anchorRef.eulerAngles.y;
+        _localCenter = Quaternion.Euler(0f, -ay, 0f) * (_center - _anchorRef.position);
+        _localYawOffset = _yaw.eulerAngles.y - ay;
+        _anchorRelative = true;
+        Debug.Log($"[SpawnArea] Room pose now anchor-relative (localCenter={_localCenter}, yawOffset={_localYawOffset:F1}).");
+    }
+
+    public Vector3 GetCenter()
+    {
+        TryConvertToAnchorRelative();
+        if (_anchorRelative && _anchorRef != null)
+            return _anchorRef.position + Quaternion.Euler(0f, _anchorRef.eulerAngles.y, 0f) * _localCenter;
+        return _center;
+    }
+
+    public Quaternion GetRotation()
+    {
+        TryConvertToAnchorRelative();
+        if (_anchorRelative && _anchorRef != null)
+            return Quaternion.Euler(0f, _anchorRef.eulerAngles.y + _localYawOffset, 0f);
+        return _yaw;
+    }
 
     public void SetCenter(Vector3 center)
     {
@@ -71,6 +115,8 @@ public class SpawnArea : MonoBehaviour
         if (_lockedByNetwork) return;
         _yaw = Quaternion.Euler(0f, yawDegrees, 0f);
         SetCenter(center);
+        _anchorRelative = false;              // 用新值重新換算 anchor 相對 pose
+        TryConvertToAnchorRelative();
     }
 
     /// host 廣播的權威房間 pose（client 用這個，並鎖定不被本機 loader 覆寫）。
@@ -80,14 +126,17 @@ public class SpawnArea : MonoBehaviour
         _yaw = Quaternion.Euler(0f, yawDegrees, 0f);
         _center = center;
         IsInitialized = true;
+        _anchorRelative = false;              // 用新值重新換算 anchor 相對 pose
+        TryConvertToAnchorRelative();
         Debug.Log($"[SpawnArea] Pose locked from network: {center}, yaw={yawDegrees}");
     }
 
     public bool IsInside(Vector3 worldPos)
     {
         if (!IsInitialized) return false;
-        float dx = worldPos.x - _center.x;
-        float dz = worldPos.z - _center.z;
+        Vector3 c = GetCenter();   // 透過 anchor 讀當下位置（世界座標移動也不會偏）
+        float dx = worldPos.x - c.x;
+        float dz = worldPos.z - c.z;
         return (dx * dx + dz * dz) <= radius * radius;
     }
 
@@ -97,7 +146,7 @@ public class SpawnArea : MonoBehaviour
     public bool IsInsideBox(Vector3 worldPos, float margin = 0f)
     {
         if (!IsInitialized) return false;
-        Vector3 local = Quaternion.Inverse(_yaw) * (worldPos - _center);
+        Vector3 local = Quaternion.Inverse(GetRotation()) * (worldPos - GetCenter());
         float limit = radius + margin;
         return Mathf.Abs(local.x) <= limit && Mathf.Abs(local.z) <= limit;
     }
