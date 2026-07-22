@@ -151,12 +151,14 @@ public class VirtualMRUKRoomLoader : MonoBehaviour
             }
             else if (net != null && net.IsConnectedClient)
             {
-                // 2b) CLIENT：等 host 廣播房間 pose（client 從不自己定位；房間跟 host 同一塊實體地板）
+                // 2b) CLIENT：等 host 廣播房間 pose（client 從不自己定位；房間跟 host 同一塊實體地板）。
+                // 必須同時等「自己已對齊 colocation 圖釘」——廣播座標是對齊後座標系的語言，
+                // 還沒對齊就拿來蓋，房間會蓋在錯的實體位置（玩家動不動就「站在房間外」）。
                 float poseWaitStart = Time.realtimeSinceStartup;
                 while (Time.realtimeSinceStartup - poseWaitStart < 180f)
                 {
                     var gf = GameFlowController.Instance;
-                    if (gf != null && gf.RoomPoseReady.Value)
+                    if (gf != null && gf.RoomPoseReady.Value && ColocationHostAlignment.AlignedOnce)
                     {
                         Vector3 c = gf.RoomCenter.Value; c.y = floorY;
                         float yawDeg = gf.RoomYawDeg.Value;
