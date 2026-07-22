@@ -74,6 +74,8 @@ public class ColocationHostAlignment : MonoBehaviour
         var nm = NetworkManager.Singleton;
         if (nm == null) return;                       // editor 單機：沒 colocation，閒置
 
+        ReadManualButton();   // 按鍵在圖釘出現前也要有回饋（震動+log），方便展場排錯
+
         if (_anchor == null || _rig == null)
         {
             if (Time.time < _nextFind) return;
@@ -90,7 +92,6 @@ public class ColocationHostAlignment : MonoBehaviour
 
         HookEventsOnce(nm);
         if (!nm.IsHost) DisableMetaAlignerPeriodically();
-        ReadManualButton();
 
         if (!_anchor.Created || Camera.main == null) return;
 
@@ -192,17 +193,25 @@ public class ColocationHostAlignment : MonoBehaviour
 
     // ═════════════════════ 觸發來源 ═════════════════════
 
-    /// 左手 Start（選單鍵）長按 1 秒 = 手動校正（展場工作人員的保險）
+    /// 左手 Start（選單鍵）長按 1 秒 = 手動校正（展場工作人員的保險）。
+    /// 按滿必震動（確認按鍵有讀到）；圖釘還沒好時只 log 原因，不執行校正。
     private void ReadManualButton()
     {
-        if (OVRInput.Get(OVRInput.Button.Start))
+        bool held = OVRInput.Get(OVRInput.Button.Start, OVRInput.Controller.LTouch)
+                 || OVRInput.Get(OVRInput.Button.Start);   // 保險：有些機況 Start 只掛在複合 controller 上
+
+        if (held)
         {
             _startHeld += Time.deltaTime;
-            if (!_manualFired && _startHeld >= ManualHoldSeconds && _alignedOnce)
+            if (!_manualFired && _startHeld >= ManualHoldSeconds)
             {
                 _manualFired = true;
-                BeginCorrection("manual (Start held)");
                 StartCoroutine(Haptics.Pulse(OVRInput.Controller.LTouch, 1f, 0.7f, 0.2f));
+
+                if (_alignedOnce)
+                    BeginCorrection("manual (Start held)");
+                else
+                    Debug.LogWarning("[ColocationAlignment] Manual correction pressed, but no colocation anchor yet — nothing to align to.");
             }
         }
         else
