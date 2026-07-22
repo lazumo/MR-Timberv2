@@ -122,32 +122,43 @@ public class RoomCenterSetup : MonoBehaviour
         string s = PlayerPrefs.GetString(PrefsKey, "");
         if (string.IsNullOrEmpty(s) || !Guid.TryParse(s, out Guid uuid)) return false;
 
-        var unbound = new List<OVRSpatialAnchor.UnboundAnchor>();
-        var result = await OVRSpatialAnchor.LoadUnboundAnchorsAsync(new[] { uuid }, unbound);
-        if (!result.Success || unbound.Count == 0)
+        // 實測（logcat 17:19:24）：戴回頭盔的瞬間查詢會回「找不到」——那時 tracking
+        // 還沒恢復（TrackingAcquired 在 1.7 秒後才來）。圖釘沒丟，是問太早。
+        // → 重試 5 次、每次隔 3 秒（涵蓋喚醒/開機的 relocalization 窗口）。
+        for (int attempt = 0; attempt < 5; attempt++)
         {
-            Debug.LogWarning($"[RoomCenterSetup] Saved anchor {uuid} not found (space setup cleared?).");
-            return false;
+            if (attempt > 0) await Task.Delay(3000);
+
+            var unbound = new List<OVRSpatialAnchor.UnboundAnchor>();
+            var result = await OVRSpatialAnchor.LoadUnboundAnchorsAsync(new[] { uuid }, unbound);
+            if (!result.Success || unbound.Count == 0)
+            {
+                Debug.LogWarning($"[RoomCenterSetup] Saved anchor {uuid} not found yet (attempt {attempt + 1}/5) — tracking may still be relocalizing.");
+                continue;
+            }
+
+            var ub = unbound[0];
+            if (!await ub.LocalizeAsync(10.0))
+            {
+                Debug.LogWarning($"[RoomCenterSetup] Saved anchor failed to localize (attempt {attempt + 1}/5).");
+                continue;
+            }
+
+            var go = new GameObject("RoomCenterAnchor");
+            go.AddComponent<RoomCenterAnchorTag>();
+            var anchor = go.AddComponent<OVRSpatialAnchor>();
+            ub.BindTo(anchor);
+
+            float t = 0f;
+            while (!anchor.Created && t < 10f) { t += Time.deltaTime; await Task.Yield(); }
+            if (!anchor.Created) { Destroy(go); continue; }
+
+            _centerAnchor = anchor;
+            return true;
         }
 
-        var ub = unbound[0];
-        if (!await ub.LocalizeAsync(10.0))
-        {
-            Debug.LogWarning("[RoomCenterSetup] Saved anchor failed to localize in 10s.");
-            return false;
-        }
-
-        var go = new GameObject("RoomCenterAnchor");
-        go.AddComponent<RoomCenterAnchorTag>();
-        var anchor = go.AddComponent<OVRSpatialAnchor>();
-        ub.BindTo(anchor);
-
-        float t = 0f;
-        while (!anchor.Created && t < 10f) { t += Time.deltaTime; await Task.Yield(); }
-        if (!anchor.Created) { Destroy(go); return false; }
-
-        _centerAnchor = anchor;
-        return true;
+        Debug.LogWarning("[RoomCenterSetup] Saved anchor unrecoverable after 5 attempts (space setup cleared?) — entering setup mode.");
+        return false;
     }
 
     private async Task<bool> CreateAndSaveAnchor(Vector3 pos, float yaw)

@@ -52,14 +52,17 @@ public class RoomBoundaryLine : MonoBehaviour
 
     private IEnumerator Start()
     {
-        // 等虛擬房間載入、SpawnArea 圓心定位完成（每 5 秒報一次還在等，方便 logcat 診斷）
+        // 等虛擬房間載入、SpawnArea 圓心定位完成（每 5 秒報一次還在等，方便 logcat 診斷）。
+        // 也要等「房間位置定案」——不等的話葉子會先用 SpawnArea 的保底值（頭的位置、
+        // 還浮在頭的高度）生出來，看起來像歪掉的房間，幾秒後才跳到正確位置。
         float nextWaitLog = Time.time + 5f;
-        while (SpawnArea.Instance == null || !SpawnArea.Instance.IsInitialized)
+        while (SpawnArea.Instance == null || !SpawnArea.Instance.IsInitialized
+               || VirtualMRUKRoomLoader.ResolvingRoomPose)
         {
             if (Time.time >= nextWaitLog)
             {
                 nextWaitLog = Time.time + 5f;
-                Debug.Log("[RoomBoundaryLeaves] waiting for SpawnArea...");
+                Debug.Log("[RoomBoundaryLeaves] waiting for SpawnArea / room pose...");
             }
             yield return null;
         }
