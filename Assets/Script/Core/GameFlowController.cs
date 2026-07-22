@@ -1,4 +1,5 @@
 using System.Collections;
+using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -90,6 +91,41 @@ public class GameFlowController : NetworkBehaviour
     public NetworkVariable<bool> RoomPoseReady = new NetworkVariable<bool>(
         false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
+    // ===== colocation alignment anchor 的 UUID:host 廣播,guest 只綁這一支
+    // (重連後場景可能殘留舊圖釘,兩台各對各的 = 修不掉的固定位移)=====
+    public NetworkVariable<FixedString64Bytes> AlignAnchorUuid = new NetworkVariable<FixedString64Bytes>(
+        default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+    // ===== 對齊誤差儀表(AlignmentErrorHud):x = 位置誤差 m、y = yaw 誤差 °;
+    // (-1,-1) = 尚無資料。host 直接寫,guest 用 ServerRpc 回報。=====
+    public NetworkVariable<Vector2> HostAlignError = new NetworkVariable<Vector2>(
+        new Vector2(-1f, -1f), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<Vector2> GuestAlignError = new NetworkVariable<Vector2>(
+        new Vector2(-1f, -1f), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+    /// host 端:ColocationHostAlignment 找到 alignment anchor 後呼叫,廣播其 UUID。
+    public void PublishAlignAnchorUuid(System.Guid uuid)
+    {
+        if (!IsServer) return;
+        string s = uuid.ToString();
+        if (AlignAnchorUuid.Value.ToString() == s) return;
+        AlignAnchorUuid.Value = s;
+        Debug.Log($"[GameFlow] Alignment anchor UUID published: {s}");
+    }
+
+    /// host 端:AlignmentErrorHud 每秒回報自己的對齊誤差。
+    public void SetHostAlignError(Vector2 err)
+    {
+        if (IsServer) HostAlignError.Value = err;
+    }
+
+    /// guest 端:AlignmentErrorHud 每秒回報自己的對齊誤差給 host。
+    [ServerRpc(RequireOwnership = false)]
+    public void ReportGuestAlignErrorServerRpc(Vector2 err)
+    {
+        GuestAlignError.Value = err;
+    }
+
     private bool _started;     // game has begun
     private bool _bridging;    // fire bridge in progress (guards against double-trigger)
 
@@ -118,6 +154,9 @@ public class GameFlowController : NetworkBehaviour
 
         // 中心圖釘設定系統（host 用；grip+Start 重擺鍵要一直活著，不能依賴 loader 的模式分支）
         RoomCenterSetup.Ensure();
+
+        // staff 對齊誤差儀表(按住左手 grip 顯示;host/guest 誤差同時可見)
+        AlignmentErrorHud.Ensure();
 
         // 房間 pose 廣播：host 等虛擬房載好後發布；client 收到就套用（含晚加入）
         if (IsServer)
@@ -154,12 +193,20 @@ public class GameFlowController : NetworkBehaviour
 
     private IEnumerator AdoptRoomPoseWhenReady()
     {
-        while (!RoomPoseReady.Value) yield return null;
+        // 廣播座標是「對齊後座標系」的語言 —— client 還沒對齊就拿去做 anchor-relative
+        // 換算(SpawnArea)會把 host 座標系和本機座標系混在一起,房間/邊界永久偏掉。
+        // editor 沒有 colocation,不等 AlignedOnce。
+        while (!RoomPoseReady.Value ||
+               !(ColocationHostAlignment.AlignedOnce || Application.isEditor))
+            yield return null;
 
         if (SpawnArea.Instance != null)
             SpawnArea.Instance.SetPoseFromNetwork(RoomCenter.Value, RoomYawDeg.Value);
 
         // host 遊戲中重擺中心圖釘 → pose 會再變 → client 跟著重新採用
+        // (先 -= 再 +=:斷線重連會重跑 OnNetworkSpawn,避免重複訂閱)
+        RoomCenter.OnValueChanged -= OnRoomPoseChanged;
+        RoomYawDeg.OnValueChanged -= OnRoomYawChanged;
         RoomCenter.OnValueChanged += OnRoomPoseChanged;
         RoomYawDeg.OnValueChanged += OnRoomYawChanged;
     }

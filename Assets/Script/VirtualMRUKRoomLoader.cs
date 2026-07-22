@@ -154,20 +154,28 @@ public class VirtualMRUKRoomLoader : MonoBehaviour
                 // 2b) CLIENT：等 host 廣播房間 pose（client 從不自己定位；房間跟 host 同一塊實體地板）。
                 // 必須同時等「自己已對齊 colocation 圖釘」——廣播座標是對齊後座標系的語言，
                 // 還沒對齊就拿來蓋，房間會蓋在錯的實體位置（玩家動不動就「站在房間外」）。
+                // 無限等、絕不 fallback:fallback = client 自己蓋一間房 = 兩台各玩各的,
+                // 比等待更糟。等超過 10 秒顯示提示讓 staff 知道要處理(通常是 host 卡住)。
                 float poseWaitStart = Time.realtimeSinceStartup;
-                while (Time.realtimeSinceStartup - poseWaitStart < 180f)
+                while (true)
                 {
                     var gf = GameFlowController.Instance;
                     if (gf != null && gf.RoomPoseReady.Value && ColocationHostAlignment.AlignedOnce)
                     {
+                        HideWaitHint();
                         Vector3 c = gf.RoomCenter.Value; c.y = floorY;
                         float yawDeg = gf.RoomYawDeg.Value;
                         Debug.Log($"[VirtualMRUKRoomLoader] CLIENT room pose from host broadcast: {c}, yaw={yawDeg:F1}");
                         return new Pose(c, Quaternion.Euler(0f, yawDeg, 0f));
                     }
+
+                    if (Time.realtimeSinceStartup - poseWaitStart > 10f)
+                        ShowWaitHint(!ColocationHostAlignment.AlignedOnce
+                            ? "Aligning to host's space...\nStay near the room center and look around."
+                            : "Waiting for host's room...\nCheck the HOST headset (worn? room placed?).");
+
                     await Task.Delay(250);
                 }
-                Debug.LogWarning("[VirtualMRUKRoomLoader] CLIENT: no room pose broadcast within 180s — falling back to local resolution.");
             }
         }
 
@@ -254,15 +262,56 @@ public class VirtualMRUKRoomLoader : MonoBehaviour
 
         while (Time.realtimeSinceStartup - start < timeout)
         {
-            foreach (var anchor in FindObjectsByType<OVRSpatialAnchor>(FindObjectsSortMode.None))
-            {
-                if (anchor != null && anchor.Created && anchor.GetComponent<RoomCenterAnchorTag>() == null)
-                    return anchor;
-            }
+            var anchor = ColocationHostAlignment.FindSharedAlignmentAnchor();
+            if (anchor != null && anchor.Created)
+                return anchor;
 
             await Task.Delay(250);
         }
         return null;
+    }
+
+    // ═══════ client 等待提示(等 host 廣播/對齊時顯示,staff 才知道卡在哪) ═══════
+
+    private TextMesh _waitHint;
+
+    private void ShowWaitHint(string text)
+    {
+        if (_waitHint == null)
+        {
+            var go = new GameObject("RoomWaitHint");
+            _waitHint = go.AddComponent<TextMesh>();
+            _waitHint.characterSize = 0.012f;
+            _waitHint.fontSize = 64;
+            _waitHint.anchor = TextAnchor.MiddleCenter;
+            _waitHint.alignment = TextAlignment.Center;
+            _waitHint.color = new Color(1f, 0.85f, 0.3f);
+            go.AddComponent<FaceCameraHint>();
+        }
+        if (_waitHint.text != text) _waitHint.text = text;
+    }
+
+    private void HideWaitHint()
+    {
+        if (_waitHint != null)
+        {
+            Destroy(_waitHint.gameObject);
+            _waitHint = null;
+        }
+    }
+
+    /// 讓提示每幀跟著頭(loader 的等待迴圈只有 4Hz,直接擺位置會抖)。
+    private class FaceCameraHint : MonoBehaviour
+    {
+        private void LateUpdate()
+        {
+            var cam = Camera.main;
+            if (cam == null) return;
+            Vector3 fwd = Vector3.ProjectOnPlane(cam.transform.forward, Vector3.up).normalized;
+            if (fwd.sqrMagnitude < 0.001f) fwd = Vector3.forward;
+            transform.position = cam.transform.position + fwd * 1.2f;
+            transform.rotation = Quaternion.LookRotation(fwd, Vector3.up);
+        }
     }
 
     /// 遊戲中重擺中心圖釘後重蓋房間（RoomCenterSetup 呼叫）。

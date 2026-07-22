@@ -65,14 +65,11 @@ public class SpawnArea : MonoBehaviour
     {
         if (_anchorRef != null) return;
         // 只綁 colocation 圖釘 — 排除手動擺放的「中心圖釘」（兩台要綁同一支才一致）
-        foreach (var a in FindObjectsByType<OVRSpatialAnchor>(FindObjectsSortMode.None))
-        {
-            if (a != null && a.Created && a.GetComponent<RoomCenterAnchorTag>() == null)
-            {
-                _anchorRef = a.transform;
-                return;
-            }
-        }
+        // 統一走 ColocationHostAlignment 的 finder:排除中心圖釘,
+        // guest 只認 host 廣播的 UUID(兩台綁到不同 anchor = 修不掉的固定位移)。
+        var a = ColocationHostAlignment.FindSharedAlignmentAnchor();
+        if (a != null && a.Created)
+            _anchorRef = a.transform;
     }
 
     // 已有世界 pose、之後才找到 anchor → 補做一次轉換（lazy）
