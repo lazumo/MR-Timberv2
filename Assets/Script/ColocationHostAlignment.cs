@@ -56,6 +56,17 @@ public class ColocationHostAlignment : MonoBehaviour
     private bool _ovrHooked;          // recenter / tracking 事件已訂閱
     private GameFlowController _flowHooked;   // 已訂閱階段變化的 GameFlowController
 
+    // ── 近距離漂移基準（Meta 3 公尺規則）────────────────────────
+    // colocation 圖釘 = host 開機位置，可能離遊戲區超過 3 公尺 → 圖釘本身開始漂，
+    // client 靠分享資料認它更不穩。改成：每台在「房間中心」建立/選用一支近距離基準
+    // 圖釘（3x3 內永遠 ≤2.1m），漂移量測與校正都對著它；colocation 圖釘只當 fallback。
+    private OVRSpatialAnchor _refAnchor;      // 房間中心基準（host=中心圖釘；client=自建）
+    private Vector3 _refExpectedPos;          // 基準「應該在」的世界位置（host 廣播 pose）
+    private float _refExpectedYaw;
+    private bool _refIsLocallyCreated;        // client 自建的 → re-place 時銷毀重建
+    private float _nextRefTry;
+    private float _refCreatedAt;              // 自建圖釘的建立時刻（15 秒沒 Created 就重建）
+
     /// 零接線生成（GameFlowController.OnNetworkSpawn 呼叫；host/guest 都需要）
     public static void Ensure()
     {
@@ -117,6 +128,8 @@ public class ColocationHostAlignment : MonoBehaviour
             return;
         }
 
+        TryEstablishRefAnchor(nm);
+
         // ── 監看誤差（anchor 對齊後世界姿態應恆為原點/yaw0，偏差即誤差）──
         MeasureError(out float posErr, out float yawErr);
         bool beyond = posErr > PosDeadband || yawErr > YawDeadbandDeg;
@@ -148,7 +161,7 @@ public class ColocationHostAlignment : MonoBehaviour
     {
         if (!_anchor.Created || Camera.main == null) { _correcting = false; return; }
 
-        ComputeTargetRigPose(out var targetPos, out float targetYaw);
+        ComputeCorrectionTarget(out var targetPos, out float targetYaw);
 
         // 指數趨近：每秒收掉大部分誤差，視覺上是平滑滑動而非瞬間跳
         float k = 1f - Mathf.Pow(2f, -Time.deltaTime / CorrectHalfLife);
@@ -179,11 +192,109 @@ public class ColocationHostAlignment : MonoBehaviour
         return null;
     }
 
-    /// anchor 的世界姿態偏離「原點/yaw0」多少（對齊完成時應趨近 0）
+    /// 漂移量測：優先用「房間中心基準圖釘」（近、準），沒有才退回 colocation 圖釘。
     private void MeasureError(out float posErr, out float yawErr)
+    {
+        if (_refAnchor != null && _refAnchor.Created)
+        {
+            posErr = (_refAnchor.transform.position - _refExpectedPos).magnitude;
+            yawErr = Mathf.Abs(Mathf.DeltaAngle(_refAnchor.transform.eulerAngles.y, _refExpectedYaw));
+            return;
+        }
+        MeasureColocationError(out posErr, out yawErr);
+    }
+
+    /// colocation 圖釘偏離「原點/yaw0」多少（對齊完成時應趨近 0）
+    private void MeasureColocationError(out float posErr, out float yawErr)
     {
         posErr = _anchor.transform.position.magnitude;
         yawErr = Mathf.Abs(Mathf.DeltaAngle(_anchor.transform.eulerAngles.y, 0f));
+    }
+
+    /// 建立近距離基準：host 用 RoomCenterSetup 擺的中心圖釘；client 在房間中心自建一支
+    /// 本地圖釘（不分享、不儲存）。只在「世界目前貼緊 colocation 圖釘」時建立，
+    /// 基準才會落在正確的實體位置。
+    private void TryEstablishRefAnchor(NetworkManager nm)
+    {
+        if (_refAnchor != null)
+        {
+            // 自建圖釘 15 秒還沒 Created（追蹤太差）→ 砍掉重建，避免卡在半殘狀態
+            if (!_refAnchor.Created && _refIsLocallyCreated && Time.time - _refCreatedAt > 15f)
+            {
+                Destroy(_refAnchor.gameObject);
+                _refAnchor = null;
+                Debug.LogWarning("[ColocationAlignment] Drift reference anchor never localized — recreating.");
+            }
+            return;
+        }
+        if (Time.time < _nextRefTry) return;
+        _nextRefTry = Time.time + 2f;
+
+        var gf = GameFlowController.Instance;
+        if (gf == null || !gf.RoomPoseReady.Value) return;
+
+        MeasureColocationError(out float pe, out float ye);
+        if (pe > PosDeadband || ye > YawDeadbandDeg) return;
+
+        Vector3 expPos = gf.RoomCenter.Value;
+        float expYaw = gf.RoomYawDeg.Value;
+
+        if (nm.IsHost)
+        {
+            foreach (var a in FindObjectsByType<OVRSpatialAnchor>(FindObjectsSortMode.None))
+            {
+                if (a != null && a.Created && a.GetComponent<RoomCenterAnchorTag>() != null)
+                {
+                    _refAnchor = a;
+                    _refIsLocallyCreated = false;
+                    break;
+                }
+            }
+            if (_refAnchor == null) return;   // 中心圖釘還沒好（或沒用中心圖釘流程）
+        }
+        else
+        {
+            var go = new GameObject("ClientDriftRefAnchor");
+            go.transform.SetPositionAndRotation(expPos, Quaternion.Euler(0f, expYaw, 0f));
+            go.AddComponent<RoomCenterAnchorTag>();   // 讓所有「找 colocation 圖釘」的程式跳過它
+            _refAnchor = go.AddComponent<OVRSpatialAnchor>();
+            _refIsLocallyCreated = true;
+            _refCreatedAt = Time.time;
+        }
+
+        _refExpectedPos = expPos;
+        _refExpectedYaw = expYaw;
+        Debug.Log($"[ColocationAlignment] Drift reference anchor established at {expPos} yaw={expYaw:F1} ({(nm.IsHost ? "host center anchor" : "client local anchor")}).");
+    }
+
+    /// host 重擺房間後呼叫：client 的本地基準要在新位置重建（host 的舊中心圖釘會被
+    /// RoomCenterSetup 銷毀，fake-null 自動觸發重建）。
+    public static void InvalidateDriftReference()
+    {
+        var inst = FindAnyObjectByType<ColocationHostAlignment>();
+        if (inst == null || inst._refAnchor == null) return;
+        if (inst._refIsLocallyCreated) Destroy(inst._refAnchor.gameObject);
+        inst._refAnchor = null;
+    }
+
+    /// 校正的 rig 目標姿態：有近距離基準 → 算「把基準圖釘搬回應在位置」所需的 rig 位移；
+    /// 沒有 → 舊路徑（colocation 圖釘 → 原點）。
+    private void ComputeCorrectionTarget(out Vector3 rigPos, out float rigYaw)
+    {
+        if (_refAnchor != null && _refAnchor.Created)
+        {
+            Vector3 cur = _refAnchor.transform.position;
+            float curYaw = _refAnchor.transform.eulerAngles.y;
+            float dYaw = Mathf.DeltaAngle(curYaw, _refExpectedYaw);
+            Quaternion dq = Quaternion.Euler(0f, dYaw, 0f);
+
+            // 繞著基準點旋轉 dYaw、再平移到 expected → rig 跟著同一個剛體變換走
+            rigPos = _refExpectedPos + dq * (_rig.position - cur);
+            rigYaw = _rig.eulerAngles.y + dYaw;
+            return;
+        }
+
+        ComputeTargetRigPose(out rigPos, out rigYaw);
     }
 
     /// 讓「世界座標系 = anchor 座標系」的 rig 目標姿態（Meta AlignCameraToAnchor 的數學）
