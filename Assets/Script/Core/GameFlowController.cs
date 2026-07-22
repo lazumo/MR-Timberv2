@@ -173,9 +173,6 @@ public class GameFlowController : NetworkBehaviour
         var loader = FindAnyObjectByType<VirtualMRUKRoomLoader>();
         if (loader != null)
             _ = loader.ReloadAtPose(next, RoomYawDeg.Value);
-
-        // client 的近距離漂移基準也要在新中心重建
-        ColocationHostAlignment.InvalidateDriftReference();
     }
 
     private void OnRoomYawChanged(float prev, float next)
