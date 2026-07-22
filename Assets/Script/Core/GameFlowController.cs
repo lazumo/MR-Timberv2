@@ -128,6 +128,9 @@ public class GameFlowController : NetworkBehaviour
 
     private IEnumerator PublishRoomPoseWhenReady()
     {
+        // 中心圖釘設定模式進行中 → 不能開始計 timeout（staff 可能擺很久）
+        while (RoomCenterSetup.Blocking) yield return null;
+
         // 等虛擬房載入 + SpawnArea 定位（timeout 後用當下值保底）
         float t = 0f;
         while (t < 30f && (!VirtualMRUKRoomLoader.VirtualRoomReady ||
@@ -151,12 +154,42 @@ public class GameFlowController : NetworkBehaviour
 
         if (SpawnArea.Instance != null)
             SpawnArea.Instance.SetPoseFromNetwork(RoomCenter.Value, RoomYawDeg.Value);
+
+        // host 遊戲中重擺中心圖釘 → pose 會再變 → client 跟著重新採用
+        RoomCenter.OnValueChanged += OnRoomPoseChanged;
+        RoomYawDeg.OnValueChanged += OnRoomYawChanged;
+    }
+
+    private void OnRoomPoseChanged(Vector3 prev, Vector3 next)
+    {
+        if (SpawnArea.Instance != null)
+            SpawnArea.Instance.SetPoseFromNetwork(next, RoomYawDeg.Value);
+    }
+
+    private void OnRoomYawChanged(float prev, float next)
+    {
+        if (SpawnArea.Instance != null)
+            SpawnArea.Instance.SetPoseFromNetwork(RoomCenter.Value, next);
+    }
+
+    /// host 重擺中心圖釘後重新廣播房間 pose（RoomCenterSetup 呼叫；server 專用）
+    public void RepublishRoomPose()
+    {
+        if (!IsServer || SpawnArea.Instance == null) return;
+        RoomCenter.Value = SpawnArea.Instance.GetCenter();
+        RoomYawDeg.Value = SpawnArea.Instance.GetRotation().eulerAngles.y;
+        RoomPoseReady.Value = true;
+        Debug.Log($"[GameFlow] Room pose REpublished: {RoomCenter.Value}, yaw={RoomYawDeg.Value:F1}");
     }
 
     private IEnumerator StartGameDelayed()
     {
         if (startupDelay > 0f) yield return new WaitForSeconds(startupDelay);
         else                   yield return null;
+
+        // 中心圖釘設定模式進行中（首次擺放）→ 等 staff 擺完再開始遊戲
+        while (RoomCenterSetup.Blocking) yield return null;
+
         StartGame();
     }
 

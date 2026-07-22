@@ -64,8 +64,15 @@ public class SpawnArea : MonoBehaviour
     private void TryBindAnchor()
     {
         if (_anchorRef != null) return;
-        var a = FindAnyObjectByType<OVRSpatialAnchor>();
-        if (a != null && a.Created) _anchorRef = a.transform;
+        // 只綁 colocation 圖釘 — 排除手動擺放的「中心圖釘」（兩台要綁同一支才一致）
+        foreach (var a in FindObjectsByType<OVRSpatialAnchor>(FindObjectsSortMode.None))
+        {
+            if (a != null && a.Created && a.GetComponent<RoomCenterAnchorTag>() == null)
+            {
+                _anchorRef = a.transform;
+                return;
+            }
+        }
     }
 
     // 已有世界 pose、之後才找到 anchor → 補做一次轉換（lazy）

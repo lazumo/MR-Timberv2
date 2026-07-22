@@ -132,6 +132,20 @@ public class VirtualMRUKRoomLoader : MonoBehaviour
             // 直接對齊 colocation alignment anchor 的軸向：anchor 鎖在物理位置，
             // 不受 recenter / tracking 漂移影響 → 房間框永遠跟 anchor 視覺平行。
             OVRSpatialAnchor anchor = await WaitForAlignmentAnchor();
+
+            // 優先：host 的「中心圖釘」（手動擺放、永久儲存）。有 → 房間直接以它為中心/朝向；
+            // 沒有存檔 → RoomCenterSetup 會進設定模式擋到 staff 擺完。guest/editor 回 null 走 fallback。
+            RoomCenterSetup.Ensure();
+            if (RoomCenterSetup.Instance != null)
+            {
+                Pose? centerPose = await RoomCenterSetup.Instance.GetRoomPoseAsync(floorY);
+                if (centerPose.HasValue)
+                {
+                    Debug.Log($"[VirtualMRUKRoomLoader] Room pose from center anchor: {centerPose.Value.position}, yaw={centerPose.Value.rotation.eulerAngles.y:F1}");
+                    return centerPose.Value;
+                }
+            }
+
             Transform cam = Camera.main != null ? Camera.main.transform : transform;
 
             if (anchor != null)
@@ -181,6 +195,7 @@ public class VirtualMRUKRoomLoader : MonoBehaviour
 
     // 等 colocation alignment anchor 出現（host: 建立 room 後幾秒；guest: 對齊完成後）。
     // Editor / 單機沒有 colocation → 短逾時後回 null（改用世界軸）。
+    // 注意：要排除「中心圖釘」（RoomCenterAnchorTag），只認 colocation 圖釘。
     private async Task<OVRSpatialAnchor> WaitForAlignmentAnchor()
     {
         float timeout = Application.isEditor ? anchorWaitTimeoutEditor : anchorWaitTimeout;
@@ -188,13 +203,37 @@ public class VirtualMRUKRoomLoader : MonoBehaviour
 
         while (Time.realtimeSinceStartup - start < timeout)
         {
-            var anchor = FindAnyObjectByType<OVRSpatialAnchor>();
-            if (anchor != null && anchor.Created)
-                return anchor;
+            foreach (var anchor in FindObjectsByType<OVRSpatialAnchor>(FindObjectsSortMode.None))
+            {
+                if (anchor != null && anchor.Created && anchor.GetComponent<RoomCenterAnchorTag>() == null)
+                    return anchor;
+            }
 
             await Task.Delay(250);
         }
         return null;
+    }
+
+    /// 遊戲中重擺中心圖釘後重蓋房間（RoomCenterSetup 呼叫）。
+    /// 繞過一次性守衛：先清掉現有 MRUK 場景，再以新 pose 重建同一份 JSON 房間。
+    public async Task ReloadAtPose(Vector3 center, float yawDegrees)
+    {
+        while (MRUK.Instance == null) await Task.Yield();
+
+        MRUK.Instance.ClearScene();
+
+        Vector3 pos = center; pos.y = floorY;
+        float resolvedCeilingHeight = ResolveCeilingHeight(pos.y);
+        string json = BuildRoomJson(pos, yawDegrees, resolvedCeilingHeight);
+        MRUK.LoadDeviceResult result = await MRUK.Instance.LoadSceneFromJsonString(json, true);
+
+        if (result != MRUK.LoadDeviceResult.Success)
+        {
+            Debug.LogError($"[VirtualMRUKRoomLoader] ReloadAtPose failed: {result}");
+            return;
+        }
+
+        Debug.Log($"[VirtualMRUKRoomLoader] Virtual room RELOADED at {pos}, yaw={yawDegrees:F1}");
     }
 
     private async Task<(bool found, Pose pose)> TryGetMrukWallPose()

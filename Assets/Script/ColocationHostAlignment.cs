@@ -81,7 +81,7 @@ public class ColocationHostAlignment : MonoBehaviour
             if (Time.time < _nextFind) return;
             _nextFind = Time.time + 1f;
 
-            if (_anchor == null) _anchor = FindAnyObjectByType<OVRSpatialAnchor>();
+            if (_anchor == null) _anchor = FindColocationAnchor();
             if (_rig == null)
             {
                 var rig = FindAnyObjectByType<OVRCameraRig>();
@@ -164,6 +164,16 @@ public class ColocationHostAlignment : MonoBehaviour
         }
     }
 
+    /// 只認 colocation 圖釘 — 排除手動擺放的「中心圖釘」（RoomCenterAnchorTag）。
+    /// 對齊到中心圖釘會把世界軸搬去它的軸 → 跟 guest（對 colocation 圖釘）分家。
+    private static OVRSpatialAnchor FindColocationAnchor()
+    {
+        foreach (var a in FindObjectsByType<OVRSpatialAnchor>(FindObjectsSortMode.None))
+            if (a != null && a.GetComponent<RoomCenterAnchorTag>() == null)
+                return a;
+        return null;
+    }
+
     /// anchor 的世界姿態偏離「原點/yaw0」多少（對齊完成時應趨近 0）
     private void MeasureError(out float posErr, out float yawErr)
     {
@@ -197,6 +207,14 @@ public class ColocationHostAlignment : MonoBehaviour
     /// 按滿必震動（確認按鍵有讀到）；圖釘還沒好時只 log 原因，不執行校正。
     private void ReadManualButton()
     {
+        // grip+Start 是「重新擺中心圖釘」的組合鍵（RoomCenterSetup）→ grip 按著時不觸發校正
+        if (OVRInput.Get(OVRInput.Axis1D.PrimaryHandTrigger, OVRInput.Controller.LTouch) > 0.5f)
+        {
+            _startHeld = 0f;
+            _manualFired = false;
+            return;
+        }
+
         bool held = OVRInput.Get(OVRInput.Button.Start, OVRInput.Controller.LTouch)
                  || OVRInput.Get(OVRInput.Button.Start);   // 保險：有些機況 Start 只掛在複合 controller 上
 
