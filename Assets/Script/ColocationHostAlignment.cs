@@ -66,6 +66,7 @@ public class ColocationHostAlignment : MonoBehaviour
     private bool _refIsLocallyCreated;        // client 自建的 → re-place 時銷毀重建
     private float _nextRefTry;
     private float _refCreatedAt;              // 自建圖釘的建立時刻（15 秒沒 Created 就重建）
+    private int _timeoutStreak;               // 連續修正收斂失敗次數（遠圖釘太晃的訊號）
 
     /// 零接線生成（GameFlowController.OnNetworkSpawn 呼叫；host/guest 都需要）
     public static void Ensure()
@@ -177,8 +178,12 @@ public class ColocationHostAlignment : MonoBehaviour
         {
             _correcting = false;
             _cooldownUntil = Time.time + CooldownSeconds;
+
+            if (settled) { _timeoutStreak = 0; _nextRefTry = 0f; }   // 收斂瞬間是建立量尺的最佳時機
+            else _timeoutStreak++;
+
             Debug.Log($"[ColocationAlignment] Correction {(settled ? "settled" : "timed out")} " +
-                      $"after {Time.time - _correctStarted:F1}s (residual {posErr:F3}m, {yawErr:F1}°).");
+                      $"after {Time.time - _correctStarted:F1}s (residual {posErr:F3}m, {yawErr:F1}°, timeoutStreak={_timeoutStreak}).");
         }
     }
 
@@ -234,7 +239,15 @@ public class ColocationHostAlignment : MonoBehaviour
         if (gf == null || !gf.RoomPoseReady.Value) return;
 
         MeasureColocationError(out float pe, out float ye);
-        if (pe > PosDeadband || ye > YawDeadbandDeg) return;
+        if (pe > PosDeadband || ye > YawDeadbandDeg)
+        {
+            // 理想上要等世界貼緊 colocation 圖釘才建立量尺。但遠圖釘若一直晃（連續
+            // 兩次修正都收斂失敗），這一刻永遠不會來，系統會追著晃的圖釘讓世界游動。
+            // → 放棄等待，直接以當下姿態建立近距離量尺（可能帶進幾公分誤差，但從此穩定；
+            //   誤差可用左手 Start 長按手動修，或下次階段轉場自動收）。
+            if (_timeoutStreak < 2) return;
+            Debug.LogWarning($"[ColocationAlignment] Establishing drift reference despite unsettled colocation anchor (residual {pe:F3}m/{ye:F1}° — far-anchor wobble suspected).");
+        }
 
         Vector3 expPos = gf.RoomCenter.Value;
         float expYaw = gf.RoomYawDeg.Value;
