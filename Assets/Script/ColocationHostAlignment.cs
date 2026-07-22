@@ -2,36 +2,77 @@ using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
-/// Host 端把 camera rig 對齊 colocation alignment anchor —— 只在進場時對齊「一次」。
-/// （曾經是每幀持續對齊，但 anchor 追蹤估計的噪音會帶著整個世界連續滑動，
-/// 使用者實測樹葉範圍一直漂移後決定改回一次性。代價：host 中途 recenter/休眠喚醒
-/// 的話世界會偏掉，demo 時避免這兩個動作即可。）
-/// Meta 的 colocation building block 只讓 guest 對齊（AlignCameraToAnchor 只加在 guest），
-/// host 停留在開機 tracking frame —— 一旦 host recenter / tracking 漂移修正，
-/// 世界軸就偏離鎖在物理空間的 anchor，綠框/房間/所有視覺就跟 anchor 軸歪掉。
-/// 對齊之後：兩台的世界座標系恆等於 anchor 座標系（anchor ≈ 原點、yaw≈0），
-/// 房間 yaw=0 = anchor 軸永遠成立，recenter 也不會歪。
+/// 世界座標系 ↔ colocation alignment anchor 的「聰明對錶」。host 與 guest 都用這一套
+/// （class 名沿用 Host 舊名以免改動呼叫端；實際上兩端都跑）。
+///
+/// 歷史（為什麼是現在這個設計，之後別再改回任一極端）：
+///  - v1 (7/14, 968fb88)：host 每幀對齊 → anchor 估計噪音帶著整個世界連續滑動，
+///    實測樹葉範圍一直漂。
+///  - v2 (7/20, e69a9d2)：改成開場對齊一次 → 噪音沒了，但 relocalization／recenter／
+///    休眠喚醒的「真實修正」永遠不被吸收；黑幕展場實測累積 30cm+，玩家被誤判出房間
+///    （灰畫面）。
+///  - v3（本版）：deadband 濾波。平常誤差 &lt; 3cm/1.5° 完全不動（吃掉 v1 的噪音）；
+///    誤差連續超標 0.5 秒（= anchor 真的跳了）才在 ~1 秒內平滑跟上（吸收 v2 吃不掉
+///    的大跳）。另外：左手 Start 鍵長按 1 秒手動校正、recenter／tracking 恢復／HMD
+///    重戴立即校正、遊戲階段切換順手校正。
+///
+/// Guest 端：Meta colocation building block 的 AlignCameraToAnchor 是「每幀貼死」版
+/// （噪音照吃），與本策略衝突 → 找到就 disable、由本元件接管（同一套數學，行為相容）。
 /// 對齊數學照抄 Meta 的 AlignCameraToAnchor（該 class 是 internal，無法直接使用）。
+/// 零接線：GameFlowController.OnNetworkSpawn 呼叫 Ensure() 動態生成（host/guest 都會）。
 /// </summary>
 [DefaultExecutionOrder(10)]
 public class ColocationHostAlignment : MonoBehaviour
 {
+    // ── 濾波參數（展場實測後可調）──────────────────────────────
+    private const float PosDeadband = 0.03f;      // 位置誤差 < 3cm 視為噪音 → 不動
+    private const float YawDeadbandDeg = 1.5f;    // 角度誤差 < 1.5° 視為噪音
+    private const float PersistSeconds = 0.5f;    // 誤差連續超標這麼久才判定「真跳」
+    private const float CorrectHalfLife = 0.25f;  // 平滑修正半衰期（約 1 秒收斂九成五）
+    private const float CorrectTimeout = 5f;      // 修正最多追這麼久（anchor 太抖就先放手）
+    private const float SettlePosEps = 0.005f;    // 收斂到 5mm / 0.2° 內就算完成
+    private const float SettleYawEps = 0.2f;
+    private const float CooldownSeconds = 3f;     // 兩次自動校正之間的冷卻
+    private const float ManualHoldSeconds = 1f;   // 左手 Start 長按秒數
+
     private OVRSpatialAnchor _anchor;
     private Transform _rig;
     private float _nextFind;
-    private bool _alignedOnce;   // 只對齊一次：持續每幀對齊會讓 anchor 估計的噪音帶著整個世界滑動
+    private bool _alignedOnce;        // 開場第一次對齊（立即 snap，不平滑）
 
-    /// 零接線生成（GameFlowController.OnNetworkSpawn 呼叫；guest 上是 no-op）
+    private float _errorSince = -1f;  // 誤差開始超標的時刻；-1 = 目前在 deadband 內
+    private bool _correcting;
+    private float _correctStarted;
+    private float _cooldownUntil;
+
+    private float _startHeld;         // 左手 Start 鍵已按住秒數
+    private bool _manualFired;        // 這次按住已觸發過（放開才重新武裝）
+
+    private float _nextMetaScan;      // guest：定期掃描並關閉 Meta 的每幀對齊元件
+    private bool _ovrHooked;          // recenter / tracking 事件已訂閱
+    private GameFlowController _flowHooked;   // 已訂閱階段變化的 GameFlowController
+
+    /// 零接線生成（GameFlowController.OnNetworkSpawn 呼叫；host/guest 都需要）
     public static void Ensure()
     {
         if (FindAnyObjectByType<ColocationHostAlignment>() != null) return;
         new GameObject("ColocationHostAlignment").AddComponent<ColocationHostAlignment>();
     }
 
+    private void OnDestroy()
+    {
+        if (_ovrHooked)
+        {
+            if (OVRManager.display != null) OVRManager.display.RecenteredPose -= OnPoseEvent;
+            OVRManager.TrackingAcquired -= OnPoseEvent;
+            OVRManager.HMDMounted -= OnPoseEvent;
+        }
+    }
+
     private void Update()
     {
         var nm = NetworkManager.Singleton;
-        if (nm == null || !nm.IsHost) return;   // guest 已由 Meta 的 AlignCameraToAnchor 對齊
+        if (nm == null) return;                       // editor 單機：沒 colocation，閒置
 
         if (_anchor == null || _rig == null)
         {
@@ -47,34 +88,176 @@ public class ColocationHostAlignment : MonoBehaviour
             if (_anchor == null || _rig == null) return;
         }
 
-        if (_alignedOnce) return;   // 進場對齊一次就收工，之後世界不再被動
-        if (!_anchor.Created) return;
+        HookEventsOnce(nm);
+        if (!nm.IsHost) DisableMetaAlignerPeriodically();
+        ReadManualButton();
 
-        Align(_anchor.transform);
-        _alignedOnce = true;
-        Debug.Log("[ColocationHostAlignment] Host aligned to colocation anchor ONCE at session start (continuous alignment disabled).");
+        if (!_anchor.Created || Camera.main == null) return;
+
+        // ── 開場第一次：立即對齊（世界座標系 = anchor 座標系）─────────
+        if (!_alignedOnce)
+        {
+            ComputeTargetRigPose(out var pos, out float yaw);
+            ApplyRigPose(pos, yaw);
+            _alignedOnce = true;
+            Debug.Log($"[ColocationAlignment] Initial align to colocation anchor ({(nm.IsHost ? "host" : "guest")}).");
+            return;
+        }
+
+        // ── 進行中的平滑修正 ─────────────────────────────────────
+        if (_correcting)
+        {
+            StepCorrection();
+            return;
+        }
+
+        // ── 監看誤差（anchor 對齊後世界姿態應恆為原點/yaw0，偏差即誤差）──
+        MeasureError(out float posErr, out float yawErr);
+        bool beyond = posErr > PosDeadband || yawErr > YawDeadbandDeg;
+
+        if (!beyond)
+        {
+            _errorSince = -1f;
+            return;
+        }
+
+        if (_errorSince < 0f) _errorSince = Time.time;
+
+        if (Time.time - _errorSince >= PersistSeconds && Time.time >= _cooldownUntil)
+            BeginCorrection($"auto (offset {posErr:F3}m, yaw {yawErr:F1}°)");
     }
 
-    private void Align(Transform anchorTransform)
+    // ═════════════════════ 修正流程 ═════════════════════
+
+    private void BeginCorrection(string reason)
     {
-        var cam = Camera.main;
-        if (cam == null) return;
+        if (!_alignedOnce || _correcting) return;
+        _correcting = true;
+        _correctStarted = Time.time;
+        _errorSince = -1f;
+        Debug.LogWarning($"[ColocationAlignment] Correcting world → anchor, trigger = {reason}");
+    }
 
-        var prevScale = anchorTransform.localScale;
-        anchorTransform.localScale = Vector3.one;
+    private void StepCorrection()
+    {
+        if (!_anchor.Created || Camera.main == null) { _correcting = false; return; }
 
-        // anchor 的 tracking-space 姿態（不受 rig 位置影響的「物理」姿態）
-        var trackingSpacePose = anchorTransform.ToTrackingSpacePose(cam);
-        anchorTransform.SetPositionAndRotation(trackingSpacePose.position, trackingSpacePose.orientation);
+        ComputeTargetRigPose(out var targetPos, out float targetYaw);
 
-        // 把 rig 變換到 anchor 的反姿態 → 世界座標系以 anchor 為原點/軸向
-        _rig.position = anchorTransform.InverseTransformPoint(Vector3.zero);
-        _rig.eulerAngles = new Vector3(0f, -anchorTransform.eulerAngles.y, 0f);
+        // 指數趨近：每秒收掉大部分誤差，視覺上是平滑滑動而非瞬間跳
+        float k = 1f - Mathf.Pow(2f, -Time.deltaTime / CorrectHalfLife);
+        Vector3 newPos = Vector3.Lerp(_rig.position, targetPos, k);
+        float newYaw = Mathf.LerpAngle(_rig.eulerAngles.y, targetYaw, k);
+        ApplyRigPose(newPos, newYaw);
 
-        // 還原 anchor 的 world-space 姿態，維持 world-locked 渲染
-        var worldSpacePose = trackingSpacePose.ToWorldSpacePose(cam);
-        anchorTransform.SetPositionAndRotation(worldSpacePose.position, worldSpacePose.orientation);
+        MeasureError(out float posErr, out float yawErr);
+        bool settled = posErr < SettlePosEps && yawErr < SettleYawEps;
+        bool timedOut = Time.time - _correctStarted > CorrectTimeout;
 
-        anchorTransform.localScale = prevScale;
+        if (settled || timedOut)
+        {
+            _correcting = false;
+            _cooldownUntil = Time.time + CooldownSeconds;
+            Debug.Log($"[ColocationAlignment] Correction {(settled ? "settled" : "timed out")} " +
+                      $"after {Time.time - _correctStarted:F1}s (residual {posErr:F3}m, {yawErr:F1}°).");
+        }
+    }
+
+    /// anchor 的世界姿態偏離「原點/yaw0」多少（對齊完成時應趨近 0）
+    private void MeasureError(out float posErr, out float yawErr)
+    {
+        posErr = _anchor.transform.position.magnitude;
+        yawErr = Mathf.Abs(Mathf.DeltaAngle(_anchor.transform.eulerAngles.y, 0f));
+    }
+
+    /// 讓「世界座標系 = anchor 座標系」的 rig 目標姿態（Meta AlignCameraToAnchor 的數學）
+    private void ComputeTargetRigPose(out Vector3 pos, out float yaw)
+    {
+        var t = _anchor.transform;
+        var prevScale = t.localScale;
+        t.localScale = Vector3.one;
+
+        // anchor 的 tracking-space 姿態（rig 怎麼擺都不影響的「物理」姿態）
+        OVRPose tp = t.ToTrackingSpacePose(Camera.main);
+        t.localScale = prevScale;
+
+        pos = Quaternion.Inverse(tp.orientation) * (-tp.position);
+        yaw = -tp.orientation.eulerAngles.y;
+    }
+
+    private void ApplyRigPose(Vector3 pos, float yaw)
+    {
+        _rig.SetPositionAndRotation(pos, Quaternion.Euler(0f, yaw, 0f));
+    }
+
+    // ═════════════════════ 觸發來源 ═════════════════════
+
+    /// 左手 Start（選單鍵）長按 1 秒 = 手動校正（展場工作人員的保險）
+    private void ReadManualButton()
+    {
+        if (OVRInput.Get(OVRInput.Button.Start))
+        {
+            _startHeld += Time.deltaTime;
+            if (!_manualFired && _startHeld >= ManualHoldSeconds && _alignedOnce)
+            {
+                _manualFired = true;
+                BeginCorrection("manual (Start held)");
+                StartCoroutine(Haptics.Pulse(OVRInput.Controller.LTouch, 1f, 0.7f, 0.2f));
+            }
+        }
+        else
+        {
+            _startHeld = 0f;
+            _manualFired = false;
+        }
+    }
+
+    private void HookEventsOnce(NetworkManager nm)
+    {
+        // recenter / tracking 恢復 / HMD 重戴 → 誤差必大，立即修正
+        if (!_ovrHooked && OVRManager.instance != null && OVRManager.display != null)
+        {
+            _ovrHooked = true;
+            OVRManager.display.RecenteredPose += OnPoseEvent;
+            OVRManager.TrackingAcquired += OnPoseEvent;
+            OVRManager.HMDMounted += OnPoseEvent;
+        }
+
+        // 階段切換（本來就有視覺轉場）→ 順手把殘餘誤差修掉，玩家無感
+        if (_flowHooked == null && GameFlowController.Instance != null)
+        {
+            _flowHooked = GameFlowController.Instance;
+            _flowHooked.CurrentPhase.OnValueChanged += OnPhaseChanged;
+        }
+    }
+
+    private void OnPoseEvent()
+    {
+        BeginCorrection("recenter / tracking regained / HMD remounted");
+    }
+
+    private void OnPhaseChanged(GamePhase prev, GamePhase next)
+    {
+        MeasureError(out float posErr, out float yawErr);
+        if (posErr > SettlePosEps * 2f || yawErr > SettleYawEps * 2f)
+            BeginCorrection($"phase transition {prev} → {next}");
+    }
+
+    /// Meta 的 AlignCameraToAnchor（internal、每幀貼死）與濾波策略衝突：
+    /// guest 上找到就關掉，由本元件接管。關不掉不會壞——只是回到「每幀貼死」行為。
+    private void DisableMetaAlignerPeriodically()
+    {
+        if (Time.time < _nextMetaScan) return;
+        _nextMetaScan = Time.time + 2f;
+
+        foreach (var mb in FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None))
+        {
+            if (mb != null && mb.enabled &&
+                mb.GetType().FullName == "Meta.XR.MultiplayerBlocks.Colocation.AlignCameraToAnchor")
+            {
+                mb.enabled = false;
+                Debug.Log("[ColocationAlignment] Disabled Meta's per-frame AlignCameraToAnchor (guest); filtered alignment takes over.");
+            }
+        }
     }
 }
