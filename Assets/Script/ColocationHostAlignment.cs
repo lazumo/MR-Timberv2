@@ -151,10 +151,13 @@ public class ColocationHostAlignment : MonoBehaviour
         }
     }
 
-    /// colocation 圖釘偏離「原點/yaw0」多少（對齊完成時應趨近 0）
+    /// colocation 圖釘偏離「原點/yaw0」多少（對齊完成時應趨近 0）。
+    /// 只量水平（XZ）：高度政策是「跟本機地板、不跟圖釘」，把 y 算進誤差
+    /// 會讓校正永遠收斂不了（y 殘差是故意留的）。
     private void MeasureError(out float posErr, out float yawErr)
     {
-        posErr = _anchor.transform.position.magnitude;
+        Vector3 p = _anchor.transform.position;
+        posErr = new Vector2(p.x, p.z).magnitude;
         yawErr = Mathf.Abs(Mathf.DeltaAngle(_anchor.transform.eulerAngles.y, 0f));
     }
 
