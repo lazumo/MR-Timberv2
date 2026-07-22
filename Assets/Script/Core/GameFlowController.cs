@@ -168,6 +168,11 @@ public class GameFlowController : NetworkBehaviour
     {
         if (SpawnArea.Instance != null)
             SpawnArea.Instance.SetPoseFromNetwork(next, RoomYawDeg.Value);
+
+        // host 遊戲中重擺 → client 的本地 MRUK 虛擬房也搬到新位置（保持兩台一致）
+        var loader = FindAnyObjectByType<VirtualMRUKRoomLoader>();
+        if (loader != null)
+            _ = loader.ReloadAtPose(next, RoomYawDeg.Value);
     }
 
     private void OnRoomYawChanged(float prev, float next)

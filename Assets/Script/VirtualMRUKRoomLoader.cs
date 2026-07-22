@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Threading.Tasks;
 using Meta.XR.MRUtilityKit;
+using Unity.Netcode;
 using UnityEngine;
 
 [DefaultExecutionOrder(-50)]
@@ -114,23 +115,57 @@ public class VirtualMRUKRoomLoader : MonoBehaviour
 
     private async Task<Pose> ResolveRoomPose()
     {
-        // ── 中心圖釘（手動擺放、永久儲存）凌駕所有對齊模式 ──
-        // 場景目前設 UseMRUKWall(2)，掛在特定分支裡會永遠不執行 → 放在最上面。
-        // 先等 host 對 colocation 圖釘完成初次對齊（世界軸定案）再讀/擺，
-        // 避免房間蓋在「還沒對齊的座標系」上；沒 colocation（單機）15 秒後照常進行。
-        RoomCenterSetup.Ensure();
-        if (RoomCenterSetup.Instance != null && !Application.isEditor)
+        // ── 房間位置的權威決策（凌駕所有對齊模式）──
+        // 之前的 bug：loader 場景一載入就跑，網路角色（host/client）根本還沒出爐 →
+        // 「IsHost=false」→ 讀不到中心圖釘 → 一次性退回「以頭為中心」。
+        // 正確順序：先等角色出爐 → host 走「等對齊→讀/擺中心圖釘」；
+        // client 走「等 host 廣播的房間 pose」（client 永遠不需要做定位）。
+        if (!Application.isEditor)
         {
-            float alignWaitStart = Time.realtimeSinceStartup;
-            while (!ColocationHostAlignment.AlignedOnce &&
-                   Time.realtimeSinceStartup - alignWaitStart < 15f)
-                await Task.Delay(250);
+            RoomCenterSetup.Ensure();
 
-            Pose? centerPose = await RoomCenterSetup.Instance.GetRoomPoseAsync(floorY);
-            if (centerPose.HasValue)
+            // 1) 等網路角色出爐（staff 可能過很久才按開房/加入 → 上限 3 分鐘後放棄走 fallback）
+            float roleWaitStart = Time.realtimeSinceStartup;
+            while (Time.realtimeSinceStartup - roleWaitStart < 180f)
             {
-                Debug.Log($"[VirtualMRUKRoomLoader] Room pose from center anchor: {centerPose.Value.position}, yaw={centerPose.Value.rotation.eulerAngles.y:F1}");
-                return centerPose.Value;
+                var nm = NetworkManager.Singleton;
+                if (nm != null && (nm.IsHost || nm.IsConnectedClient)) break;
+                await Task.Delay(250);
+            }
+
+            var net = NetworkManager.Singleton;
+            if (net != null && net.IsHost)
+            {
+                // 2a) HOST：等初次對齊完成（世界軸定案；單機沒 colocation 最多等 15 秒）
+                float alignWaitStart = Time.realtimeSinceStartup;
+                while (!ColocationHostAlignment.AlignedOnce &&
+                       Time.realtimeSinceStartup - alignWaitStart < 15f)
+                    await Task.Delay(250);
+
+                Pose? centerPose = await RoomCenterSetup.Instance.GetRoomPoseAsync(floorY);
+                if (centerPose.HasValue)
+                {
+                    Debug.Log($"[VirtualMRUKRoomLoader] HOST room pose from center anchor: {centerPose.Value.position}, yaw={centerPose.Value.rotation.eulerAngles.y:F1}");
+                    return centerPose.Value;
+                }
+            }
+            else if (net != null && net.IsConnectedClient)
+            {
+                // 2b) CLIENT：等 host 廣播房間 pose（client 從不自己定位；房間跟 host 同一塊實體地板）
+                float poseWaitStart = Time.realtimeSinceStartup;
+                while (Time.realtimeSinceStartup - poseWaitStart < 180f)
+                {
+                    var gf = GameFlowController.Instance;
+                    if (gf != null && gf.RoomPoseReady.Value)
+                    {
+                        Vector3 c = gf.RoomCenter.Value; c.y = floorY;
+                        float yawDeg = gf.RoomYawDeg.Value;
+                        Debug.Log($"[VirtualMRUKRoomLoader] CLIENT room pose from host broadcast: {c}, yaw={yawDeg:F1}");
+                        return new Pose(c, Quaternion.Euler(0f, yawDeg, 0f));
+                    }
+                    await Task.Delay(250);
+                }
+                Debug.LogWarning("[VirtualMRUKRoomLoader] CLIENT: no room pose broadcast within 180s — falling back to local resolution.");
             }
         }
 
