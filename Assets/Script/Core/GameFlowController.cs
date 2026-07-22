@@ -131,8 +131,9 @@ public class GameFlowController : NetworkBehaviour
 
     private IEnumerator PublishRoomPoseWhenReady()
     {
-        // 中心圖釘設定模式進行中 → 不能開始計 timeout（staff 可能擺很久）
-        while (RoomCenterSetup.Blocking) yield return null;
+        // 房間位置還在決定中（含設定模式）→ 不能開始計 timeout（staff 可能擺很久）
+        while (RoomCenterSetup.Blocking || VirtualMRUKRoomLoader.ResolvingRoomPose)
+            yield return null;
 
         // 等虛擬房載入 + SpawnArea 定位（timeout 後用當下值保底）
         float t = 0f;
@@ -190,8 +191,10 @@ public class GameFlowController : NetworkBehaviour
         if (startupDelay > 0f) yield return new WaitForSeconds(startupDelay);
         else                   yield return null;
 
-        // 中心圖釘設定模式進行中（首次擺放）→ 等 staff 擺完再開始遊戲
-        while (RoomCenterSetup.Blocking) yield return null;
+        // 等「房間位置定案」（含 colocation 對齊、讀/擺中心圖釘、房間載入）。
+        // 只等 Blocking 會賽跑：設定模式的旗要幾秒後才舉起來，遊戲會先開跑。
+        while (RoomCenterSetup.Blocking || VirtualMRUKRoomLoader.ResolvingRoomPose)
+            yield return null;
 
         // 設定模式若走了 Restart 路徑，遊戲已經開始 → 不要重複 StartGame
         if (!_started) StartGame();

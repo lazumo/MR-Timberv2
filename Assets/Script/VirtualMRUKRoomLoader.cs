@@ -44,6 +44,11 @@ public class VirtualMRUKRoomLoader : MonoBehaviour
     /// 避免 host 啟動搶在虛擬房之前、把房子生在「真實房間」的牆上）。
     public static bool VirtualRoomReady { get; private set; }
 
+    /// true = 正在決定房間位置（等 colocation 對齊、讀/擺中心圖釘、載入房間）。
+    /// StartGame / HouseSpawner / 房間廣播都要等它結束 —— 不能只等 RoomCenterSetup.Blocking，
+    /// 那面旗要幾秒後才舉起來，用它當條件會發生「遊戲先開跑、設定畫面才出現」的賽跑。
+    public static bool ResolvingRoomPose { get; private set; }
+
     private const string RoomUuid = "11111111111141118111111111111111";
     private const string FloorUuid = "22222222222242228222222222222222";
     private const string CeilingUuid = "33333333333343338333333333333333";
@@ -71,6 +76,7 @@ public class VirtualMRUKRoomLoader : MonoBehaviour
     {
         if (_loadingOrLoaded) return;
         _loadingOrLoaded = true;
+        ResolvingRoomPose = true;   // 同步舉旗（第一幀就成立，等待端不會搶跑）
 
         while (MRUK.Instance == null)
         {
@@ -86,6 +92,7 @@ public class VirtualMRUKRoomLoader : MonoBehaviour
         {
             Debug.LogError($"[VirtualMRUKRoomLoader] Failed to load virtual MRUK room: {result}");
             _loadingOrLoaded = false;   // 失敗 → 允許下一次 SceneLoadedEvent 重試
+            ResolvingRoomPose = false;
             return;
         }
 
@@ -95,6 +102,7 @@ public class VirtualMRUKRoomLoader : MonoBehaviour
         }
 
         VirtualRoomReady = true;
+        ResolvingRoomPose = false;
 
         Debug.Log($"[VirtualMRUKRoomLoader] Loaded virtual room at {roomPose.position}, yaw={roomPose.rotation.eulerAngles.y}, ceiling={resolvedCeilingHeight}");
     }

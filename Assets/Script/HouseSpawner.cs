@@ -74,9 +74,10 @@ public class HouseSpawnerNetworked : NetworkBehaviour
     // 直接生會把房子貼在真實房間的牆上（跑出 3x3）。timeout 後保底照舊生成。
     private IEnumerator SpawnWhenRoomReady()
     {
-        // 中心圖釘設定模式進行中 → 20 秒保底不能開始倒數
+        // 房間位置還在決定中（含設定模式）→ 20 秒保底不能開始倒數
         //（不等的話 timeout 會拿「真實房間」亂生房子）
-        while (RoomCenterSetup.Blocking) yield return null;
+        while (RoomCenterSetup.Blocking || VirtualMRUKRoomLoader.ResolvingRoomPose)
+            yield return null;
 
         float t = 0f;
         while (t < 20f && (!VirtualMRUKRoomLoader.VirtualRoomReady ||
