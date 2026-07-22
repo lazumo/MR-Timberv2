@@ -106,6 +106,26 @@ public class VirtualMRUKRoomLoader : MonoBehaviour
 
     private async Task<Pose> ResolveRoomPose()
     {
+        // ── 中心圖釘（手動擺放、永久儲存）凌駕所有對齊模式 ──
+        // 場景目前設 UseMRUKWall(2)，掛在特定分支裡會永遠不執行 → 放在最上面。
+        // 先等 host 對 colocation 圖釘完成初次對齊（世界軸定案）再讀/擺，
+        // 避免房間蓋在「還沒對齊的座標系」上；沒 colocation（單機）15 秒後照常進行。
+        RoomCenterSetup.Ensure();
+        if (RoomCenterSetup.Instance != null && !Application.isEditor)
+        {
+            float alignWaitStart = Time.realtimeSinceStartup;
+            while (!ColocationHostAlignment.AlignedOnce &&
+                   Time.realtimeSinceStartup - alignWaitStart < 15f)
+                await Task.Delay(250);
+
+            Pose? centerPose = await RoomCenterSetup.Instance.GetRoomPoseAsync(floorY);
+            if (centerPose.HasValue)
+            {
+                Debug.Log($"[VirtualMRUKRoomLoader] Room pose from center anchor: {centerPose.Value.position}, yaw={centerPose.Value.rotation.eulerAngles.y:F1}");
+                return centerPose.Value;
+            }
+        }
+
         Vector3 frontDirection;
         Vector3 frontWallPoint;
 
@@ -132,20 +152,6 @@ public class VirtualMRUKRoomLoader : MonoBehaviour
             // 直接對齊 colocation alignment anchor 的軸向：anchor 鎖在物理位置，
             // 不受 recenter / tracking 漂移影響 → 房間框永遠跟 anchor 視覺平行。
             OVRSpatialAnchor anchor = await WaitForAlignmentAnchor();
-
-            // 優先：host 的「中心圖釘」（手動擺放、永久儲存）。有 → 房間直接以它為中心/朝向；
-            // 沒有存檔 → RoomCenterSetup 會進設定模式擋到 staff 擺完。guest/editor 回 null 走 fallback。
-            RoomCenterSetup.Ensure();
-            if (RoomCenterSetup.Instance != null)
-            {
-                Pose? centerPose = await RoomCenterSetup.Instance.GetRoomPoseAsync(floorY);
-                if (centerPose.HasValue)
-                {
-                    Debug.Log($"[VirtualMRUKRoomLoader] Room pose from center anchor: {centerPose.Value.position}, yaw={centerPose.Value.rotation.eulerAngles.y:F1}");
-                    return centerPose.Value;
-                }
-            }
-
             Transform cam = Camera.main != null ? Camera.main.transform : transform;
 
             if (anchor != null)

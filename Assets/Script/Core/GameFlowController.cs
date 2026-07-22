@@ -116,6 +116,9 @@ public class GameFlowController : NetworkBehaviour
         // recenter/漂移，房間與綠框就會偏離 anchor 軸）
         ColocationHostAlignment.Ensure();
 
+        // 中心圖釘設定系統（host 用；grip+Start 重擺鍵要一直活著，不能依賴 loader 的模式分支）
+        RoomCenterSetup.Ensure();
+
         // 房間 pose 廣播：host 等虛擬房載好後發布；client 收到就套用（含晚加入）
         if (IsServer)
             StartCoroutine(PublishRoomPoseWhenReady());
@@ -190,7 +193,8 @@ public class GameFlowController : NetworkBehaviour
         // 中心圖釘設定模式進行中（首次擺放）→ 等 staff 擺完再開始遊戲
         while (RoomCenterSetup.Blocking) yield return null;
 
-        StartGame();
+        // 設定模式若走了 Restart 路徑，遊戲已經開始 → 不要重複 StartGame
+        if (!_started) StartGame();
     }
 
     private void Update()

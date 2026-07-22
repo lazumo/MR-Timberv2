@@ -35,6 +35,10 @@ public class ColocationHostAlignment : MonoBehaviour
     private const float CooldownSeconds = 3f;     // 兩次自動校正之間的冷卻
     private const float ManualHoldSeconds = 1f;   // 左手 Start 長按秒數
 
+    /// 本機是否已完成「開場第一次對齊」（RoomCenterSetup / loader 等這個才讀中心圖釘，
+    /// 避免把房間蓋在還沒對齊的座標系上）
+    public static bool AlignedOnce { get; private set; }
+
     private OVRSpatialAnchor _anchor;
     private Transform _rig;
     private float _nextFind;
@@ -101,6 +105,7 @@ public class ColocationHostAlignment : MonoBehaviour
             ComputeTargetRigPose(out var pos, out float yaw);
             ApplyRigPose(pos, yaw);
             _alignedOnce = true;
+            AlignedOnce = true;
             Debug.Log($"[ColocationAlignment] Initial align to colocation anchor ({(nm.IsHost ? "host" : "guest")}).");
             return;
         }

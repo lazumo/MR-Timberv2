@@ -88,6 +88,9 @@ public class RoomCenterSetup : MonoBehaviour
         if (Application.isEditor || !IsHost) return null;
         _floorY = floorY;
 
+        // 已載入/已擺好（例如 staff 先用 grip+Start 擺完才輪到 loader 來問）→ 直接回
+        if (_state == State.Done && _centerAnchor != null) return PoseFromAnchor();
+
         // 1) 試載入存過的圖釘
         _state = State.Loading;
         if (await TryLoadSavedAnchor())
@@ -205,8 +208,9 @@ public class RoomCenterSetup : MonoBehaviour
     {
         if (Application.isEditor || !IsHost) return;
 
-        // 遊戲中重新設定：左手 grip + Start 按住 1 秒
-        if (_state == State.Done)
+        // 重新設定：左手 grip + Start 按住 1 秒。
+        // Idle 也可觸發（例如 loader 模式沒接上、或想在遊戲前手動重擺）。
+        if (_state == State.Done || _state == State.Idle)
         {
             bool combo = OVRInput.Get(OVRInput.Axis1D.PrimaryHandTrigger, OVRInput.Controller.LTouch) > 0.5f
                       && OVRInput.Get(OVRInput.Button.Start, OVRInput.Controller.LTouch);
@@ -286,13 +290,15 @@ public class RoomCenterSetup : MonoBehaviour
 
         StartCoroutine(Haptics.Pulse(OVRInput.Controller.RTouch, 1f, 0.9f, 0.3f));
         ClearVisuals();
-        Blocking = false;
 
         bool wasMidGame = _midGame;
         _state = State.Done;
 
+        // midGame：套用完（重蓋房間+Restart）才解除 Blocking，
+        // 避免 StartGameDelayed 和 Restart 同時各叫一次 StartGame。
         if (wasMidGame)
             await ApplyMidGameAsync();
+        Blocking = false;
         // 首次流程：GetRoomPoseAsync 的等待迴圈會接手，把 pose 交給 loader
     }
 
