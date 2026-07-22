@@ -183,7 +183,21 @@ public class ColocationHostAlignment : MonoBehaviour
 
     private void ApplyRigPose(Vector3 pos, float yaw)
     {
+        // 高度不信圖釘：FloorLevel 追蹤原點下，rig y=0 ⇒ 世界地板 = 本機實測地板。
+        // 圖釘的高度估計（尤其 client 對分享圖釘的）常差幾公分且會漂 →
+        // 之前 host 世界下沉、client 上浮就是它。XZ+朝向跟圖釘，高度跟自己的腳下。
+        pos.y = 0f;
         _rig.SetPositionAndRotation(pos, Quaternion.Euler(0f, yaw, 0f));
+    }
+
+    private void LateUpdate()
+    {
+        // guest：Meta 的每幀對齊會把圖釘高度誤差寫進 rig → 世界浮/沉。
+        // 在它之後每幀把高度清回 0（= 本機地板），XZ/朝向不動、不跟它打架。
+        var nm = NetworkManager.Singleton;
+        if (nm == null || nm.IsHost || _rig == null) return;
+        var p = _rig.position;
+        if (Mathf.Abs(p.y) > 0.0005f) _rig.position = new Vector3(p.x, 0f, p.z);
     }
 
     // ═════════════════════ 觸發來源 ═════════════════════
