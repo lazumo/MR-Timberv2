@@ -79,6 +79,12 @@ public class RoomCenterSetup : MonoBehaviour
     private bool IsHost =>
         NetworkManager.Singleton != null && NetworkManager.Singleton.IsHost;
 
+    private bool IsGuest =>
+        NetworkManager.Singleton != null &&
+        NetworkManager.Singleton.IsConnectedClient && !NetworkManager.Singleton.IsHost;
+
+    private bool _guestInitStarted;   // guest pin 載入/擺放只跑一次
+
     // ════════════════ 對外入口（loader 呼叫） ════════════════
 
     /// 房間該蓋在哪。有存檔 → 載入圖釘回傳其 pose；沒有 → 進設定模式等 staff 擺完。
@@ -105,6 +111,30 @@ public class RoomCenterSetup : MonoBehaviour
         BeginSetup(midGame: false);
         while (_state != State.Done) await Task.Yield();
         return PoseFromAnchor();
+    }
+
+    /// v6:本機中心圖釘(host = 房間位置權威;guest = 對齊校正參考)。
+    /// ColocationHostAlignment.TryGetPinReference 讀這個。
+    public OVRSpatialAnchor CenterAnchor => _centerAnchor;
+
+    /// guest 的 pin 初始化:載入存過的(同一個 PlayerPrefs key —— pin 代表
+    /// 「這台裝置在實體十字上的圖釘」,跟角色無關,角色互換也照用);
+    /// 沒有存檔就進擺放模式。擺放不需要等對齊 —— 圖釘存的是實體姿態。
+    private async Task EnsureGuestPinAsync()
+    {
+        _floorY = 0f;
+        _state = State.Loading;
+
+        if (await TryLoadSavedAnchor())
+        {
+            _state = State.Done;
+            Debug.Log($"[RoomCenterSetup] GUEST loaded saved center pin at {_centerAnchor.transform.position}.");
+            return;
+        }
+
+        Debug.Log("[RoomCenterSetup] GUEST has no saved center pin — entering setup mode (place on the SAME floor cross as host).");
+        BeginSetup(midGame: false);
+        // ConfirmAsync 收尾(state=Done、Blocking=false);對齊校正會自動改用這支 pin。
     }
 
     private Pose PoseFromAnchor()
@@ -217,7 +247,19 @@ public class RoomCenterSetup : MonoBehaviour
 
     private void Update()
     {
-        if (Application.isEditor || !IsHost) return;
+        if (Application.isEditor) return;
+        bool host = IsHost;
+        bool guest = IsGuest;
+        if (!host && !guest) return;
+
+        // v6:guest 也擁有自己的中心圖釘(打在跟 host 同一個實體十字上)。
+        // 它是 guest 對齊校正的參考:本機地圖建的圖釘品質遠勝「共享」圖釘的 localize。
+        // 連上後自動載入存過的 pin;沒有存檔就進擺放模式(staff 一次性設定)。
+        if (guest && !_guestInitStarted && _state == State.Idle)
+        {
+            _guestInitStarted = true;
+            _ = EnsureGuestPinAsync();
+        }
 
         // 重新設定：左手 grip + Start 按住 1 秒。
         // Idle 也可觸發（例如 loader 模式沒接上、或想在遊戲前手動重擺）。
@@ -307,7 +349,7 @@ public class RoomCenterSetup : MonoBehaviour
 
         // midGame：套用完（重蓋房間+Restart）才解除 Blocking，
         // 避免 StartGameDelayed 和 Restart 同時各叫一次 StartGame。
-        if (wasMidGame)
+        if (wasMidGame && IsHost)
             await ApplyMidGameAsync();
         Blocking = false;
         // 首次流程：GetRoomPoseAsync 的等待迴圈會接手，把 pose 交給 loader
